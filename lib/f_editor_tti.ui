@@ -1,0 +1,308 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>f_editor_tti</class>
+ <widget class="QWidget" name="f_editor_tti">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>1059</width>
+    <height>512</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Form</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="spacing">
+    <number>0</number>
+   </property>
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QSplitter" name="splitter">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <widget class="QPlainTextEdit" name="mem_editor">
+      <property name="font">
+       <font>
+        <family>Monospace</family>
+        <pointsize>11</pointsize>
+       </font>
+      </property>
+      <property name="lineWrapMode">
+       <enum>QPlainTextEdit::NoWrap</enum>
+      </property>
+     </widget>
+     <widget class="QWidget" name="widget" native="true">
+      <layout class="QVBoxLayout" name="verticalLayout_2">
+       <property name="spacing">
+        <number>0</number>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QFrame" name="frame">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>35</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>16777215</width>
+           <height>35</height>
+          </size>
+         </property>
+         <property name="frameShape">
+          <enum>QFrame::Box</enum>
+         </property>
+         <property name="frameShadow">
+          <enum>QFrame::Raised</enum>
+         </property>
+         <widget class="QPushButton" name="bt_tool_clip">
+          <property name="geometry">
+           <rect>
+            <x>160</x>
+            <y>2</y>
+            <width>41</width>
+            <height>30</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>copy</string>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="bt_tool_column">
+          <property name="geometry">
+           <rect>
+            <x>4</x>
+            <y>2</y>
+            <width>41</width>
+            <height>30</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>#</string>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="bt_tool_csv">
+          <property name="geometry">
+           <rect>
+            <x>200</x>
+            <y>2</y>
+            <width>41</width>
+            <height>30</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>csv</string>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="bt_tool_insert">
+          <property name="geometry">
+           <rect>
+            <x>240</x>
+            <y>2</y>
+            <width>41</width>
+            <height>30</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>sql</string>
+          </property>
+         </widget>
+         <widget class="QCheckBox" name="chk_all_text">
+          <property name="geometry">
+           <rect>
+            <x>330</x>
+            <y>6</y>
+            <width>131</width>
+            <height>24</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Run all SQL text</string>
+          </property>
+         </widget>
+         <widget class="QCheckBox" name="chk_run_user_local">
+          <property name="geometry">
+           <rect>
+            <x>460</x>
+            <y>6</y>
+            <width>121</width>
+            <height>24</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Run User Local</string>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="bt_fetch">
+          <property name="geometry">
+           <rect>
+            <x>100</x>
+            <y>2</y>
+            <width>41</width>
+            <height>30</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>↓</string>
+          </property>
+         </widget>
+         <widget class="QLabel" name="lb_timer">
+          <property name="geometry">
+           <rect>
+            <x>741</x>
+            <y>8</y>
+            <width>58</width>
+            <height>18</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>00:00:00</string>
+          </property>
+         </widget>
+         <widget class="QLabel" name="lb_row">
+          <property name="geometry">
+           <rect>
+            <x>820</x>
+            <y>8</y>
+            <width>58</width>
+            <height>18</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>row:0</string>
+          </property>
+         </widget>
+         <widget class="QCheckBox" name="chk_parameters">
+          <property name="geometry">
+           <rect>
+            <x>590</x>
+            <y>6</y>
+            <width>121</width>
+            <height>24</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Disable &quot;&amp;&amp;&quot;</string>
+          </property>
+         </widget>
+         <widget class="QPushButton" name="bt_tool_delete">
+          <property name="geometry">
+           <rect>
+            <x>44</x>
+            <y>2</y>
+            <width>41</width>
+            <height>30</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>-</string>
+          </property>
+         </widget>
+        </widget>
+       </item>
+       <item>
+        <widget class="QTabWidget" name="tabWidget">
+         <property name="tabPosition">
+          <enum>QTabWidget::South</enum>
+         </property>
+         <property name="currentIndex">
+          <number>0</number>
+         </property>
+         <widget class="QWidget" name="tab">
+          <attribute name="title">
+           <string>data</string>
+          </attribute>
+          <layout class="QVBoxLayout" name="verticalLayout_3">
+           <property name="spacing">
+            <number>0</number>
+           </property>
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QTableWidget" name="grid_select">
+             <property name="alternatingRowColors">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+         <widget class="QWidget" name="tab_2">
+          <attribute name="title">
+           <string>dbms</string>
+          </attribute>
+          <layout class="QVBoxLayout" name="verticalLayout_4">
+           <property name="spacing">
+            <number>0</number>
+           </property>
+           <property name="leftMargin">
+            <number>0</number>
+           </property>
+           <property name="topMargin">
+            <number>0</number>
+           </property>
+           <property name="rightMargin">
+            <number>0</number>
+           </property>
+           <property name="bottomMargin">
+            <number>0</number>
+           </property>
+           <item>
+            <widget class="QPlainTextEdit" name="mem_dbms">
+             <property name="font">
+              <font>
+               <family>Monospace</family>
+              </font>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

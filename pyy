@@ -1,0 +1,24 @@
+if [ "$1" = "1" ]; then
+    echo "*** gerando AlgarSQL"
+
+    rm AlgarSQL
+    zip -r AlgarSQL.zip *py *lib*   -x "*ui" -x "*pycache*"
+    
+    echo '#!/usr/bin/env python3' | cat - AlgarSQL.zip > AlgarSQL
+    chmod 755 AlgarSQL
+    rm AlgarSQL.zip
+
+elif [ "$1" = "2" ]; then
+    echo "*** gerando backup"
+    dt=`date +"%d-%m-%Y"`
+    zip -r backup_$dt.zip *
+    mv backup_$dt.zip backup/
+
+else
+    echo "*** compilando arquivos"
+    
+    pyrcc5 menus.qrc -o menus_rc.py
+    echo "menus.qrc"
+    cd lib
+    for cx in `find . | grep ui$ | cut -d"/" -f2 | cut -d "." -f 1`; do echo $cx; pyuic5 $cx.ui > $cx.py ; done
+fi

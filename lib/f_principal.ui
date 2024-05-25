@@ -1,0 +1,293 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>f_principal</class>
+ <widget class="QMainWindow" name="f_principal">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>928</width>
+    <height>653</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>AlgarSQL</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="horizontalLayout">
+    <property name="spacing">
+     <number>0</number>
+    </property>
+    <property name="leftMargin">
+     <number>0</number>
+    </property>
+    <property name="topMargin">
+     <number>0</number>
+    </property>
+    <property name="rightMargin">
+     <number>0</number>
+    </property>
+    <property name="bottomMargin">
+     <number>0</number>
+    </property>
+    <item>
+     <widget class="QSplitter" name="splitter">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+      <widget class="QToolBox" name="toolBox">
+       <property name="minimumSize">
+        <size>
+         <width>200</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <property name="currentIndex">
+        <number>0</number>
+       </property>
+       <widget class="QWidget" name="page">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>561</width>
+          <height>549</height>
+         </rect>
+        </property>
+        <attribute name="label">
+         <string>Objects Tree</string>
+        </attribute>
+        <layout class="QVBoxLayout" name="verticalLayout">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QTreeWidget" name="tree_objetos">
+           <attribute name="headerVisible">
+            <bool>false</bool>
+           </attribute>
+           <column>
+            <property name="text">
+             <string notr="true">1</string>
+            </property>
+           </column>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="page_2">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>561</width>
+          <height>549</height>
+         </rect>
+        </property>
+        <attribute name="label">
+         <string>Templates</string>
+        </attribute>
+        <layout class="QVBoxLayout" name="verticalLayout_2">
+         <property name="spacing">
+          <number>0</number>
+         </property>
+         <property name="leftMargin">
+          <number>0</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="rightMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
+         <item>
+          <widget class="QTreeView" name="tree_templates">
+           <property name="alternatingRowColors">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </widget>
+      </widget>
+      <widget class="QTabWidget" name="pc_editor">
+       <property name="currentIndex">
+        <number>0</number>
+       </property>
+       <property name="tabsClosable">
+        <bool>true</bool>
+       </property>
+       <widget class="QWidget" name="tab">
+        <attribute name="title">
+         <string>Tab 1</string>
+        </attribute>
+       </widget>
+       <widget class="QWidget" name="tab_2">
+        <attribute name="title">
+         <string>Tab 2</string>
+        </attribute>
+       </widget>
+      </widget>
+     </widget>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QToolBar" name="toolBar">
+   <property name="windowTitle">
+    <string>toolBar</string>
+   </property>
+   <property name="iconSize">
+    <size>
+     <width>25</width>
+     <height>25</height>
+    </size>
+   </property>
+   <property name="toolButtonStyle">
+    <enum>Qt::ToolButtonIconOnly</enum>
+   </property>
+   <attribute name="toolBarArea">
+    <enum>TopToolBarArea</enum>
+   </attribute>
+   <attribute name="toolBarBreak">
+    <bool>false</bool>
+   </attribute>
+   <addaction name="actionLogon"/>
+   <addaction name="actionLogoff"/>
+   <addaction name="actionNewEditor"/>
+   <addaction name="actionSaveEditor"/>
+   <addaction name="actionOpenEditor"/>
+   <addaction name="actionRunSQL"/>
+   <addaction name="actionStopSQL"/>
+   <addaction name="actionCommit"/>
+   <addaction name="actionRollback"/>
+   <addaction name="actionConfigs"/>
+  </widget>
+  <action name="actionLogon">
+   <property name="icon">
+    <iconset resource="../menus.qrc">
+     <normaloff>:/png/ico/db_logon.png</normaloff>:/png/ico/db_logon.png</iconset>
+   </property>
+   <property name="text">
+    <string>Logon</string>
+   </property>
+  </action>
+  <action name="actionLogoff">
+   <property name="icon">
+    <iconset resource="../menus.qrc">
+     <normaloff>:/png/ico/db_logoff.png</normaloff>:/png/ico/db_logoff.png</iconset>
+   </property>
+   <property name="text">
+    <string>Logoff</string>
+   </property>
+  </action>
+  <action name="actionNewEditor">
+   <property name="icon">
+    <iconset resource="../menus.qrc">
+     <normaloff>:/png/ico/file_new.png</normaloff>:/png/ico/file_new.png</iconset>
+   </property>
+   <property name="text">
+    <string>NewEditor</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+N</string>
+   </property>
+  </action>
+  <action name="actionSaveEditor">
+   <property name="icon">
+    <iconset resource="../menus.qrc">
+     <normaloff>:/png/ico/file_saveall.png</normaloff>:/png/ico/file_saveall.png</iconset>
+   </property>
+   <property name="text">
+    <string>SaveEditor</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+S</string>
+   </property>
+  </action>
+  <action name="actionOpenEditor">
+   <property name="icon">
+    <iconset resource="../menus.qrc">
+     <normaloff>:/png/ico/file_open.png</normaloff>:/png/ico/file_open.png</iconset>
+   </property>
+   <property name="text">
+    <string>OpenEditor</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+O</string>
+   </property>
+  </action>
+  <action name="actionRunSQL">
+   <property name="icon">
+    <iconset resource="../menus.qrc">
+     <normaloff>:/png/ico/sql_run.png</normaloff>:/png/ico/sql_run.png</iconset>
+   </property>
+   <property name="text">
+    <string>RunSQL</string>
+   </property>
+   <property name="shortcut">
+    <string>F8</string>
+   </property>
+  </action>
+  <action name="actionStopSQL">
+   <property name="icon">
+    <iconset resource="../menus.qrc">
+     <normaloff>:/png/ico/sql_stop.png</normaloff>:/png/ico/sql_stop.png</iconset>
+   </property>
+   <property name="text">
+    <string>StopSQL</string>
+   </property>
+  </action>
+  <action name="actionCommit">
+   <property name="icon">
+    <iconset resource="../menus.qrc">
+     <normaloff>:/png/ico/sql_commit.png</normaloff>:/png/ico/sql_commit.png</iconset>
+   </property>
+   <property name="text">
+    <string>Commit</string>
+   </property>
+  </action>
+  <action name="actionRollback">
+   <property name="icon">
+    <iconset resource="../menus.qrc">
+     <normaloff>:/png/ico/sql_rollback.png</normaloff>:/png/ico/sql_rollback.png</iconset>
+   </property>
+   <property name="text">
+    <string>Rollback</string>
+   </property>
+  </action>
+  <action name="actionConfigs">
+   <property name="icon">
+    <iconset resource="../menus.qrc">
+     <normaloff>:/png/ico/preferences.png</normaloff>:/png/ico/preferences.png</iconset>
+   </property>
+   <property name="text">
+    <string>Configs</string>
+   </property>
+  </action>
+ </widget>
+ <resources>
+  <include location="../menus.qrc"/>
+ </resources>
+ <connections/>
+</ui>
