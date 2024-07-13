@@ -8,12 +8,6 @@ if [ "$1" = "1" ]; then
     chmod 755 AlgarSQL
     rm AlgarSQL.zip
 
-elif [ "$1" = "2" ]; then
-    echo "*** gerando backup"
-    dt=`date +"%d-%m-%Y"`
-    zip -r backup_$dt.zip *
-    mv backup_$dt.zip backup/
-
 else
     echo "*** compilando arquivos"
     

@@ -138,18 +138,16 @@ def configSave(tagName, tagValue, p_tipo):
 
 def populateGrid(grid: QTableWidget, data , columnNames=None, columnTypes=None, editableColumns="", appending=False):
     row_idx = 0 if appending == False else grid.rowCount()
-    for x in range( grid.columnCount() ):
-        grid.horizontalHeaderItem(x).FIELD_TYPE = "CHAR" if columnTypes == None else columnTypes[x]
-        
+    
+    grid.col_names = columnNames
+    grid.col_types = columnTypes
+
     grid.setRowCount( len(data) + row_idx )
     if appending == False:
         if columnNames != None:
             grid.setColumnCount(len(columnNames))
             for i,x in enumerate(columnNames):
-                item            = QTableWidgetItem()
-                item.FIELD_TYPE = "CHAR"
-                if columnTypes != None:
-                    item.FIELD_TYPE = columnTypes[i]
+                item  = QTableWidgetItem()
                 item.setText(x)
                 grid.setHorizontalHeaderItem(i, item) 
 
@@ -161,9 +159,9 @@ def populateGrid(grid: QTableWidget, data , columnNames=None, columnTypes=None, 
             
             if a == None:
                 tt = ""  
-            elif "DATE" in grid.horizontalHeaderItem(j).FIELD_TYPE:
+            elif columnTypes != None and "DATE" in columnTypes[j]:
                 tt = a.strftime("%d/%m/%Y %H:%M:%S")
-            elif "BLOB" in grid.horizontalHeaderItem(j).FIELD_TYPE:
+            elif columnTypes != None and "BLOB" in columnTypes[j]:
                 tt = a.read().decode("utf-8", errors='replace')
             else:
                 tt = str(a)

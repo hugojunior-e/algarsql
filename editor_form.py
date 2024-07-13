@@ -34,7 +34,7 @@ class form(QDialog):
             for x in range( self.ui.grid.rowCount() ):
                 fn  = self.ui.grid.item(x,0).text()
                 fv  = self.ui.grid.item(x,1).text()
-                ft  = self.grid_orig.horizontalHeaderItem(x).FIELD_TYPE
+                ft  = self.l_tipos[fn]
 
                 if len(fv) == 0:
                     sql_bind_vars[fn] = None
@@ -76,11 +76,15 @@ class form(QDialog):
         self.db               = db
         self.sql              = ""
         self.bt_salvar_text   = "View"
+        self.l_tipos          = {}
         self.ui.grid.show()
         self.ui.mem_grid.hide()
+        
 
         t = []
         for x in range( grid_orig.columnCount() ):
+            self.l_tipos[ grid_orig.col_names[x] ] = grid_orig.col_types[x]
+
             if grid_orig.horizontalHeaderItem(x).text() == 'ROWID':
                 self.bt_salvar_text   = "Save"
                 self.rowid            = grid_orig.item(rowIndex,x).text()
