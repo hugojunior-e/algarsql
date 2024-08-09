@@ -139,12 +139,12 @@ def configSave(tagName, tagValue, p_tipo):
 def populateGrid(grid: QTableWidget, data , columnNames=None, columnTypes=None, editableColumns="", appending=False):
     row_idx = 0 if appending == False else grid.rowCount()
     
-    grid.col_names = columnNames
-    grid.col_types = columnTypes
-
     grid.setRowCount( len(data) + row_idx )
     if appending == False:
         if columnNames != None:
+            grid.col_names = columnNames
+            grid.col_types = columnTypes
+            
             grid.setColumnCount(len(columnNames))
             for i,x in enumerate(columnNames):
                 item  = QTableWidgetItem()

@@ -109,56 +109,53 @@ class form(QDialog):
     ## ==============================================================================================
 
     def bt_csv_populate_thread(self):
-        new_file = self.ui.edt_csv_file.text().replace(".csv","_newdata.csv")
-        linhas   = dm.loadFromFile(self.ui.edt_csv_file.text())
-        sql      = self.ui.mem_csv.toPlainText()
-        i_start  = 1 if self.ui.chk_csv.isChecked() else 0
-        i_linha  = 0
+        new_file   = self.ui.edt_csv_file.text().replace(".csv","_newdata.csv")
+        sql        = self.ui.mem_csv.toPlainText()
+        i_start    = 1 if self.ui.chk_csv.isChecked() else 0
+        linhas     = dm.loadFromFile(self.ui.edt_csv_file.text())[i_start:]
 
+        ##--tratando SELECT
         if dm.tipoSQL(sql) == 1:
             r = open(new_file,'w')
-            for s_linha in linhas:
-                if i_linha >= i_start:
-                    if i_linha % 50 == 0:
-                        self.bt.setText( f"processed line {i_linha} " )
+            for i_linha, s_linha in enumerate( linhas ):
+                if i_linha % 50 == 0:
+                    self.bt.setText( f"processed line {i_linha} " )
 
-                    sql_temp = sql
-                    a_linha  = s_linha.strip().split(";")
-                    for i,v in enumerate(a_linha):
-                        sql_temp = sql_temp.replace( f"<{i+1}>", v )
-                    
-                    dm.db.executeSQL(p_sql=sql_temp, p_tipo='SELECT_DIRECT')
-                    if dm.db.status_code == 0:
-                        retorno = dm.db.cur.fetchone()
-                        if retorno != None:
-                            r.write(s_linha.strip() + ";" + ( ";".join([str(i) for i in retorno]) )   + "\n")
-                        else:
-                            r.write(s_linha.strip() + ";\n")
+                sql_temp = sql
+                a_linha  = s_linha.strip().split(";")
+                for i,v in enumerate(a_linha):
+                    sql_temp = sql_temp.replace( f"<{i+1}>", v )
+                
+                dm.db.executeSQL(p_sql=sql_temp, p_tipo='SELECT_DIRECT')
+                if dm.db.status_code == 0:
+                    retorno = dm.db.cur.fetchone()
+                    if retorno != None:
+                        r.write(s_linha.strip() + ";" + ( ";".join([str(i) for i in retorno]) )   + "\n")
                     else:
-                        self.bt.setText( dm.db.status_msg )
-                        return 0
-                i_linha = i_linha + 1 
+                        r.write(s_linha.strip() + ";\n")
+                else:
+                    self.bt.setText( dm.db.status_msg )
+                    return 0
             r.close()
             self.bt.setText( f"Finished. {i_linha} lines\nSaved file: {new_file} " )
+
+        ##--tratando UPDATE, INSERT, DELETE
         else:
             dados_insert = []
-            for s_linha in linhas:
-                if i_linha >= i_start:
-                    dados_insert.append( tuple(s_linha.split(";")) )                    
+            for i_linha, s_linha in enumerate( linhas ):
+                dados_insert.append( tuple(s_linha.split(";")) )                    
 
-                    if i_linha % 5000 == 0:
-                        self.bt.setText( f"processed line {i_linha} " )
-                        dm.db.executeSQL(p_sql=sql, p_tipo='EXEC_DIRECT', p_bind_values=dados_insert, p_many=True)
-                        if dm.db.status_code == 0:
-                            dm.db.commit()
-                        else:
-                            self.bt.setText( dm.db.status_msg  )
-                            return 0
-                        dados_insert = []
-                i_linha = i_linha + 1 
-            dm.db.cur.executemany(sql,dados_insert)
-            dm.db.commit()
+                if i_linha % 5000 == 0 or i_linha == (len(linhas) - 1):
+                    self.bt.setText( f"processed line {i_linha} " )
+                    dm.db.executeSQL(p_sql=sql, p_tipo='EXEC_DIRECT', p_bind_values=dados_insert, p_many=True)
+                    if dm.db.status_code == 0:
+                        dm.db.commit()
+                    else:
+                        self.bt.setText( dm.db.status_msg  )
+                        return 0
+                    dados_insert = []
             self.bt.setText( f"Finished {i_linha} records" )
+
 
     def bt_csv_populate_edited(self):
         dm.configSave("csv_sql",self.ui.mem_csv.toPlainText(), "CONFIG")
