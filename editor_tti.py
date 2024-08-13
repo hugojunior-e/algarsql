@@ -1,5 +1,6 @@
 import lib.f_editor_tti
 import dm
+
 import os
 import subprocess
 import time
@@ -10,11 +11,12 @@ from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
+
+
 class form(QWidget):
     def __init__(self):
         self.db       = dm.HOracle()
-        self.db_timer = dm.Worker()
-        self.db_timer.init( self.db_timer_thread )
+        self.db_timer = dm.Worker(self.db_timer_thread, autostart=False)
         
         super(form, self).__init__()
         self.ui = lib.f_editor_tti.Ui_f_editor_tti()
@@ -46,8 +48,6 @@ class form(QWidget):
         self.ui.bt_fetch.setVisible(False)
         self.filename    = None
         self.objectname  = None
-        self.bt = None
-        self.th = None
         
     ## ==============================================================================================
     ## TabSheets Titles and Icons
@@ -338,12 +338,15 @@ class form(QWidget):
             self.tabTextIcon(Icon=dm.iconRed)
             dm.f_principal.pc_editor_tabchange()
             self.db_timer.thread.start()   
-            self.th = dm.Worker()             
-            self.th.init(proc_run=self.th_process_exec, proc_fim=self.th_process_exec_grid).start()
+            self.th = dm.Worker(proc_run=self.th_process_exec, proc_fim=self.th_process_exec_grid)
+
+
 
     ## ==============================================================================================
     ## toolbar - botoes grid
     ## ==============================================================================================
+
+
 
     def bt_tool_delete_clicked(self):
         v_rowid = None
@@ -384,8 +387,7 @@ class form(QWidget):
     def bt_fetch_clicked(self):
         self.bt        = dm.createButtonWork(Run=lambda:(self.bt_fetch_clicked_thread_stop())  )
         self.bt.H_stop = False
-        self.th        = dm.Worker()
-        self.th.init(proc_run=self.bt_fetch_clicked_thread).start()
+        self.th        = dm.Worker(proc_run=self.bt_fetch_clicked_thread)
 
     ##-------------
 
@@ -421,8 +423,7 @@ class form(QWidget):
         if ok:    
             self.bt              = dm.createButtonWork(Run=lambda:(self.th.thread.terminate(),self.bt.close()))
             self.bt.H_table_name = table_name           
-            self.th              = dm.Worker()
-            self.th.init(proc_run=self.bt_tool_insert_clicked_thread).start()
+            self.th              = dm.Worker(proc_run=self.bt_tool_insert_clicked_thread)
 
     ##-------------
 
@@ -457,8 +458,7 @@ class form(QWidget):
                 
         if QMessageBox.question(self,"Confirm","Confirm export to csv?",QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
             self.bt = dm.createButtonWork(Run=lambda:(self.th.thread.terminate(),self.bt.close()))
-            self.th = dm.Worker()
-            self.th.init(proc_run=self.bt_tool_csv_clicked_thread).start()
+            self.th = dm.Worker(proc_run=self.bt_tool_csv_clicked_thread)
 
     ##-------------
 

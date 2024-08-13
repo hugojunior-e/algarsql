@@ -12,7 +12,7 @@ class form(QMainWindow):
         super(form, self).__init__()
         self.ui = f_principal.Ui_f_principal()
         self.ui.setupUi(self)
-        self.popup_config = dm.createMenu(self, ["Recall SQL|Ctrl+E", "View Sessions", "Find Objects", "Explain Query|F5", "CSV Updater", "-", "Recompile Invalid Objects", "-", "Reload Templates","-", "Config Tools"],self.popup_config_click)        
+        self.popup_config = dm.createMenu(self, ["Recall SQL|Ctrl+E", "View Sessions", "Find Objects", "Explain Query|F5", "CSV Updater", "-", "Recompile Invalid Objects", "-", "Reload Templates","-", "Config Tools","-","Export data Table"],self.popup_config_click)        
         self.popup_tree   = dm.createMenu(self, ["View Code", "Query Data"],self.popup_tree_click)
         self.ui.actionLogon.triggered.connect( lambda: dm.f_logon.showLogin() )
         self.ui.actionLogoff.triggered.connect(self.actionLogoff_click)
@@ -46,8 +46,7 @@ class form(QMainWindow):
                 return
             self.bt      = dm.createButtonWork(Run=lambda:(self.th.thread.terminate(),self.bt.close()), Text=f"Extracting DML {info}")
             self.bt.info = info
-            self.th      = dm.Worker()
-            self.th.init(proc_run=lambda:(dm.db.executeSQL(p_sql=info, p_tipo='DML')), proc_fim=self.popup_tree_view_code_finish).start()
+            self.th      = dm.Worker(proc_run=lambda:(dm.db.executeSQL(p_sql=info, p_tipo='DML')), proc_fim=self.popup_tree_view_code_finish)
 
     def popup_tree_view_code_finish(self):
         for txt in dm.db.status_msg.split("<end_package_spec>"):
@@ -188,16 +187,30 @@ class form(QMainWindow):
                 self.bt.H_msg_ret.append( "----------------------------------------" )
         self._bt_.close()
         
+        
+    def popup_config_export_data(self):
+        db = self.ui.pc_editor.currentWidget().db
+        ff = dm.do_filename('export_data.db')
+        while True:
+           data =  db.cur.fetchmany(5000)
+           if len(data) == 0:
+               break
+               
+
 
     def popup_config_click(self):
         if self.sender().text() == "Reload Templates":
             self.montaTreeTemplate()
 
+        elif self.sender().text() == "Export data Table":
+            self.bt = dm.createButtonWork(Run=lambda:(self.th.thread.terminate(),self.bt.close()))
+            self.th = dm.Worker(proc_run=self.popup_config_export_data)
+
+
         elif self.sender().text() == "Recompile Invalid Objects":
             x       = lambda: dm.f_editor.showForm("Editor", "\n".join( self.bt.H_msg_ret ) )
             self.bt = dm.createButtonWork(Run=lambda:(self.th.thread.terminate(),self.bt.close(), x))
-            self.th = dm.Worker()
-            self.th.init(proc_run=self.popup_config_recompile, proc_fim=x).start()
+            self.th = dm.Worker(proc_run=self.popup_config_recompile, proc_fim=x)
         else:
             ff = self.ui.pc_editor.currentWidget()
             dm.f_editor.showForm( self.sender().text() , "" if ff == None else ff.ui.mem_editor.toPlainText() )
@@ -211,14 +224,7 @@ class form(QMainWindow):
         fileName = self.ui.tree_templates.model().fileName(index)
         filePath = self.ui.tree_templates.model().filePath(index)
         fullName = (filePath + os.path.pathsep + fileName).split(":")[0]
-        print(fullName)
         if os.path.isfile(fullName):
-            """
-            for i in range(self.ui.pc_editor.tabBar().count()):
-                if self.ui.pc_editor.widget(i).filename == fullName:
-                    self.ui.pc_editor.setCurrentIndex(i)
-                    return
-            """
             self.actionOpenEditor_loadfromfile(fileName=fullName)
 
     def montaTreeTemplate(self):

@@ -51,9 +51,6 @@ class form(QDialog):
         for i in range(self.ui.tabWidget.count()):
             self.ui.tabWidget.setTabVisible(i,False)
 
-        self.th = None
-        self.bt = None
-
 
     ## ==============================================================================================
     ## mostra o formulario
@@ -164,8 +161,7 @@ class form(QDialog):
             return
 
         self.bt = dm.createButtonWork(Run=lambda:( self.th.thread.terminate(), self.bt.close() )   ) 
-        self.th = dm.Worker()
-        self.th.init(proc_run=self.bt_csv_populate_thread).start()
+        self.th = dm.Worker(proc_run=self.bt_csv_populate_thread)
 
 
     def bt_csv_of_clicked(self):
