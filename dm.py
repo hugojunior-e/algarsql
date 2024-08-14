@@ -243,6 +243,8 @@ class HOracle:
             self.status_code = r1
             self.status_msg  = r2
         return self.is_connected
+    
+
 
     def connect(self, p_usuario, p_senha, p_tns, p_is_direct):
         global C_SQL_SESSIONS
@@ -306,6 +308,7 @@ class HOracle:
 
     def stopSQL(self):
         self.con.cancel()  
+
 
     def create_lob(self, data, is_blob=False):
         x = self.con.createlob(oracledb.DB_TYPE_BLOB if is_blob else oracledb.DB_TYPE_CLOB)

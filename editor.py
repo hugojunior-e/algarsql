@@ -1,5 +1,6 @@
 import lib.f_editor as f_editor
 import dm
+import lib.constantes
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -182,7 +183,7 @@ class form(QDialog):
         nos = [ None for i in range(5000) ]
         dm.db.executeSQL(p_sql='DELETE FROM PLAN_TABLES', p_tipo='EXEC')
         dm.db.executeSQL(p_sql='EXPLAIN PLAN FOR\n' + self.ui.mem_explain.toPlainText(), p_tipo='EXEC')
-        dm.db.executeSQL(p_sql=dm.C_SQL_EXPLAIN)        
+        dm.db.executeSQL(p_sql=lib.constantes.C_SQL_EXPLAIN)        
         if dm.db.status_code == 0:
             for reg in dm.db.cur.fetchall():
                 id = reg[0]
@@ -218,7 +219,7 @@ class form(QDialog):
         
         self.ui.grid_objetos.setRowCount(0)
         ot = [  "'" + x.text() + "'" if x.isChecked() else "'-'" for  x in self.lista_chk_obj ]
-        dm.db.executeSQL(p_sql=dm.C_SQL_FIND_OBJECT % ( self.ui.edt_objetos.text() , ",".join(ot) ) )
+        dm.db.executeSQL(p_sql=lib.constantes.C_SQL_FIND_OBJECT % ( self.ui.edt_objetos.text() , ",".join(ot) ) )
         if dm.db.status_code == 0:
             dm.populateGrid(grid=self.ui.grid_objetos,data=dm.db.cur.fetchall(),columnNames=dm.db.col_names, columnTypes=dm.db.col_types)
         else:

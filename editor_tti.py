@@ -1,6 +1,6 @@
 import lib.f_editor_tti
 import dm
-
+import lib.constantes
 import os
 import subprocess
 import time
@@ -117,14 +117,14 @@ class form(QWidget):
             self.ui.mem_editor.textCursor().insertText(x)
 
         if self.sender().text() == "Describe":
-            x = dm.db.executeSQL(p_sql=dm.C_SQL_DESCRIBE % (txt.upper()))
+            x = dm.db.executeSQL(p_sql=lib.constantes.C_SQL_DESCRIBE % (txt.upper()))
             if dm.db.status_code == 0:
                 self.grid_describe = QTableWidget()
                 dm.populateGrid(self.grid_describe, dm.db.cur.fetchall(), dm.db.col_names)
                 self.grid_describe.show()
 
         if self.sender().text() == "Properties":
-            x = dm.db.executeSQL(p_sql=dm.C_SQL_PROPERTIES % (txt.upper()))
+            x = dm.db.executeSQL(p_sql=lib.constantes.C_SQL_PROPERTIES % (txt.upper()))
             if dm.db.status_code == 0:
                 col_data = []
                 for r in dm.db.cur.fetchall():
@@ -201,11 +201,11 @@ class form(QWidget):
                 lista = []
 
                 if tc.selectedText().upper() in dm.all_users:
-                    dm.db.executeSQL(p_sql=dm.C_SQL_ALL_TABLES % (tc.selectedText()))
+                    dm.db.executeSQL(p_sql=lib.constantes.C_SQL_ALL_TABLES % (tc.selectedText()))
                     lista = [x[0] for x in dm.db.cur.fetchall()]
 
                 elif tc.selectedText().upper() in dm.all_tables:
-                    dm.db.executeSQL(p_sql=dm.C_SQL_ALL_TAB_COLUMNS % (tc.selectedText()))
+                    dm.db.executeSQL(p_sql=lib.constantes.C_SQL_ALL_TAB_COLUMNS % (tc.selectedText()))
                     lista = [x[0] for x in dm.db.cur.fetchall()]
 
                 else:
@@ -215,7 +215,7 @@ class form(QWidget):
                     info_a = x.split(' ')
                     for i, info in enumerate(info_a):
                         if tc.selectedText().upper() == info.upper() and info_a[i-1] in dm.all_tables:
-                            dm.db.executeSQL(p_sql=dm.C_SQL_ALL_TAB_COLUMNS % (info_a[i-1]))
+                            dm.db.executeSQL(p_sql=lib.constantes.C_SQL_ALL_TAB_COLUMNS % (info_a[i-1]))
                             lista = [x[0] for x in dm.db.cur.fetchall()]
                             break
 
@@ -289,7 +289,7 @@ class form(QWidget):
                 QMessageBox.about(None, "Message", self.db.status_msg)               
             else:
                 ii = self.objectname.split(".")
-                self.db.executeSQL(p_sql=dm.C_SQL_ALL_ERRORS % (ii[0], ii[1]), p_tipo='SELECT_DIRECT' )
+                self.db.executeSQL(p_sql=lib.constantes.C_SQL_ALL_ERRORS % (ii[0], ii[1]), p_tipo='SELECT_DIRECT' )
                 col_data = self.db.cur.fetchall()
                 dm.populateGrid(self.ui.grid_select, data=col_data,columnNames=self.db.col_names, columnTypes=self.db.col_types)
                 for ii in range(len(col_data)):

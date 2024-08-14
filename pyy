@@ -1,6 +1,8 @@
 if [ "$1" = "1" ]; then
     echo "*** gerando AlgarSQL"
 
+    rm -rf __pycache__
+    rm -rf lib/__pycache__
     rm AlgarSQL
     zip -r AlgarSQL.zip *py *lib*   -x "*ui" -x "*pycache*"
     
@@ -10,9 +12,8 @@ if [ "$1" = "1" ]; then
 
 else
     echo "*** compilando arquivos"
-    
+    cd lib    
     pyrcc5 menus.qrc -o menus_rc.py
     echo "menus.qrc"
-    cd lib
     for cx in `find . | grep ui$ | cut -d"/" -f2 | cut -d "." -f 1`; do echo $cx; pyuic5 $cx.ui > $cx.py ; done
 fi

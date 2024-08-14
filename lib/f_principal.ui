@@ -185,7 +185,7 @@
   </widget>
   <action name="actionLogon">
    <property name="icon">
-    <iconset resource="../menus.qrc">
+    <iconset resource="menus.qrc">
      <normaloff>:/png/ico/db_logon.png</normaloff>:/png/ico/db_logon.png</iconset>
    </property>
    <property name="text">
@@ -194,7 +194,7 @@
   </action>
   <action name="actionLogoff">
    <property name="icon">
-    <iconset resource="../menus.qrc">
+    <iconset resource="menus.qrc">
      <normaloff>:/png/ico/db_logoff.png</normaloff>:/png/ico/db_logoff.png</iconset>
    </property>
    <property name="text">
@@ -203,7 +203,7 @@
   </action>
   <action name="actionNewEditor">
    <property name="icon">
-    <iconset resource="../menus.qrc">
+    <iconset resource="menus.qrc">
      <normaloff>:/png/ico/file_new.png</normaloff>:/png/ico/file_new.png</iconset>
    </property>
    <property name="text">
@@ -215,7 +215,7 @@
   </action>
   <action name="actionSaveEditor">
    <property name="icon">
-    <iconset resource="../menus.qrc">
+    <iconset resource="menus.qrc">
      <normaloff>:/png/ico/file_saveall.png</normaloff>:/png/ico/file_saveall.png</iconset>
    </property>
    <property name="text">
@@ -227,7 +227,7 @@
   </action>
   <action name="actionOpenEditor">
    <property name="icon">
-    <iconset resource="../menus.qrc">
+    <iconset resource="menus.qrc">
      <normaloff>:/png/ico/file_open.png</normaloff>:/png/ico/file_open.png</iconset>
    </property>
    <property name="text">
@@ -239,7 +239,7 @@
   </action>
   <action name="actionRunSQL">
    <property name="icon">
-    <iconset resource="../menus.qrc">
+    <iconset resource="menus.qrc">
      <normaloff>:/png/ico/sql_run.png</normaloff>:/png/ico/sql_run.png</iconset>
    </property>
    <property name="text">
@@ -251,7 +251,7 @@
   </action>
   <action name="actionStopSQL">
    <property name="icon">
-    <iconset resource="../menus.qrc">
+    <iconset resource="menus.qrc">
      <normaloff>:/png/ico/sql_stop.png</normaloff>:/png/ico/sql_stop.png</iconset>
    </property>
    <property name="text">
@@ -260,7 +260,7 @@
   </action>
   <action name="actionCommit">
    <property name="icon">
-    <iconset resource="../menus.qrc">
+    <iconset resource="menus.qrc">
      <normaloff>:/png/ico/sql_commit.png</normaloff>:/png/ico/sql_commit.png</iconset>
    </property>
    <property name="text">
@@ -269,7 +269,7 @@
   </action>
   <action name="actionRollback">
    <property name="icon">
-    <iconset resource="../menus.qrc">
+    <iconset resource="menus.qrc">
      <normaloff>:/png/ico/sql_rollback.png</normaloff>:/png/ico/sql_rollback.png</iconset>
    </property>
    <property name="text">
@@ -278,7 +278,7 @@
   </action>
   <action name="actionConfigs">
    <property name="icon">
-    <iconset resource="../menus.qrc">
+    <iconset resource="menus.qrc">
      <normaloff>:/png/ico/preferences.png</normaloff>:/png/ico/preferences.png</iconset>
    </property>
    <property name="text">
@@ -287,7 +287,7 @@
   </action>
  </widget>
  <resources>
-  <include location="../menus.qrc"/>
+  <include location="menus.qrc"/>
  </resources>
  <connections/>
 </ui>

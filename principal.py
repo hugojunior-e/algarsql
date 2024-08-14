@@ -1,7 +1,7 @@
 import lib.f_principal as f_principal
 import dm
 import os
-import glob
+import lib.constantes
 import editor_tti
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -33,7 +33,7 @@ class form(QMainWindow):
         self.ui.tree_templates.doubleClicked.connect( self.tree_templates_doubleclicked )
         self.ui.splitter.setSizes([300, 1000])
         self.montaTreeTemplate()
-        self.setWindowTitle(dm.C_APP_VERSION)
+        self.setWindowTitle(lib.constantes.C_APP_VERSION)
         
     
     ## ==============================================================================================
@@ -78,7 +78,7 @@ class form(QMainWindow):
 
     def tree_objetos_montar(self):
         self.ui.tree_objetos.clear()
-        dm.db.executeSQL( p_sql=dm.C_SQL_TREE )
+        dm.db.executeSQL( p_sql=lib.constantes.C_SQL_TREE )
         dm.all_tables = []
         dm.all_users  = []
         if dm.db.status_code == 0:
@@ -113,7 +113,7 @@ class form(QMainWindow):
         dm.db.disconnect()
         for i in range( self.ui.pc_editor.tabBar().count() ):
             self.ui.pc_editor.widget(i).db.disconnect()    
-        self.setWindowTitle(dm.C_APP_VERSION)   
+        self.setWindowTitle(lib.constantes.C_APP_VERSION)   
         self.ui.tree_objetos.clear()
 
     def actionCommit_click(self):
@@ -174,7 +174,7 @@ class form(QMainWindow):
     ## ==============================================================================================
 
     def popup_config_recompile(self):
-        dm.db.executeSQL(p_sql=dm.C_SQL_RECOMPILE, p_tipo="SELECT_DIRECT")
+        dm.db.executeSQL(p_sql=lib.constantes.C_SQL_RECOMPILE, p_tipo="SELECT_DIRECT")
         if dm.db.status_code == 0:
             listagem = dm.db.cur.fetchall()
             self.bt.H_msg_ret = []
