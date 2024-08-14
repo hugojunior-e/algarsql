@@ -12,8 +12,9 @@ if [ "$1" = "1" ]; then
 
 else
     echo "*** compilando arquivos"
-    cd lib    
-    pyrcc5 menus.qrc -o menus_rc.py
     echo "menus.qrc"
-    for cx in `find . | grep ui$ | cut -d"/" -f2 | cut -d "." -f 1`; do echo $cx; pyuic5 $cx.ui > $cx.py ; done
+    pyrcc5 lib/menus.qrc -o menus_rc.py
+    
+    cd lib    
+    for cx in `find . | grep ui$ | cut -d"/" -f2 | cut -d "." -f 1`; do echo $cx; pyuic5 $cx.ui > ../$cx.py ; done
 fi

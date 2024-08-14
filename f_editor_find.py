@@ -1,4 +1,4 @@
-import lib.f_editor_find
+import d_editor_find
 import re
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import *
 class form(QDialog):
     def __init__(self):
         super(form, self).__init__()
-        self.ui = lib.f_editor_find.Ui_f_editor_find()
+        self.ui = d_editor_find.Ui_d_editor_find()
         self.setFixedSize(430,200)
         self.ui.setupUi(self)
         self.ui.bt_find.clicked.connect( self.find )

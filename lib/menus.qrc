@@ -1,18 +1,18 @@
 <RCC>
   <qresource prefix="png">
-    <file>ico/tree_usr.png</file>
-    <file>ico/tree_obj.png</file>
-    <file>ico/sql_commit.png</file>
-    <file>ico/sql_rollback.png</file>
-    <file>ico/sql_run.png</file>
-    <file>ico/sql_stop.png</file>
-    <file>ico/blue.png</file>
-    <file>ico/red.png</file>
-    <file>ico/file_new.png</file>
-    <file>ico/db_logoff.png</file>
-    <file>ico/db_logon.png</file>
-    <file>ico/preferences.png</file>
-    <file>ico/file_open.png</file>
-    <file>ico/file_saveall.png</file>
+    <file>../ico/tree_usr.png</file>
+    <file>../ico/tree_obj.png</file>
+    <file>../ico/sql_commit.png</file>
+    <file>../ico/sql_rollback.png</file>
+    <file>../ico/sql_run.png</file>
+    <file>../ico/sql_stop.png</file>
+    <file>../ico/blue.png</file>
+    <file>../ico/red.png</file>
+    <file>../ico/file_new.png</file>
+    <file>../ico/db_logoff.png</file>
+    <file>../ico/db_logon.png</file>
+    <file>../ico/preferences.png</file>
+    <file>../ico/file_open.png</file>
+    <file>../ico/file_saveall.png</file>
   </qresource>
 </RCC>

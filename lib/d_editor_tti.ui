@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>f_editor_tti</class>
- <widget class="QWidget" name="f_editor_tti">
+ <class>d_editor_tti</class>
+ <widget class="QWidget" name="d_editor_tti">
   <property name="geometry">
    <rect>
     <x>0</x>

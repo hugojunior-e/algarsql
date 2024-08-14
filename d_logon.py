@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'f_logon.ui'
+# Form implementation generated from reading ui file 'd_logon.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.6
 #
@@ -11,18 +11,18 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 
-class Ui_f_logon(object):
-    def setupUi(self, f_logon):
-        f_logon.setObjectName("f_logon")
-        f_logon.resize(550, 280)
-        f_logon.setMinimumSize(QtCore.QSize(550, 280))
-        f_logon.setMaximumSize(QtCore.QSize(550, 280))
-        f_logon.setModal(True)
-        self.horizontalLayout = QtWidgets.QHBoxLayout(f_logon)
+class Ui_d_logon(object):
+    def setupUi(self, d_logon):
+        d_logon.setObjectName("d_logon")
+        d_logon.resize(550, 280)
+        d_logon.setMinimumSize(QtCore.QSize(550, 280))
+        d_logon.setMaximumSize(QtCore.QSize(550, 280))
+        d_logon.setModal(True)
+        self.horizontalLayout = QtWidgets.QHBoxLayout(d_logon)
         self.horizontalLayout.setContentsMargins(9, 9, 9, 9)
         self.horizontalLayout.setSpacing(9)
         self.horizontalLayout.setObjectName("horizontalLayout")
-        self.frame = QtWidgets.QFrame(f_logon)
+        self.frame = QtWidgets.QFrame(d_logon)
         self.frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.frame.setFrameShadow(QtWidgets.QFrame.Raised)
         self.frame.setObjectName("frame")
@@ -65,14 +65,14 @@ class Ui_f_logon(object):
         self.tree_tns.header().setVisible(False)
         self.horizontalLayout.addWidget(self.frame)
 
-        self.retranslateUi(f_logon)
-        QtCore.QMetaObject.connectSlotsByName(f_logon)
+        self.retranslateUi(d_logon)
+        QtCore.QMetaObject.connectSlotsByName(d_logon)
 
-    def retranslateUi(self, f_logon):
+    def retranslateUi(self, d_logon):
         _translate = QtCore.QCoreApplication.translate
-        f_logon.setWindowTitle(_translate("f_logon", "Dialog"))
-        self.label_3.setText(_translate("f_logon", "Pasword"))
-        self.label_4.setText(_translate("f_logon", "Database"))
-        self.bt_conectar.setText(_translate("f_logon", "OK"))
-        self.label_2.setText(_translate("f_logon", "Username"))
-        self.chk_direct_access.setText(_translate("f_logon", "Direct Acess"))
+        d_logon.setWindowTitle(_translate("d_logon", "Dialog"))
+        self.label_3.setText(_translate("d_logon", "Pasword"))
+        self.label_4.setText(_translate("d_logon", "Database"))
+        self.bt_conectar.setText(_translate("d_logon", "OK"))
+        self.label_2.setText(_translate("d_logon", "Username"))
+        self.chk_direct_access.setText(_translate("d_logon", "Direct Acess"))

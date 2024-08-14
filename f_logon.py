@@ -1,4 +1,4 @@
-import lib.f_logon as f_logon
+import d_logon
 import dm
 import json
 
@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import *
 class form(QDialog):
     def __init__(self):
         super(form, self).__init__()
-        self.ui = f_logon.Ui_f_logon()
+        self.ui = d_logon.Ui_d_logon()
         self.ui.setupUi(self)
         self.ui.bt_conectar.clicked.connect(self.bt_conectar_clicked)
         self.ui.tree_tns.clicked.connect(self.tree_tns_itemclicked)

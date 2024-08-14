@@ -1,4 +1,4 @@
-import lib.f_editor_form
+import d_editor_form
 import dm
 
 from PyQt5.QtGui import *
@@ -9,7 +9,7 @@ from datetime import datetime
 class form(QDialog):
     def __init__(self):
         super(form, self).__init__()
-        self.ui = lib.f_editor_form.Ui_f_editor_form()
+        self.ui = d_editor_form.Ui_d_editor_form()
         self.ui.setupUi(self)
         self.ui.bt_salvar.clicked.connect(self.bt_salvar_clicked)
         self.ui.grid.doubleClicked.connect(self.grid_doubleclicked)

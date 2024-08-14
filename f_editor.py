@@ -1,6 +1,6 @@
-import lib.f_editor as f_editor
+import d_editor
 import dm
-import lib.constantes
+import dm_const
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -9,7 +9,7 @@ from PyQt5.QtCore import *
 class form(QDialog):
     def __init__(self):
         super(form, self).__init__()
-        self.ui = f_editor.Ui_f_editor()
+        self.ui = d_editor.Ui_d_editor()
         self.ui.setupUi(self)
         self.ui.bt_sessions_exec.clicked.connect(self.bt_sessions_exec_click)
         self.ui.edt_objetos.textEdited.connect(self.edt_objetos_edited)
@@ -183,7 +183,7 @@ class form(QDialog):
         nos = [ None for i in range(5000) ]
         dm.db.executeSQL(p_sql='DELETE FROM PLAN_TABLES', p_tipo='EXEC')
         dm.db.executeSQL(p_sql='EXPLAIN PLAN FOR\n' + self.ui.mem_explain.toPlainText(), p_tipo='EXEC')
-        dm.db.executeSQL(p_sql=lib.constantes.C_SQL_EXPLAIN)        
+        dm.db.executeSQL(p_sql=dm_const.C_SQL_EXPLAIN)        
         if dm.db.status_code == 0:
             for reg in dm.db.cur.fetchall():
                 id = reg[0]
@@ -219,7 +219,7 @@ class form(QDialog):
         
         self.ui.grid_objetos.setRowCount(0)
         ot = [  "'" + x.text() + "'" if x.isChecked() else "'-'" for  x in self.lista_chk_obj ]
-        dm.db.executeSQL(p_sql=lib.constantes.C_SQL_FIND_OBJECT % ( self.ui.edt_objetos.text() , ",".join(ot) ) )
+        dm.db.executeSQL(p_sql=dm_const.C_SQL_FIND_OBJECT % ( self.ui.edt_objetos.text() , ",".join(ot) ) )
         if dm.db.status_code == 0:
             dm.populateGrid(grid=self.ui.grid_objetos,data=dm.db.cur.fetchall(),columnNames=dm.db.col_names, columnTypes=dm.db.col_types)
         else:

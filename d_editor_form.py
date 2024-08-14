@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'f_editor_form.ui'
+# Form implementation generated from reading ui file 'd_editor_form.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.6
 #
@@ -11,14 +11,14 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 
-class Ui_f_editor_form(object):
-    def setupUi(self, f_editor_form):
-        f_editor_form.setObjectName("f_editor_form")
-        f_editor_form.resize(336, 490)
-        f_editor_form.setModal(True)
-        self.verticalLayout = QtWidgets.QVBoxLayout(f_editor_form)
+class Ui_d_editor_form(object):
+    def setupUi(self, d_editor_form):
+        d_editor_form.setObjectName("d_editor_form")
+        d_editor_form.resize(336, 490)
+        d_editor_form.setModal(True)
+        self.verticalLayout = QtWidgets.QVBoxLayout(d_editor_form)
         self.verticalLayout.setObjectName("verticalLayout")
-        self.frame = QtWidgets.QFrame(f_editor_form)
+        self.frame = QtWidgets.QFrame(d_editor_form)
         self.frame.setMinimumSize(QtCore.QSize(0, 40))
         self.frame.setFrameShape(QtWidgets.QFrame.StyledPanel)
         self.frame.setFrameShadow(QtWidgets.QFrame.Raised)
@@ -31,7 +31,7 @@ class Ui_f_editor_form(object):
         self.bt_salvar.setObjectName("bt_salvar")
         self.horizontalLayout.addWidget(self.bt_salvar)
         self.verticalLayout.addWidget(self.frame)
-        self.grid = QtWidgets.QTableWidget(f_editor_form)
+        self.grid = QtWidgets.QTableWidget(d_editor_form)
         self.grid.setObjectName("grid")
         self.grid.setColumnCount(2)
         self.grid.setRowCount(0)
@@ -40,7 +40,7 @@ class Ui_f_editor_form(object):
         item = QtWidgets.QTableWidgetItem()
         self.grid.setHorizontalHeaderItem(1, item)
         self.verticalLayout.addWidget(self.grid)
-        self.mem_grid = QtWidgets.QPlainTextEdit(f_editor_form)
+        self.mem_grid = QtWidgets.QPlainTextEdit(d_editor_form)
         font = QtGui.QFont()
         font.setFamily("Monospace")
         self.mem_grid.setFont(font)
@@ -48,14 +48,14 @@ class Ui_f_editor_form(object):
         self.mem_grid.setObjectName("mem_grid")
         self.verticalLayout.addWidget(self.mem_grid)
 
-        self.retranslateUi(f_editor_form)
-        QtCore.QMetaObject.connectSlotsByName(f_editor_form)
+        self.retranslateUi(d_editor_form)
+        QtCore.QMetaObject.connectSlotsByName(d_editor_form)
 
-    def retranslateUi(self, f_editor_form):
+    def retranslateUi(self, d_editor_form):
         _translate = QtCore.QCoreApplication.translate
-        f_editor_form.setWindowTitle(_translate("f_editor_form", "Dialog"))
-        self.bt_salvar.setText(_translate("f_editor_form", "salvar"))
+        d_editor_form.setWindowTitle(_translate("d_editor_form", "Dialog"))
+        self.bt_salvar.setText(_translate("d_editor_form", "salvar"))
         item = self.grid.horizontalHeaderItem(0)
-        item.setText(_translate("f_editor_form", "FieldName"))
+        item.setText(_translate("d_editor_form", "FieldName"))
         item = self.grid.horizontalHeaderItem(1)
-        item.setText(_translate("f_editor_form", "FieldValue"))
+        item.setText(_translate("d_editor_form", "FieldValue"))

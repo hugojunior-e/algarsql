@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'f_editor_tti.ui'
+# Form implementation generated from reading ui file 'd_editor_tti.ui'
 #
 # Created by: PyQt5 UI code generator 5.15.6
 #
@@ -11,15 +11,15 @@
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 
-class Ui_f_editor_tti(object):
-    def setupUi(self, f_editor_tti):
-        f_editor_tti.setObjectName("f_editor_tti")
-        f_editor_tti.resize(1059, 512)
-        self.verticalLayout = QtWidgets.QVBoxLayout(f_editor_tti)
+class Ui_d_editor_tti(object):
+    def setupUi(self, d_editor_tti):
+        d_editor_tti.setObjectName("d_editor_tti")
+        d_editor_tti.resize(1059, 512)
+        self.verticalLayout = QtWidgets.QVBoxLayout(d_editor_tti)
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout.setSpacing(0)
         self.verticalLayout.setObjectName("verticalLayout")
-        self.splitter = QtWidgets.QSplitter(f_editor_tti)
+        self.splitter = QtWidgets.QSplitter(d_editor_tti)
         self.splitter.setOrientation(QtCore.Qt.Vertical)
         self.splitter.setObjectName("splitter")
         self.mem_editor = QtWidgets.QPlainTextEdit(self.splitter)
@@ -107,23 +107,23 @@ class Ui_f_editor_tti(object):
         self.verticalLayout_2.addWidget(self.tabWidget)
         self.verticalLayout.addWidget(self.splitter)
 
-        self.retranslateUi(f_editor_tti)
+        self.retranslateUi(d_editor_tti)
         self.tabWidget.setCurrentIndex(0)
-        QtCore.QMetaObject.connectSlotsByName(f_editor_tti)
+        QtCore.QMetaObject.connectSlotsByName(d_editor_tti)
 
-    def retranslateUi(self, f_editor_tti):
+    def retranslateUi(self, d_editor_tti):
         _translate = QtCore.QCoreApplication.translate
-        f_editor_tti.setWindowTitle(_translate("f_editor_tti", "Form"))
-        self.bt_tool_clip.setText(_translate("f_editor_tti", "copy"))
-        self.bt_tool_column.setText(_translate("f_editor_tti", "#"))
-        self.bt_tool_csv.setText(_translate("f_editor_tti", "csv"))
-        self.bt_tool_insert.setText(_translate("f_editor_tti", "sql"))
-        self.chk_all_text.setText(_translate("f_editor_tti", "Run all SQL text"))
-        self.chk_run_user_local.setText(_translate("f_editor_tti", "Run User Local"))
-        self.bt_fetch.setText(_translate("f_editor_tti", "↓"))
-        self.lb_timer.setText(_translate("f_editor_tti", "00:00:00"))
-        self.lb_row.setText(_translate("f_editor_tti", "row:0"))
-        self.chk_parameters.setText(_translate("f_editor_tti", "Disable \"&&\""))
-        self.bt_tool_delete.setText(_translate("f_editor_tti", "-"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), _translate("f_editor_tti", "data"))
-        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("f_editor_tti", "dbms"))
+        d_editor_tti.setWindowTitle(_translate("d_editor_tti", "Form"))
+        self.bt_tool_clip.setText(_translate("d_editor_tti", "copy"))
+        self.bt_tool_column.setText(_translate("d_editor_tti", "#"))
+        self.bt_tool_csv.setText(_translate("d_editor_tti", "csv"))
+        self.bt_tool_insert.setText(_translate("d_editor_tti", "sql"))
+        self.chk_all_text.setText(_translate("d_editor_tti", "Run all SQL text"))
+        self.chk_run_user_local.setText(_translate("d_editor_tti", "Run User Local"))
+        self.bt_fetch.setText(_translate("d_editor_tti", "↓"))
+        self.lb_timer.setText(_translate("d_editor_tti", "00:00:00"))
+        self.lb_row.setText(_translate("d_editor_tti", "row:0"))
+        self.chk_parameters.setText(_translate("d_editor_tti", "Disable \"&&\""))
+        self.bt_tool_delete.setText(_translate("d_editor_tti", "-"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab), _translate("d_editor_tti", "data"))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), _translate("d_editor_tti", "dbms"))

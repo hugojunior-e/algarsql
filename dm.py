@@ -5,12 +5,12 @@ import sys
 import sqlite3
 import platform
 
-import principal
-import logon
-import editor_find
-import editor_form
-import editor
-import lib.constantes
+import f_principal
+import f_logon
+import f_editor_find
+import f_editor_form
+import f_editor
+import dm_const
 
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
@@ -139,6 +139,10 @@ def populateGrid(grid: QTableWidget, data , columnNames=None, columnTypes=None, 
     row_idx = 0 if appending == False else grid.rowCount()
     
     grid.setRowCount( len(data) + row_idx )
+
+    for ii in range(len(data)):
+        grid.setColumnWidth(ii, 200)
+
     if appending == False:
         if columnNames != None:
             grid.col_names = columnNames
@@ -265,19 +269,19 @@ class HOracle:
             self.cur          = self.con.cursor()
             self.login_sid    = 0
             self.login_serial = 0
-            self.cur.execute(lib.constantes.C_SQL_START)
+            self.cur.execute(dm_const.C_SQL_START)
 
             for r in self.cur.execute("select global_name, banner, Sys_Context('USERENV', 'SID') from global_name, v$version").fetchall():
                 self.login_global_name = r[0]
                 self.login_banner      = r[1]
                 self.login_sid         = r[2]
 
-            self.sql_session = lib.constantes.C_SQL_SESSIONS_ORA
+            self.sql_session = dm_const.C_SQL_SESSIONS_ORA
             if p_is_direct == False:
                 self.executeSQL(p_sql="SELECT OWNER FROM ALL_VIEWS WHERE VIEW_NAME = 'VW_SESSIONS' ORDER BY 1")
                 if self.status_code == 0:
                     rr = self.cur.fetchone()
-                    self.sql_session = lib.constantes.C_SQL_SESSIONS_ALGAR.replace("<TABELA>", rr[0] + ".VW_SESSIONS")
+                    self.sql_session = dm_const.C_SQL_SESSIONS_ALGAR.replace("<TABELA>", rr[0] + ".VW_SESSIONS")
 
             self.con.autocommit = False
             self.is_connected   = True
@@ -353,14 +357,14 @@ class HOracle:
 
                         self.cur.callproc("user_exec.pc_exec_dml.pr_bind_execute", (ret1, ret2))
                     else:    
-                        self.cur.callproc(lib.constantes.C_SQL_EXEC, (p_sql, ret1, ret2))
+                        self.cur.callproc(dm_const.C_SQL_EXEC, (p_sql, ret1, ret2))
 
                     retorno          = f"{ret1.getvalue()}-{ret2.getvalue()}"
                     self.status_code = ret1.getvalue()
                     self.status_msg  = retorno
 
                 retorno             = self.cur.var(str)
-                self.cur.execute(lib.constantes.C_SQL_DBMS,retorno=retorno)                
+                self.cur.execute(dm_const.C_SQL_DBMS,retorno=retorno)                
                 self.dbms_output    = retorno.getvalue()
                 self.in_transaction = True
 
@@ -370,7 +374,7 @@ class HOracle:
                     self.cur.execute(p_sql)
                 else:
                     myvar = self.cur.var(oracledb.CURSOR)
-                    self.cur.callproc(lib.constantes.C_SQL_SELECT, (p_sql, myvar))
+                    self.cur.callproc(dm_const.C_SQL_SELECT, (p_sql, myvar))
                     self.cur    = myvar.getvalue()
                 self.col_names     = [  self.cur.description[i][0] for i in range(0, len(self.cur.description))  ]
                 self.col_types     = [  str(self.cur.description[i][1]) for i in range(0, len(self.cur.description))  ]
@@ -380,7 +384,7 @@ class HOracle:
             if p_tipo == 'DML':
                 dados   = p_sql.split("/")
                 ddl     = self.cur.var(oracledb.CLOB)
-                SQL_DML = (lib.constantes.C_SQL_DML_DIRECT if self.is_direct else lib.constantes.C_SQL_DML).replace("<1>", dados[1]).replace("<2>",dados[0]).replace("<3>", dados[2])
+                SQL_DML = (dm_const.C_SQL_DML_DIRECT if self.is_direct else dm_const.C_SQL_DML).replace("<1>", dados[1]).replace("<2>",dados[0]).replace("<3>", dados[2])
                 self.cur.execute(SQL_DML,ddl=ddl)
                 self.status_code = 0
                 self.status_msg  = ddl.getvalue().read().replace("CCRREEAATTEE",'CREATE')
@@ -530,11 +534,11 @@ iconObject.addPixmap(QPixmap(":/png/ico/tree_obj.png"), QIcon.Normal, QIcon.Off)
 iconUser.addPixmap(QPixmap(":/png/ico/tree_usr.png"), QIcon.Normal, QIcon.Off)   
 
 clipboard     = app.clipboard()
-f_logon       = logon.form()
-f_principal   = principal.form()
-f_editor_form = editor_form.form()
-f_editor      = editor.form()
-f_editor_find = editor_find.form()
+f_logon       = f_logon.form()
+f_principal   = f_principal.form()
+f_editor_form = f_editor_form.form()
+f_editor      = f_editor.form()
+f_editor_find = f_editor_find.form()
 
 def main():
     try:
