@@ -1,4 +1,4 @@
-import d_editor
+import lib.d_editor as d_editor
 import dm
 import dm_const
 

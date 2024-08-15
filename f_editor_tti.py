@@ -1,4 +1,4 @@
-import d_editor_tti
+import lib.d_editor_tti as d_editor_tti
 import dm
 import dm_const
 import os
@@ -87,7 +87,7 @@ class form(QWidget):
             txt = self.ui.mem_editor.textCursor().selection().toPlainText()
             if len(txt) > 1:
                 arq = dm.do_filename("fmt.sql")
-                jar = dm.do_filename("FormatSQL.jar")
+                jar = dm.do_filename("dm_format_sql.jar")
                 if os.path.exists(jar):
                     o = open( arq , 'w')
                     o.write(txt)
@@ -96,7 +96,7 @@ class form(QWidget):
                     self.ui.mem_editor.textCursor().insertText(x)
                     os.remove(arq)
                 else:
-                    QMessageBox.about(None, "Message", "FormatSQL.jar not found")
+                    QMessageBox.about(None, "Message", "dm_format_sql.jar not found")
             else:
                 QMessageBox.about(None, "Message", "No SQL Selected")            
 

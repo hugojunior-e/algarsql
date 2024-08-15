@@ -42,7 +42,7 @@ class Ui_d_principal(object):
         self.verticalLayout.addWidget(self.tree_objetos)
         self.toolBox.addItem(self.page, "")
         self.page_2 = QtWidgets.QWidget()
-        self.page_2.setGeometry(QtCore.QRect(0, 0, 561, 549))
+        self.page_2.setGeometry(QtCore.QRect(0, 0, 98, 70))
         self.page_2.setObjectName("page_2")
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.page_2)
         self.verticalLayout_2.setContentsMargins(0, 0, 0, 0)
@@ -157,4 +157,4 @@ class Ui_d_principal(object):
         self.actionCommit.setText(_translate("d_principal", "Commit"))
         self.actionRollback.setText(_translate("d_principal", "Rollback"))
         self.actionConfigs.setText(_translate("d_principal", "Configs"))
-import menus_rc
+from lib import menus_rc

@@ -1,4 +1,4 @@
-import d_editor_find
+import lib.d_editor_find as d_editor_find
 import re
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *

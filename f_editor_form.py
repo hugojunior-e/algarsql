@@ -1,4 +1,4 @@
-import d_editor_form
+import lib.d_editor_form as d_editor_form
 import dm
 
 from PyQt5.QtGui import *

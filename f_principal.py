@@ -1,4 +1,4 @@
-import d_principal
+import lib.d_principal as d_principal
 import dm
 import os
 import dm_const
