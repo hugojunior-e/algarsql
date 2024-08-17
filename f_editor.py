@@ -124,7 +124,7 @@ class form(QDialog):
                 for i,v in enumerate(a_linha):
                     sql_temp = sql_temp.replace( f"<{i+1}>", v )
                 
-                dm.db.executeSQL(p_sql=sql_temp, p_tipo='SELECT_DIRECT')
+                dm.db.SELECT(p_sql=sql_temp, direct=True)
                 if dm.db.status_code == 0:
                     retorno = dm.db.cur.fetchone()
                     if retorno != None:
@@ -145,7 +145,7 @@ class form(QDialog):
 
                 if i_linha % 5000 == 0 or i_linha == (len(linhas) - 1):
                     self.bt.setText( f"processed line {i_linha} " )
-                    dm.db.executeSQL(p_sql=sql, p_tipo='EXEC_DIRECT', p_bind_values=dados_insert, p_many=True)
+                    dm.db.EXECUTE(p_sql=sql, direct=True, p_bind_values=dados_insert, p_many=True)
                     if dm.db.status_code == 0:
                         dm.db.commit()
                     else:
@@ -181,9 +181,7 @@ class form(QDialog):
 
     def bt_explain_clicked(self):
         nos = [ None for i in range(5000) ]
-        dm.db.executeSQL(p_sql='DELETE FROM PLAN_TABLES', p_tipo='EXEC')
-        dm.db.executeSQL(p_sql='EXPLAIN PLAN FOR\n' + self.ui.mem_explain.toPlainText(), p_tipo='EXEC')
-        dm.db.executeSQL(p_sql=dm_const.C_SQL_EXPLAIN)        
+        dm.db.EXPLAIN(sql=dm_const.C_SQL_EXPLAIN)        
         if dm.db.status_code == 0:
             for reg in dm.db.cur.fetchall():
                 id = reg[0]
@@ -208,9 +206,8 @@ class form(QDialog):
 
     def bt_obj_viewcode_clicked(self):
         y   = self.ui.grid_objetos.currentRow()
-        obj = self.ui.grid_objetos.item(y,0).text() + '/' + self.ui.grid_objetos.item(y,5).text() + '/' + self.ui.grid_objetos.item(y,1).text()
         self.close()
-        dm.f_principal.extrai_ddl(obj)
+        dm.f_principal.extrai_ddl( self.ui.grid_objetos.item(y,0).text(), self.ui.grid_objetos.item(y,5).text(), self.ui.grid_objetos.item(y,1).text() )
 
     def edt_objetos_edited(self):
         if dm.db.prepare() == False:
@@ -219,7 +216,7 @@ class form(QDialog):
         
         self.ui.grid_objetos.setRowCount(0)
         ot = [  "'" + x.text() + "'" if x.isChecked() else "'-'" for  x in self.lista_chk_obj ]
-        dm.db.executeSQL(p_sql=dm_const.C_SQL_FIND_OBJECT % ( self.ui.edt_objetos.text() , ",".join(ot) ) )
+        dm.db.SELECT(p_sql=dm_const.C_SQL_FIND_OBJECT % ( self.ui.edt_objetos.text() , ",".join(ot) ) )
         if dm.db.status_code == 0:
             dm.populateGrid(grid=self.ui.grid_objetos,data=dm.db.cur.fetchall(),columnNames=dm.db.col_names, columnTypes=dm.db.col_types)
         else:
@@ -238,7 +235,7 @@ class form(QDialog):
     ## ==============================================================================================
         
     def bt_sessions_exec_click(self):
-        dm.db.executeSQL(p_sql=dm.db.sql_session.replace("<WHERE>", self.ui.cbo_sessions.currentText() ))
+        dm.db.SELECT(p_sql=dm.db.sql_session.replace("<WHERE>", self.ui.cbo_sessions.currentText() ))
         if dm.db.status_code == 0:
             parent_id = "-"
             status    = "-"

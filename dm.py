@@ -21,7 +21,7 @@ from threading import Thread
 ## operacoes com arquivos
 ## ==============================================================================================
 
-def do_filename(filename, path="root"):
+def generateFileName(filename, path="root"):
     v_path = os.path.dirname(sys.argv[0]) if path == "root" else configValue(tag="output_dir")
     return os.path.join( v_path, filename )
 
@@ -69,8 +69,7 @@ def createButtonWork(Run=None, Size=QSize(600, 100), Text="wait a few seconds...
     if Frameless:
         G.setWindowFlag(Qt.FramelessWindowHint)
     G.setText(Text)
-    if Run != None:
-        G.clicked.connect(Run)
+    G.clicked.connect( Run if Run != None else lambda:(G.close()) )
     G.show()
     return G
 
@@ -103,7 +102,7 @@ def createMenu(obj, items, procmenuClick):
 ## ==============================================================================================
 
 def configValue(tag=None, w="%"):
-    fileConfig       = do_filename("AlgarSQL.db")
+    fileConfig       = generateFileName("AlgarSQL.db")
     if os.path.exists(fileConfig) == False:
         return ""
     conn    = sqlite3.connect(fileConfig)
@@ -119,7 +118,7 @@ def configValue(tag=None, w="%"):
 
 
 def configSave(tagName, tagValue, p_tipo):
-    conn             = sqlite3.connect(do_filename("AlgarSQL.db"))
+    conn             = sqlite3.connect(generateFileName("AlgarSQL.db"))
     cursor           = conn.cursor()
     cursor.execute("CREATE TABLE if not exists config      ( node VARCHAR(11), info text ) ")
     cursor.execute("CREATE TABLE if not exists sql_history ( dt datetime default current_timestamp, dbname varchar(50), info text ) ")
@@ -140,9 +139,6 @@ def populateGrid(grid: QTableWidget, data , columnNames=None, columnTypes=None, 
     
     grid.setRowCount( len(data) + row_idx )
 
-    for ii in range(len(data)):
-        grid.setColumnWidth(ii, 200)
-
     if appending == False:
         if columnNames != None:
             grid.col_names = columnNames
@@ -153,6 +149,7 @@ def populateGrid(grid: QTableWidget, data , columnNames=None, columnTypes=None, 
                 item  = QTableWidgetItem()
                 item.setText(x)
                 grid.setHorizontalHeaderItem(i, item) 
+                grid.setColumnWidth(i, 200)
 
     for i,x in enumerate(data):
         for j,a in enumerate(x):
@@ -211,191 +208,6 @@ def tipoSQL(SQL,checkCreateObj=False):
 
 
 ## ==============================================================================================
-##
-## ==============================================================================================
-
-
-class HOracle:
-    def __init__(self):
-        self.con            = None
-        self.cur            = None
-        self.is_connected   = False
-        self.in_transaction = False
-        self.in_execution   = False
-        self.is_direct      = False
-        self.login_sid      = 0
-        self.last_sql       = "-"
-        self.p_usuario      = None
-        self.p_senha        = None
-        self.p_tns          = None
-
-
-    def value(self, v):
-        if v == None:
-            return "null"
-        elif "date" in str(type(v)):
-            return f"to_date('{v}','YYYY-MM-DD HH24:MI:SS')"
-        else:
-            return f"'{str(v)}'"
-        
-    def prepare(self):
-        try:
-            self.con.ping()
-            self.is_connected = True
-        except:
-            r1,r2 = self.connect(db.p_usuario, db.p_senha, db.p_tns, db.is_direct)
-            self.status_code = r1
-            self.status_msg  = r2
-        return self.is_connected
-    
-
-
-    def connect(self, p_usuario, p_senha, p_tns, p_is_direct):
-        global C_SQL_SESSIONS
-        self.in_transaction = False
-        self.in_execution   = False
-        self.is_connected   = False
-        self.is_direct      = p_is_direct
-
-        if p_usuario == None or p_senha == None or p_tns == None:
-            return (-1,"Parameter User/Pass Invalid!")
-        try:
-            self.p_usuario    = p_usuario
-            self.p_senha      = p_senha
-            self.p_tns        = p_tns
-
-            print( f"logging into {self.p_usuario}@{self.p_tns}")
-            self.con          = oracledb.connect( user=self.p_usuario, password=self.p_senha, dsn=self.p_tns)
-            self.cur          = self.con.cursor()
-            self.login_sid    = 0
-            self.login_serial = 0
-            self.cur.execute(dm_const.C_SQL_START)
-
-            for r in self.cur.execute("select global_name, banner, Sys_Context('USERENV', 'SID') from global_name, v$version").fetchall():
-                self.login_global_name = r[0]
-                self.login_banner      = r[1]
-                self.login_sid         = r[2]
-
-            self.sql_session = dm_const.C_SQL_SESSIONS_ORA
-            if p_is_direct == False:
-                self.executeSQL(p_sql="SELECT OWNER FROM ALL_VIEWS WHERE VIEW_NAME = 'VW_SESSIONS' ORDER BY 1")
-                if self.status_code == 0:
-                    rr = self.cur.fetchone()
-                    self.sql_session = dm_const.C_SQL_SESSIONS_ALGAR.replace("<TABELA>", rr[0] + ".VW_SESSIONS")
-
-            self.con.autocommit = False
-            self.is_connected   = True
-            return (0,"OK")
-        except Exception as e:
-            return (-1,str(e))
-
-    def disconnect(self):
-        try:
-            if self.con != None:
-                t1 = Thread(target=lambda: self.con.close())
-                t1.start()
-                t1.join(3)
-        except:
-            print("Not Connected")
-        self.p_usuario      = None
-        self.is_connected   = False  
-        self.in_transaction = False
-        self.in_execution   = False  
-
-    def commit(self):
-        self.con.commit()
-        self.in_transaction = False
-
-    def rollback(self):
-        self.con.rollback()
-        self.in_transaction = False
-
-    def stopSQL(self):
-        self.con.cancel()  
-
-
-    def create_lob(self, data, is_blob=False):
-        x = self.con.createlob(oracledb.DB_TYPE_BLOB if is_blob else oracledb.DB_TYPE_CLOB)
-        x.open()
-        x.write(data)
-        return x
-    
-    def executeSQL(self,p_sql, p_Log=False, p_tipo="SELECT", p_bind_values=None, p_many=False):
-        self.dbms_output  = ""
-        self.col_names    = []
-        self.col_data     = []
-        self.col_types    = []
-        self.in_execution = True
-        
-        if p_Log and self.last_sql != p_sql:
-            configSave(self.login_global_name, p_sql,"SQL_HISTORY")
-            self.last_sql = p_sql
-        
-        try:
-            if p_tipo.startswith('EXEC'):
-                if "DIRECT" in p_tipo or self.is_direct:
-                    (self.cur.executemany if p_many else self.cur.execute) ( statement=p_sql , parameters=p_bind_values)
-                    self.status_code   = 0
-                    self.status_msg    = "SUCESSO"
-                else:
-                    ret1  = self.cur.var(int)
-                    ret2  = self.cur.var(str)
-                    if p_bind_values != None:
-                        names = ["","p_str","p_date","p_clob","p_blob",""]
-                        self.cur.callproc("user_exec.pc_exec_dml.pr_bind_prepare", (p_sql, ret1, ret2))
-
-                        if ret1.getvalue() != 0:
-                            raise Exception(ret2.getvalue())
-                        
-                        for x in p_bind_values.keys():
-                            idx = 1
-                            if "datetime" in str(type(p_bind_values[x])):
-                                idx = 2
-                            if "LOB" in str(type(p_bind_values[x])):
-                                idx = 4 if "BLOB" in str(p_bind_values[x].type) else 3
-                            self.cur.execute(f"begin user_exec.pc_exec_dml.pr_bind_var(p_var => :p_var, p_tip => :p_tip, {names[idx]} => :p_valor); end;", (x, idx, p_bind_values[x]) )
-
-                        self.cur.callproc("user_exec.pc_exec_dml.pr_bind_execute", (ret1, ret2))
-                    else:    
-                        self.cur.callproc(dm_const.C_SQL_EXEC, (p_sql, ret1, ret2))
-
-                    retorno          = f"{ret1.getvalue()}-{ret2.getvalue()}"
-                    self.status_code = ret1.getvalue()
-                    self.status_msg  = retorno
-
-                retorno             = self.cur.var(str)
-                self.cur.execute(dm_const.C_SQL_DBMS,retorno=retorno)                
-                self.dbms_output    = retorno.getvalue()
-                self.in_transaction = True
-
-            if p_tipo.startswith('SELECT'):
-                if "DIRECT" in p_tipo or self.is_direct:
-                    self.cur.arraysize = 5000
-                    self.cur.execute(p_sql)
-                else:
-                    myvar = self.cur.var(oracledb.CURSOR)
-                    self.cur.callproc(dm_const.C_SQL_SELECT, (p_sql, myvar))
-                    self.cur    = myvar.getvalue()
-                self.col_names     = [  self.cur.description[i][0] for i in range(0, len(self.cur.description))  ]
-                self.col_types     = [  str(self.cur.description[i][1]) for i in range(0, len(self.cur.description))  ]
-                self.status_code   = 0
-                self.status_msg    = "SUCESSO"
-
-            if p_tipo == 'DML':
-                dados   = p_sql.split("/")
-                ddl     = self.cur.var(oracledb.CLOB)
-                SQL_DML = (dm_const.C_SQL_DML_DIRECT if self.is_direct else dm_const.C_SQL_DML).replace("<1>", dados[1]).replace("<2>",dados[0]).replace("<3>", dados[2])
-                self.cur.execute(SQL_DML,ddl=ddl)
-                self.status_code = 0
-                self.status_msg  = ddl.getvalue().read().replace("CCRREEAATTEE",'CREATE')
-        except Exception as e:
-            self.status_code = -1
-            self.status_msg  = str(e)
-        self.in_execution = False
-
-
-
-## ==============================================================================================
 ## SQLHigLigth
 ## ==============================================================================================
 
@@ -413,7 +225,7 @@ class SyntaxHighlighter(QSyntaxHighlighter):
 
         funcF = QTextCharFormat()
         funcF.setForeground(Qt.cyan)
-        funcPatterns = ['REPLACE','TRANSLATE','EXISTS','INSTR','REVERSE','REGEXP_INSTR','REGEXP_REPLACE','REGEXP_SUBSTR','REGEXP_COUNT','ADD_MONTHS','SQLERRM','RETURN','EXIT', 'LPAD','RPAD','TRUNC','TO_DATE','TO_CHAR','TO_NUMBER','NVL','DECODE','SYSDATE', 'COUNT','AVG','SUM','MAX','MIN','CASE','NULL','NVL2','TRIM','SUBSTR','UPPER','LOWER','INITCAP']
+        funcPatterns = ['UTL_FILE', 'UTL_HTTP', 'MOD', 'REPLACE','TRANSLATE','INSTR','REVERSE','REGEXP_INSTR','REGEXP_REPLACE','REGEXP_SUBSTR','REGEXP_COUNT','ADD_MONTHS', 'LPAD','RPAD','TRUNC','TO_DATE','TO_CHAR','TO_NUMBER','NVL','DECODE','SYSDATE', 'COUNT','AVG','SUM','MAX','MIN','CASE','NVL2','TRIM','SUBSTR','UPPER','LOWER','INITCAP']
 
         typeF = QTextCharFormat()
         typeF.setForeground(Qt.magenta)
@@ -431,7 +243,7 @@ class SyntaxHighlighter(QSyntaxHighlighter):
                             'ELSE',' THEN','IF','ELSIF','CREATE','OR','FORCE','EDITIONABLE','BETWEEN',
                             'VIEW','TABLE','PROCEDURE','PACKAGE','BODY','TRIGGER','FUNCTION','FREELIST',
                             'MODIFY', 'RENAME', 'ADD','COLUMN','GLOBAL','TEMPORARY','COMMIT','PRESERVE','ROWS',
-                            'USING','COMPUTE','STATISTICS','BUFFER_POOL','FLASH_CACHE','CELL_FLASH_CACHE',
+                            'USING','COMPUTE','STATISTICS','BUFFER_POOL','FLASH_CACHE','CELL_FLASH_CACHE','EXISTS','SQLERRM','RETURN','EXIT','NULL',
                             'INITIAL','NEXT','MINEXTENTS','MAXEXTENTS','PCTINCREASE','FREELISTS','GROUPS']
 
 
@@ -511,7 +323,234 @@ class Worker(QObject):
 
 
 ## ==============================================================================================
-## variaveis globais
+## CLASSE DE CONEXAO COM ORACLE
+## ==============================================================================================
+
+
+
+class ORACLE:
+    def __init__(self):
+        self.con            = None
+        self.cur            = None
+        self.is_connected   = False
+        self.in_transaction = False
+        self.in_execution   = False
+        self.is_direct      = False
+        self.login_sid      = 0
+        self.last_sql       = "-"
+        self.p_usuario      = None
+        self.p_senha        = None
+        self.p_tns          = None
+
+
+    def value(self, v):
+        if v == None:
+            return "null"
+        elif "date" in str(type(v)):
+            return f"to_date('{v}','YYYY-MM-DD HH24:MI:SS')"
+        else:
+            return f"'{str(v)}'"
+        
+
+
+    def prepare(self):
+        try:
+            self.con.ping()
+            self.is_connected = True
+        except:
+            r1,r2 = self.connect(db.p_usuario, db.p_senha, db.p_tns, db.is_direct)
+            self.status_code = r1
+            self.status_msg  = r2
+        return self.is_connected
+    
+
+
+    def connect(self, p_usuario, p_senha, p_tns, p_is_direct):
+        global C_SQL_SESSIONS
+        self.in_transaction = False
+        self.in_execution   = False
+        self.is_connected   = False
+        self.is_direct      = p_is_direct
+
+        if p_usuario == None or p_senha == None or p_tns == None:
+            return (-1,"Parameter User/Pass Invalid!")
+        try:
+            self.p_usuario    = p_usuario
+            self.p_senha      = p_senha
+            self.p_tns        = p_tns
+
+            print( f"logging into {self.p_usuario}@{self.p_tns}")
+            self.con          = oracledb.connect( user=self.p_usuario, password=self.p_senha, dsn=self.p_tns)
+            self.cur          = self.con.cursor()
+            self.login_sid    = 0
+            self.login_serial = 0
+            self.cur.execute(dm_const.C_SQL_START)
+            self.cur.execute(dm_const.C_SQL_ENABLE_WARN)
+
+            for r in self.cur.execute("select global_name, banner, Sys_Context('USERENV', 'SID') from global_name, v$version").fetchall():
+                self.login_global_name = r[0]
+                self.login_banner      = r[1]
+                self.login_sid         = r[2]
+
+            self.sql_session = dm_const.C_SQL_SESSIONS_ORA
+            if p_is_direct == False:
+                self.SELECT(p_sql="SELECT OWNER FROM ALL_VIEWS WHERE VIEW_NAME = 'VW_SESSIONS' ORDER BY 1")
+                if self.status_code == 0:
+                    rr = self.cur.fetchone()
+                    self.sql_session = dm_const.C_SQL_SESSIONS_ALGAR.replace("<TABELA>", rr[0] + ".VW_SESSIONS")
+
+            self.con.autocommit = False
+            self.is_connected   = True
+            return (0,"OK")
+        except Exception as e:
+            return (-1,str(e))
+
+
+
+    def disconnect(self):
+        try:
+            if self.con != None:
+                t1 = Thread(target=lambda: self.con.close())
+                t1.start()
+                t1.join(3)
+        except:
+            print("Not Connected")
+        self.p_usuario      = None
+        self.is_connected   = False  
+        self.in_transaction = False
+        self.in_execution   = False  
+
+
+
+    def commit(self):
+        self.con.commit()
+        self.in_transaction = False
+
+
+
+    def rollback(self):
+        self.con.rollback()
+        self.in_transaction = False
+
+
+
+    def stopSQL(self):
+        self.con.cancel()  
+
+
+    def create_lob(self, data, is_blob=False):
+        x = self.con.createlob(oracledb.DB_TYPE_BLOB if is_blob else oracledb.DB_TYPE_CLOB)
+        x.open()
+        x.write(data)
+        return x
+    
+    def prepareVars(self, p_sql, logger):
+        self.dbms_output  = ""
+        self.col_names    = []
+        self.col_data     = []
+        self.col_types    = []
+        self.in_execution = True
+        if logger and self.last_sql != p_sql:
+            configSave(self.login_global_name, p_sql,"SQL_HISTORY")
+            self.last_sql = p_sql            
+
+
+    def EXECUTE(self,p_sql, logger=False, p_bind_values=None, p_many=False, direct=False):
+        self.prepareVars(p_sql=p_sql, logger=logger)
+        
+        try:
+            if direct or self.is_direct:
+                (self.cur.executemany if p_many else self.cur.execute) ( statement=p_sql , parameters=p_bind_values)
+                self.status_code   = 0
+                self.status_msg    = "SUCESSO"
+            else:
+                ret1  = self.cur.var(int)
+                ret2  = self.cur.var(str)
+                if p_bind_values != None:
+                    names = ["","p_str","p_date","p_clob","p_blob",""]
+                    self.cur.callproc("user_exec.pc_exec_dml.pr_bind_prepare", (p_sql, ret1, ret2))
+
+                    if ret1.getvalue() != 0:
+                        raise Exception(ret2.getvalue())
+                    
+                    for x in p_bind_values.keys():
+                        idx = 1
+                        if "datetime" in str(type(p_bind_values[x])):
+                            idx = 2
+                        if "LOB" in str(type(p_bind_values[x])):
+                            idx = 4 if "BLOB" in str(p_bind_values[x].type) else 3
+                        self.cur.execute(f"begin user_exec.pc_exec_dml.pr_bind_var(p_var => :p_var, p_tip => :p_tip, {names[idx]} => :p_valor); end;", (x, idx, p_bind_values[x]) )
+
+                    self.cur.callproc("user_exec.pc_exec_dml.pr_bind_execute", (ret1, ret2))
+                else:    
+                    self.cur.callproc(dm_const.C_SQL_EXEC, (p_sql, ret1, ret2))
+
+                retorno          = f"{ret1.getvalue()}-{ret2.getvalue()}"
+                self.status_code = ret1.getvalue()
+                self.status_msg  = retorno
+
+            retorno             = self.cur.var(str)
+            self.cur.execute(dm_const.C_SQL_DBMS,retorno=retorno)                
+            self.dbms_output    = retorno.getvalue()
+            self.in_transaction = True
+        except Exception as e:
+            self.status_code = -1
+            self.status_msg  = str(e)
+        self.in_execution = False
+
+
+
+
+
+    def SELECT(self, p_sql, direct=False, logger=False):
+        self.prepareVars(p_sql, logger)
+
+        try:
+            if direct or self.is_direct:
+                self.cur.arraysize = 5000
+                self.cur.execute(p_sql)
+            else:
+                myvar = self.cur.var(oracledb.CURSOR)
+                self.cur.callproc(dm_const.C_SQL_SELECT, (p_sql, myvar))
+                self.cur    = myvar.getvalue()
+            self.col_names     = [  self.cur.description[i][0] for i in range(0, len(self.cur.description))  ]
+            self.col_types     = [  str(self.cur.description[i][1]) for i in range(0, len(self.cur.description))  ]
+            self.status_code   = 0
+            self.status_msg    = "SUCESSO"
+        except Exception as e:
+            self.status_code = -1
+            self.status_msg  = str(e)
+        self.in_execution = False
+
+
+
+
+
+    def DDL(self, owner, type, name):
+        self.prepareVars("",False)
+        try:
+            ddl     = self.cur.var(oracledb.CLOB)
+            SQL_DML = (dm_const.C_SQL_DML_DIRECT if self.is_direct else dm_const.C_SQL_DML).replace("<1>", type).replace("<2>",owner).replace("<3>", name)
+            self.cur.execute(SQL_DML,ddl=ddl)
+            self.status_code = 0
+            self.status_msg  = ddl.getvalue().read().replace("CCRREEAATTEE",'CREATE')
+        except Exception as e:
+            self.status_code = -1
+            self.status_msg  = str(e)
+        self.in_execution = False
+
+
+
+    def EXPLAIN(self, sql):
+        self.EXECUTE(p_sql='DELETE FROM PLAN_TABLES')
+        self.EXECUTE(p_sql='EXPLAIN PLAN FOR\n' + sql)
+        self.SELECT(p_sql=dm_const.C_SQL_EXPLAIN)           
+
+
+
+
+## ==============================================================================================
+## BLOCO PRINCIPAL DO DATA MODULE
 ## ==============================================================================================
 
 app           = QApplication(sys.argv)
@@ -522,7 +561,7 @@ fontSQL.setPointSize(10)
 
 all_tables    = []
 all_users     = []
-db            = HOracle()
+db            = ORACLE()
 
 iconBlue      = QIcon()
 iconRed       = QIcon()

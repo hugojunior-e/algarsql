@@ -47,7 +47,7 @@ class form(QDialog):
 
             SQL_UPDATE_AUX = "UPDATE (" + self.sql + ") SET " + (",".join([ x + " = :" + x for x in sql_bind_vars.keys() ])) + " WHERE ROWID='" + self.rowid + "'" 
 
-            self.db.executeSQL(p_sql=SQL_UPDATE_AUX, p_tipo='EXEC', p_bind_values=sql_bind_vars)
+            self.db.EXECUTE(p_sql=SQL_UPDATE_AUX, p_bind_values=sql_bind_vars)
             
             if self.db.status_code == 0:
                 o_col = 0

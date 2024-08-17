@@ -2,6 +2,7 @@ import lib.d_principal as d_principal
 import dm
 import os
 import dm_const
+import sqlite3
 import f_editor_tti
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -40,29 +41,31 @@ class form(QMainWindow):
     ## tree de objetos + popup
     ## ==============================================================================================
 
-    def extrai_ddl(self, info):
-            if dm.db.prepare() == False:
-                QMessageBox.about(None, "Message", self.db.status_msg) 
-                return
-            self.bt      = dm.createButtonWork(Run=lambda:(self.th.thread.terminate(),self.bt.close()), Text=f"Extracting DML {info}")
-            self.bt.info = info
-            self.th      = dm.Worker(proc_run=lambda:(dm.db.executeSQL(p_sql=info, p_tipo='DML')), proc_fim=self.popup_tree_view_code_finish)
 
     def popup_tree_view_code_finish(self):
         for txt in dm.db.status_msg.split("<end_package_spec>"):
-            nomes              = self.bt.info.split("/")
             tab                = self.actionNewEditor_click()
             tab.ui.mem_editor.setPlainText(txt)
             tab.db_hide_grid_opts( False )
-            tab.objectname = nomes[0] + "." + nomes[2]
+            tab.objectname = self.bt.info
             tab.tabTextIcon()
             self.bt.close()
+
+    def extrai_ddl(self, owner, type, name):
+        if dm.db.prepare() == False:
+            QMessageBox.about(None, "Message", self.db.status_msg) 
+            return
+        self.bt      = dm.createButtonWork(Run=lambda:(self.th.thread.terminate(),self.bt.close()), Text=f"Extracting DML {owner + '.' + name}")
+        self.bt.info = owner + '.' + name
+        self.th      = dm.Worker(proc_run=lambda:(dm.db.DDL(owner, type, name)), proc_fim=self.popup_tree_view_code_finish)
+
 
     def popup_tree_click(self):
         x = self.ui.tree_objetos.currentItem().text(1)
 
         if self.sender().text() == "View Code":
-            self.extrai_ddl(x)
+            a,b,c = x.split("/")
+            self.extrai_ddl( a,b,c )
 
         if self.sender().text() == "Query Data":
             xx  = self.ui.tree_objetos.currentItem().text(1).split("/")
@@ -76,9 +79,11 @@ class form(QMainWindow):
             self.popup_tree.actions()[1].setVisible( "/TABLE/" in x or "/VIEW/" in x )
             self.popup_tree.exec_(self.ui.tree_objetos.viewport().mapToGlobal(position))
 
+
+
     def tree_objetos_montar(self):
         self.ui.tree_objetos.clear()
-        dm.db.executeSQL( p_sql=dm_const.C_SQL_TREE )
+        dm.db.SELECT( p_sql=dm_const.C_SQL_TREE )
         dm.all_tables = []
         dm.all_users  = []
         if dm.db.status_code == 0:
@@ -174,13 +179,13 @@ class form(QMainWindow):
     ## ==============================================================================================
 
     def popup_config_recompile(self):
-        dm.db.executeSQL(p_sql=dm_const.C_SQL_RECOMPILE, p_tipo="SELECT_DIRECT")
+        dm.db.SELECT(p_sql=dm_const.C_SQL_RECOMPILE, direct=True)
         if dm.db.status_code == 0:
             listagem = dm.db.cur.fetchall()
             self.bt.H_msg_ret = []
             for x in listagem:
                 self.bt.setText( x[0] )
-                dm.db.executeSQL(p_sql=x[1], p_tipo="EXEC_DIRECT")
+                dm.db.SELECT(p_sql=x[1],direct=True)
 
                 self.bt.H_msg_ret.append( x[0] )
                 self.bt.H_msg_ret.append( dm.db.status_msg )
@@ -189,13 +194,29 @@ class form(QMainWindow):
         
         
     def popup_config_export_data(self):
-        db = self.ui.pc_editor.currentWidget().db
-        ff = dm.do_filename('export_data.db')
-        while True:
-           data =  db.cur.fetchmany(5000)
-           if len(data) == 0:
-               break
-               
+        tab = self.ui.pc_editor.currentWidget()
+        ff  = dm.generateFileName('export_data.db')
+        if os.path.exists(ff):
+            os.remove(ff)
+        tab.tabTextIcon(Icon=dm.iconRed)
+        tab.db.SELECT( p_sql=tab.pegaSQL() )
+        sqlite_conn        = sqlite3.connect(ff)
+        sqlite_cursor      = sqlite_conn.cursor()
+        columns            = [ f"{column[0]} TEXT" for column in tab.db.cur.description]
+        create_table_query = f"CREATE TABLE IF NOT EXISTS tabela ( { ', '.join(columns) } )"
+        insert_table_query = f"INSERT INTO tabela VALUES ({', '.join(['?' for _ in columns])})"
+        sqlite_cursor.execute(create_table_query)
+        qtd = 0
+        while self.bt.isVisible():
+            row = tab.db.cur.fetchmany(10000)
+            qtd = qtd + len(row)
+            if len(row) == 0:
+                break
+            self.bt.setText( f"{qtd} records" )
+            sqlite_cursor.executemany(insert_table_query, row)
+            sqlite_conn.commit()
+        sqlite_conn.close()
+        tab.tabTextIcon(Icon=dm.iconBlue)
 
 
     def popup_config_click(self):
@@ -203,8 +224,9 @@ class form(QMainWindow):
             self.montaTreeTemplate()
 
         elif self.sender().text() == "Export data Table":
-            self.bt = dm.createButtonWork(Run=lambda:(self.th.thread.terminate(),self.bt.close()))
-            self.th = dm.Worker(proc_run=self.popup_config_export_data)
+            if self.ui.pc_editor.currentWidget():
+                self.bt = dm.createButtonWork()
+                self.th = dm.Worker(proc_run=self.popup_config_export_data)
 
 
         elif self.sender().text() == "Recompile Invalid Objects":

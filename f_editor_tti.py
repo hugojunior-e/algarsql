@@ -15,7 +15,7 @@ from PyQt5.QtWidgets import *
 
 class form(QWidget):
     def __init__(self):
-        self.db       = dm.HOracle()
+        self.db       = dm.ORACLE()
         self.db_timer = dm.Worker(self.db_timer_thread, autostart=False)
         
         super(form, self).__init__()
@@ -86,8 +86,8 @@ class form(QWidget):
         if self.sender().text() == "Format SQL":
             txt = self.ui.mem_editor.textCursor().selection().toPlainText()
             if len(txt) > 1:
-                arq = dm.do_filename("fmt.sql")
-                jar = dm.do_filename("dm_format_sql.jar")
+                arq = dm.generateFileName("fmt.sql")
+                jar = dm.generateFileName("dm_format_sql.jar")
                 if os.path.exists(jar):
                     o = open( arq , 'w')
                     o.write(txt)
@@ -117,14 +117,14 @@ class form(QWidget):
             self.ui.mem_editor.textCursor().insertText(x)
 
         if self.sender().text() == "Describe":
-            x = dm.db.executeSQL(p_sql=dm_const.C_SQL_DESCRIBE % (txt.upper()))
+            x = dm.db.SELECT(p_sql=dm_const.C_SQL_DESCRIBE % (txt.upper()))
             if dm.db.status_code == 0:
                 self.grid_describe = QTableWidget()
                 dm.populateGrid(self.grid_describe, dm.db.cur.fetchall(), dm.db.col_names)
                 self.grid_describe.show()
 
         if self.sender().text() == "Properties":
-            x = dm.db.executeSQL(p_sql=dm_const.C_SQL_PROPERTIES % (txt.upper()))
+            x = dm.db.SELECT(p_sql=dm_const.C_SQL_PROPERTIES % (txt.upper()))
             if dm.db.status_code == 0:
                 col_data = []
                 for r in dm.db.cur.fetchall():
@@ -201,11 +201,11 @@ class form(QWidget):
                 lista = []
 
                 if tc.selectedText().upper() in dm.all_users:
-                    dm.db.executeSQL(p_sql=dm_const.C_SQL_ALL_TABLES % (tc.selectedText()))
+                    dm.db.SELECT(p_sql=dm_const.C_SQL_ALL_TABLES % (tc.selectedText()))
                     lista = [x[0] for x in dm.db.cur.fetchall()]
 
                 elif tc.selectedText().upper() in dm.all_tables:
-                    dm.db.executeSQL(p_sql=dm_const.C_SQL_ALL_TAB_COLUMNS % (tc.selectedText()))
+                    dm.db.SELECT(p_sql=dm_const.C_SQL_ALL_TAB_COLUMNS % (tc.selectedText()))
                     lista = [x[0] for x in dm.db.cur.fetchall()]
 
                 else:
@@ -215,7 +215,7 @@ class form(QWidget):
                     info_a = x.split(' ')
                     for i, info in enumerate(info_a):
                         if tc.selectedText().upper() == info.upper() and info_a[i-1] in dm.all_tables:
-                            dm.db.executeSQL(p_sql=dm_const.C_SQL_ALL_TAB_COLUMNS % (info_a[i-1]))
+                            dm.db.SELECT(p_sql=dm_const.C_SQL_ALL_TAB_COLUMNS % (info_a[i-1]))
                             lista = [x[0] for x in dm.db.cur.fetchall()]
                             break
 
@@ -289,7 +289,7 @@ class form(QWidget):
                 QMessageBox.about(None, "Message", self.db.status_msg)               
             else:
                 ii = self.objectname.split(".")
-                self.db.executeSQL(p_sql=dm_const.C_SQL_ALL_ERRORS % (ii[0], ii[1]), p_tipo='SELECT_DIRECT' )
+                self.db.SELECT(p_sql=dm_const.C_SQL_ALL_ERRORS % (ii[0], ii[1]), direct=True )
                 col_data = self.db.cur.fetchall()
                 dm.populateGrid(self.ui.grid_select, data=col_data,columnNames=self.db.col_names, columnTypes=self.db.col_types)
                 for ii in range(len(col_data)):
@@ -307,11 +307,11 @@ class form(QWidget):
     def th_process_exec(self):
         try:
             if self.db._sql_type == 1:
-                self.db.executeSQL(p_sql=self.db._sql, p_Log=True, p_tipo='SELECT' + self.db._sql_direct)
+                self.db.SELECT(p_sql=self.db._sql, logger=True, direct=self.ui.chk_run_user_local.isChecked() )
                 if self.db.status_code == 0:
                     self.db.col_data = self.db.cur.fetchmany(20)
             else:
-                self.db.executeSQL(p_sql=self.db._sql, p_Log=True, p_tipo='EXEC' + self.db._sql_direct)
+                self.db.EXECUTE(p_sql=self.db._sql, logger=True, direct=self.ui.chk_run_user_local.isChecked())
         except Exception as e:
             self.db.status_code = -1
             self.db.status_msg = str(e)
@@ -328,7 +328,6 @@ class form(QWidget):
 
         self.db._sql        = self.pegaSQL()
         self.db._sql_type   = dm.tipoSQL(self.db._sql)                     
-        self.db._sql_direct = "_DIRECT" if self.ui.chk_run_user_local.isChecked() else ""        
         self.ui.bt_fetch.setVisible(self.db._sql_type == 1)
 
         if self.db._sql != None:
@@ -354,7 +353,7 @@ class form(QWidget):
         if v_rowid == None:
             QMessageBox.about(None, "Message", "No rowid found!") 
         else:
-            self.db.executeSQL(p_sql=f" delete (\n{self.db._sql}\n) where rowid = '{v_rowid}' ",p_tipo="EXEC")
+            self.db.EXECUTE(p_sql=f" delete (\n{self.db._sql}\n) where rowid = '{v_rowid}' ")
             if self.db.status_code != 0:
                 QMessageBox.about(None, "Message", self.db.status_msg ) 
             else:    
@@ -363,17 +362,12 @@ class form(QWidget):
 
     ##-------------
                 
-    def bt_fetch_clicked_thread_stop(self):
-        self.bt.H_stop = True
-        self.bt.close()
-
-
     def bt_fetch_clicked_thread(self):
         try:
-            while self.bt.H_stop == False:
+            while self.bt.isVisible():
                 data = self.db.cur.fetchmany(500)
                 if len(data) == 0:
-                    self.ui.bt_fetch.setVisible(False)
+                    self.ui.bt_fetch.close()
                     break
                 dm.populateGrid(grid=self.ui.grid_select,data=data,appending=True,columnTypes=self.db.col_types)
                 self.bt.setText( str(self.ui.grid_select.rowCount()) )
@@ -383,20 +377,19 @@ class form(QWidget):
         
 
     def bt_fetch_clicked(self):
-        self.bt        = dm.createButtonWork(Run=lambda:(self.bt_fetch_clicked_thread_stop())  )
-        self.bt.H_stop = False
+        self.bt        = dm.createButtonWork()
         self.th        = dm.Worker(proc_run=self.bt_fetch_clicked_thread)
 
     ##-------------
 
     def bt_tool_insert_clicked_thread(self):
         try:
-            self.db.executeSQL(p_sql=self.pegaSQL(), p_tipo='SELECT' + ("_DIRECT" if self.ui.chk_run_user_local.isChecked() else ""))
+            self.db.SELECT(p_sql=self.pegaSQL(),direct=self.ui.chk_run_user_local.isChecked() )
             if self.db.status_code == 0:
                 qtd            = 0 
-                ins_file       = open( file=dm.do_filename("generated_inserts.sql",path="output_dir"), mode="w", encoding="utf-8")
+                ins_file       = open( file=dm.generateFileName("generated_inserts.sql",path="output_dir"), mode="w", encoding="utf-8")
                 s_insert_title = f"""insert into {self.bt.H_table_name}({",".join(self.db.col_names)}) """
-                while True:
+                while self.bt.isVisible():
                     data = self.db.cur.fetchmany(5000)
                     qtd  = qtd + len(data)
                     if len(data) == 0:
@@ -419,7 +412,7 @@ class form(QWidget):
                 
         table_name, ok = QInputDialog().getText(self, "Export Data" , "Type TableName",  QLineEdit.Normal, "__tablename__")                        
         if ok:    
-            self.bt              = dm.createButtonWork(Run=lambda:(self.th.thread.terminate(),self.bt.close()))
+            self.bt              = dm.createButtonWork()
             self.bt.H_table_name = table_name           
             self.th              = dm.Worker(proc_run=self.bt_tool_insert_clicked_thread)
 
@@ -427,13 +420,13 @@ class form(QWidget):
 
     def bt_tool_csv_clicked_thread(self):
         try:
-            self.db.executeSQL(p_sql=self.pegaSQL(), p_tipo='SELECT' + ("_DIRECT" if self.ui.chk_run_user_local.isChecked() else ""))
+            self.db.SELECT(p_sql=self.pegaSQL(), direct=self.ui.chk_run_user_local.isChecked() )
             if self.db.status_code == 0:
                 qtd      = 0 
-                csv_file = open( file=dm.do_filename("exported.csv",path="output_dir"), mode="w", encoding="utf-8")
+                csv_file = open( file=dm.generateFileName("exported.csv",path="output_dir"), mode="w", encoding="utf-8")
                 arq      = csv.writer(csv_file,delimiter=";",quotechar='"', escapechar="\\",quoting=csv.QUOTE_ALL)
                 arq.writerow( self.db.col_names )
-                while True:
+                while self.bt.isVisible():
                     data = self.db.cur.fetchmany(5000)
                     qtd  = qtd + len(data)
                     if len(data) == 0:
@@ -455,7 +448,7 @@ class form(QWidget):
             return
                 
         if QMessageBox.question(self,"Confirm","Confirm export to csv?",QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
-            self.bt = dm.createButtonWork(Run=lambda:(self.th.thread.terminate(),self.bt.close()))
+            self.bt = dm.createButtonWork()
             self.th = dm.Worker(proc_run=self.bt_tool_csv_clicked_thread)
 
     ##-------------
