@@ -358,14 +358,14 @@ class ORACLE:
             self.con.ping()
             self.is_connected = True
         except:
-            r1,r2 = self.connect(db.p_usuario, db.p_senha, db.p_tns, db.is_direct)
+            r1,r2 = self.CONNECT(db.p_usuario, db.p_senha, db.p_tns, db.is_direct)
             self.status_code = r1
             self.status_msg  = r2
         return self.is_connected
     
 
 
-    def connect(self, p_usuario, p_senha, p_tns, p_is_direct):
+    def CONNECT(self, p_usuario, p_senha, p_tns, p_is_direct):
         global C_SQL_SESSIONS
         self.in_transaction = False
         self.in_execution   = False
@@ -401,9 +401,11 @@ class ORACLE:
 
             self.con.autocommit = False
             self.is_connected   = True
-            return (0,"OK")
+            self.status_code = 0
+            self.status_msg  = 'OK'
         except Exception as e:
-            return (-1,str(e))
+            self.status_code = -1
+            self.status_msg  = str(e)
 
 
 

@@ -47,8 +47,8 @@ class form(QDialog):
 
 
     def bt_conectar_clicked(self):
-        r1,r2 = dm.db.connect( self.ui.edt_username.text(), self.ui.edt_password.text(), self.ui.cbo_database.currentData(), self.ui.chk_direct_access.isChecked() )
-        if r1 == 0:
+        dm.db.CONNECT( self.ui.edt_username.text(), self.ui.edt_password.text(), self.ui.cbo_database.currentData(), self.ui.chk_direct_access.isChecked() )
+        if dm.db.status_code == 0:
             for i in range( dm.f_principal.ui.pc_editor.tabBar().count() ):
                 dm.f_principal.ui.pc_editor.widget(i).db.disconnect()    
                 dm.f_principal.ui.pc_editor.widget(i).ui.chk_run_user_local.setVisible(not dm.db.is_direct)
@@ -56,4 +56,4 @@ class form(QDialog):
             dm.f_principal.tree_objetos_montar()
             self.close()
         else:
-            QMessageBox.about(None, "Message", r2)
+            QMessageBox.about(None, "Message", dm.db.status_msg)
