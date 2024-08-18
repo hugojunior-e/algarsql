@@ -14,7 +14,7 @@ class form(QMainWindow):
         self.ui = d_principal.Ui_d_principal()
         self.ui.setupUi(self)
         self.popup_config = dm.createMenu(self, ["Recall SQL|Ctrl+E", "View Sessions", "Find Objects", "Explain Query|F5", "CSV Updater", "-", "Recompile Invalid Objects", "-", "Reload Templates","-", "Config Tools","-","Export data Table"],self.popup_config_click)        
-        self.popup_tree   = dm.createMenu(self, ["View Code", "Query Data"],self.popup_tree_click)
+        self.popup_tree   = dm.createMenu(self, ["View Code", "Query Data"],self.tree_objetos_popup_click)
         self.ui.actionLogon.triggered.connect( lambda: dm.f_logon.showLogin() )
         self.ui.actionLogoff.triggered.connect(self.actionLogoff_click)
         self.ui.actionNewEditor.triggered.connect(self.actionNewEditor_click)
@@ -42,7 +42,7 @@ class form(QMainWindow):
     ## ==============================================================================================
 
 
-    def popup_tree_view_code_finish(self):
+    def tree_objetos_popup_view_code_finish(self):
         for txt in dm.db.status_msg.split("<end_package_spec>"):
             tab                = self.actionNewEditor_click()
             tab.ui.mem_editor.setPlainText(txt)
@@ -57,10 +57,12 @@ class form(QMainWindow):
             return
         self.bt      = dm.createButtonWork(Run=lambda:(self.th.thread.terminate(),self.bt.close()), Text=f"Extracting DML {owner + '.' + name}")
         self.bt.info = owner + '.' + name
-        self.th      = dm.Worker(proc_run=lambda:(dm.db.DDL(owner, type, name)), proc_fim=self.popup_tree_view_code_finish)
+        self.th      = dm.Worker(proc_run=lambda:(dm.db.DDL(owner, type, name)), proc_fim=self.tree_objetos_popup_view_code_finish)
 
 
-    def popup_tree_click(self):
+
+
+    def tree_objetos_popup_click(self):
         x = self.ui.tree_objetos.currentItem().text(1)
 
         if self.sender().text() == "View Code":
@@ -72,6 +74,8 @@ class form(QMainWindow):
             tab = self.actionNewEditor_click()
             tab.ui.mem_editor.setPlainText("SELECT * FROM " + xx[0] + "." + xx[2])
             tab.executeSQL()
+
+
 
     def tree_objetos_popup(self, position):
         x = self.ui.tree_objetos.currentItem().text(1)

@@ -107,15 +107,21 @@ class form(QDialog):
     ## ==============================================================================================
 
     def bt_csv_populate_thread(self):
-        new_file   = self.ui.edt_csv_file.text().replace(".csv","_newdata.csv")
-        sql        = self.ui.mem_csv.toPlainText()
-        i_start    = 1 if self.ui.chk_csv.isChecked() else 0
-        linhas     = dm.loadFromFile(self.ui.edt_csv_file.text())[i_start:]
+        new_file     = self.ui.edt_csv_file.text().replace(".csv","_newdata.csv")
+        sql          = self.ui.mem_csv.toPlainText()
+        i_start      = 1 if self.ui.chk_csv.isChecked() else 0
+        linhas       = dm.loadFromFile(self.ui.edt_csv_file.text())[i_start:]
+        dados_insert = []
+        i_tipo_sql   = dm.tipoSQL(sql)
 
-        ##--tratando SELECT
-        if dm.tipoSQL(sql) == 1:
+        if i_tipo_sql == 1:
             r = open(new_file,'w')
-            for i_linha, s_linha in enumerate( linhas ):
+
+        for i_linha, s_linha in enumerate( linhas ):
+            if not self.bt.isVisible():
+                break
+
+            if i_tipo_sql == 1:  ##--tratando SELECT
                 if i_linha % 50 == 0:
                     self.bt.setText( f"processed line {i_linha} " )
 
@@ -134,13 +140,8 @@ class form(QDialog):
                 else:
                     self.bt.setText( dm.db.status_msg )
                     return 0
-            r.close()
-            self.bt.setText( f"Finished. {i_linha} lines\nSaved file: {new_file} " )
 
-        ##--tratando UPDATE, INSERT, DELETE
-        else:
-            dados_insert = []
-            for i_linha, s_linha in enumerate( linhas ):
+            else: ##--tratando UPDATE, INSERT, DELETE
                 dados_insert.append( tuple(s_linha.split(";")) )                    
 
                 if i_linha % 5000 == 0 or i_linha == (len(linhas) - 1):
@@ -152,7 +153,11 @@ class form(QDialog):
                         self.bt.setText( dm.db.status_msg  )
                         return 0
                     dados_insert = []
-            self.bt.setText( f"Finished {i_linha} records" )
+
+        self.bt.setText( f"Finished {i_linha} records" )
+        
+        if i_tipo_sql == 1:
+            r.close()
 
 
     def bt_csv_populate_edited(self):
@@ -161,7 +166,7 @@ class form(QDialog):
             QMessageBox.about(None, "Message", "Filename Required")    
             return
 
-        self.bt = dm.createButtonWork(Run=lambda:( self.th.thread.terminate(), self.bt.close() )   ) 
+        self.bt = dm.createButtonWork() 
         self.th = dm.Worker(proc_run=self.bt_csv_populate_thread)
 
 
@@ -181,7 +186,7 @@ class form(QDialog):
 
     def bt_explain_clicked(self):
         nos = [ None for i in range(5000) ]
-        dm.db.EXPLAIN(sql=dm_const.C_SQL_EXPLAIN)        
+        dm.db.EXPLAIN(p_sql=dm_const.C_SQL_EXPLAIN)        
         if dm.db.status_code == 0:
             for reg in dm.db.cur.fetchall():
                 id = reg[0]
@@ -248,12 +253,10 @@ class form(QDialog):
             for reg in dm.db.cur.fetchall():
                 if parent_id != reg[0]:
                     pai = QTreeWidgetItem([ reg[0] ])
-                    pai.H_sql = ""
                     self.ui.tree_sessions.addTopLevelItem(pai)                
 
                 if parent_id + status != reg[0] + reg[1]:
                     meio       = QTreeWidgetItem([ reg[1] ])
-                    meio.H_sql = ""
                     pai.addChild(meio)
                 
                 fim  = QTreeWidgetItem([ str(reg[2]), str(reg[3]), str(reg[4]), str(reg[5]), str(reg[6]), str(reg[7]), str(reg[8]), str(reg[9] ) ,  "" if reg[10] == None else str(reg[10])   ])

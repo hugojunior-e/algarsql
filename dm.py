@@ -358,9 +358,7 @@ class ORACLE:
             self.con.ping()
             self.is_connected = True
         except:
-            r1,r2 = self.CONNECT(db.p_usuario, db.p_senha, db.p_tns, db.is_direct)
-            self.status_code = r1
-            self.status_msg  = r2
+            self.CONNECT(db.p_usuario, db.p_senha, db.p_tns, db.is_direct)
         return self.is_connected
     
 
@@ -459,7 +457,6 @@ class ORACLE:
 
     def EXECUTE(self,p_sql, logger=False, p_bind_values=None, p_many=False, direct=False):
         self.prepareVars(p_sql=p_sql, logger=logger)
-        
         try:
             if direct or self.is_direct:
                 (self.cur.executemany if p_many else self.cur.execute) ( statement=p_sql , parameters=p_bind_values)
@@ -506,7 +503,6 @@ class ORACLE:
 
     def SELECT(self, p_sql, direct=False, logger=False):
         self.prepareVars(p_sql, logger)
-
         try:
             if direct or self.is_direct:
                 self.cur.arraysize = 5000
@@ -543,10 +539,10 @@ class ORACLE:
 
 
 
-    def EXPLAIN(self, sql):
-        self.EXECUTE(p_sql='DELETE FROM PLAN_TABLES')
-        self.EXECUTE(p_sql='EXPLAIN PLAN FOR\n' + sql)
-        self.SELECT(p_sql=dm_const.C_SQL_EXPLAIN)           
+    def EXPLAIN(self, p_sql):
+        self.EXECUTE(p_sql='DELETE FROM PLAN_TABLES',direct=True)
+        self.EXECUTE(p_sql='EXPLAIN PLAN FOR\n' + p_sql,direct=True)
+        self.SELECT(p_sql=dm_const.C_SQL_EXPLAIN,direct=True)
 
 
 
