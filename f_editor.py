@@ -100,7 +100,7 @@ class form(QDialog):
         dm.configSave("EditorSqlDarkMode", "1" if self.ui.chk_cfg_dark_mode.isChecked() else "0" , "CONFIG")
         dm.configSave("cfg_run_user_pref" ,"1" if self.ui.chk_cfg_run_user.isChecked() else "0", "CONFIG" )
         dm.f_logon.reload_conf = True
-        QMessageBox.about(None, "Message", "Configs Saved Sucess")
+        dm.messageBox("Configs Saved Sucess")
 
     ## ==============================================================================================
     ## tab atualizador csv
@@ -163,7 +163,7 @@ class form(QDialog):
     def bt_csv_populate_edited(self):
         dm.configSave("csv_sql",self.ui.mem_csv.toPlainText(), "CONFIG")
         if len(self.ui.edt_csv_file.text().strip()) == 0:
-            QMessageBox.about(None, "Message", "Filename Required")    
+            dm.messageBox("Filename Required")    
             return
 
         self.bt = dm.createButtonWork() 
@@ -203,7 +203,7 @@ class form(QDialog):
             for i in range(8):
                 self.ui.tree_explain.setColumnWidth(i, 200)
         else:
-            QMessageBox.about(None, "Message", dm.db.status_msg)
+            dm.messageBox(dm.db.status_msg)
 
     ## ==============================================================================================
     ## tab find de objetos
@@ -216,7 +216,7 @@ class form(QDialog):
 
     def edt_objetos_edited(self):
         if dm.db.prepare() == False:
-            QMessageBox.about(None, "Message", self.db.status_msg) 
+            dm.messageBox(self.db.status_msg) 
             return
         
         self.ui.grid_objetos.setRowCount(0)
@@ -225,7 +225,7 @@ class form(QDialog):
         if dm.db.status_code == 0:
             dm.populateGrid(grid=self.ui.grid_objetos,data=dm.db.cur.fetchall(),columnNames=dm.db.col_names, columnTypes=dm.db.col_types)
         else:
-            QMessageBox.about(None, "Message", dm.db.status_msg)
+            dm.messageBox(dm.db.status_msg)
 
 
     ## ==============================================================================================
@@ -264,4 +264,4 @@ class form(QDialog):
                 parent_id = reg[0]
                 status    = reg[1]
         else:
-            QMessageBox.about(None, "Message", dm.db.status_msg)
+            dm.messageBox(dm.db.status_msg)

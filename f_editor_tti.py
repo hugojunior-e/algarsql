@@ -15,8 +15,8 @@ from PyQt5.QtWidgets import *
 
 class form(QWidget):
     def __init__(self):
-        self.db       = dm.ORACLE()
-        self.db_timer = dm.Worker(self.db_timer_thread, autostart=False)
+        self.db            = dm.ORACLE()
+        self.db_timer      = dm.Worker(self.db_timer_thread, autostart=False)
         
         super(form, self).__init__()
         self.ui = d_editor_tti.Ui_d_editor_tti()
@@ -48,7 +48,22 @@ class form(QWidget):
         self.ui.bt_fetch.setVisible(False)
         self.filename    = None
         self.objectname  = None
-        
+
+
+    ## ==============================================================================================
+    ## Tipo do Editor SQL PY OU TEXTO
+    ## ==============================================================================================
+
+    def getEditorType(self):
+        if self.filename != None:
+            if os.path.splitext(self.filename)[1].upper() == '.PY':
+                return dm_const.C_EDITOR_PYC
+            if os.path.splitext(self.filename)[1].upper() == '.SQL':
+                return dm_const.C_EDITOR_SQL
+            return dm_const.C_EDITOR_TXT
+
+        return dm_const.C_EDITOR_SQL
+
     ## ==============================================================================================
     ## TabSheets Titles and Icons
     ## ==============================================================================================
@@ -69,6 +84,30 @@ class form(QWidget):
             tab_pai.setTabText(tab_idx, (nome2 + nome3 + nome1).strip() )           
         if Icon != None:
             tab_pai.setTabIcon(tab_idx,Icon)   
+
+
+    ## ==============================================================================================
+    ## configura a visibilidade de alguns controles
+    ## ==============================================================================================
+
+
+    def visibility_controls(self, b=False):
+        if self.getEditorType() == dm_const.C_EDITOR_PYC:
+            self.ui.pan_baixo.hide()
+            self.G_mem_editor_highlight = None
+        else:
+            self.ui.chk_all_text.setChecked(True)
+            self.ui.chk_run_user_local.setChecked(True)        
+            self.ui.bt_fetch.setVisible(b)
+            self.ui.bt_tool_clip.setVisible(b)
+            self.ui.bt_tool_column.setVisible(b)
+            self.ui.bt_tool_csv.setVisible(b)
+            self.ui.bt_tool_insert.setVisible(b)
+            self.ui.bt_tool_delete.setVisible(b)
+            self.ui.chk_all_text.setVisible(b)
+            self.ui.chk_parameters.setVisible(b)
+            self.ui.chk_run_user_local.setVisible(b)
+            self.ui.pc_baixo_grid.setTabVisible(1,False)
 
 
     ## ==============================================================================================
@@ -96,9 +135,9 @@ class form(QWidget):
                     self.ui.mem_editor.textCursor().insertText(x)
                     os.remove(arq)
                 else:
-                    QMessageBox.about(None, "Message", "dm_format_sql.jar not found")
+                    dm.messageBox("dm_format_sql.jar not found")
             else:
-                QMessageBox.about(None, "Message", "No SQL Selected")            
+                dm.messageBox("No SQL Selected")            
 
         if self.sender().text() == "Paste with ITENS":
             x = ",\n".join( dm.clipboard.text().strip().split("\n") )
@@ -134,7 +173,7 @@ class form(QWidget):
                 dm.populateGrid(self.grid_props,col_data, ["Property", "Value"] )
                 self.grid_props.show()
             else:
-                QMessageBox.about(None, "Message", dm.db.status_msg)
+                dm.messageBox(dm.db.status_msg)
 
 
     ## ==============================================================================================
@@ -230,120 +269,8 @@ class form(QWidget):
 
 
     ## ==============================================================================================
-    ## executar SQL
-    ## ==============================================================================================
-
-    def db_hide_grid_opts(self, b):
-        self.ui.chk_all_text.setChecked(True)
-        self.ui.chk_run_user_local.setChecked(True)        
-        self.ui.bt_fetch.setVisible(b)
-        self.ui.bt_tool_clip.setVisible(b)
-        self.ui.bt_tool_column.setVisible(b)
-        self.ui.bt_tool_csv.setVisible(b)
-        self.ui.bt_tool_insert.setVisible(b)
-        self.ui.bt_tool_delete.setVisible(b)
-        self.ui.chk_all_text.setVisible(b)
-        self.ui.chk_parameters.setVisible(b)
-        self.ui.chk_run_user_local.setVisible(b)
-        self.ui.tabWidget.setTabVisible(1,False)
-
-
-    def db_timer_thread(self):
-        dt_ini = datetime.now()
-        self.db_timer_stop = False
-        while self.db_timer_stop == False:
-            self.ui.lb_timer.setText(  str(datetime.now() - dt_ini).split(".")[0]  )
-            time.sleep(1)
-
-    def pegaSQL(self):
-        sql = self.ui.mem_editor.toPlainText()
-
-        if not self.ui.chk_all_text.isChecked():
-            sql = self.ui.mem_editor.textCursor().selection().toPlainText()
-            if len(sql.strip()) == 0:
-                x = self.ui.mem_editor.textCursor().position().real
-                t = ""
-                for sql in self.ui.mem_editor.toPlainText().split(";"):
-                    if len(t+sql) >= x:
-                        break
-                    t = t + sql
-        
-        if self.ui.chk_parameters.isChecked() == False and self.objectname == None and "&" in sql:
-            while "&" in sql:
-                idx = sql.find("&")
-                x   = sql[idx:]
-                for i in range( len(x) ):
-                    if x[i:i+1] in ['"',"'",";"," ","\n","",","]:
-                        text, ok = QInputDialog().getText(self, "value" , f"Type Value Of: {x[0:i]}",  QLineEdit.Normal, "")                        
-                        if ok:
-                            print(x[0:i] + "-" + text)
-                            sql = sql.replace( x[0:i] , text )
-                        else:
-                            return None
-                        break
-        return sql
-
-    def th_process_exec_grid(self):
-        if self.objectname != None:
-            if self.db.status_code != 0:
-                QMessageBox.about(None, "Message", self.db.status_msg)               
-            else:
-                ii = self.objectname.split(".")
-                self.db.SELECT(p_sql=dm_const.C_SQL_ALL_ERRORS % (ii[0], ii[1]), direct=True )
-                col_data = self.db.cur.fetchall()
-                dm.populateGrid(self.ui.grid_select, data=col_data,columnNames=self.db.col_names, columnTypes=self.db.col_types)
-                for ii in range(len(col_data)):
-                    self.ui.grid_select.setColumnWidth(2, 650)
-                    self.ui.grid_select.setRowHeight(ii, 100)
-        else:
-            if self.db.status_code != 0 or self.db._sql_type != 1:
-                QMessageBox.about(None, "Message", self.db.status_msg)               
-            elif self.db._sql_type == 1:
-                dm.populateGrid(grid=self.ui.grid_select, data=self.db.col_data,columnNames=self.db.col_names, columnTypes=self.db.col_types)
-        self.ui.mem_dbms.setPlainText(self.db.dbms_output)
-        dm.f_principal.pc_editor_tabchange()
-        self.tabTextIcon(Icon=dm.iconBlue)
-
-    def th_process_exec(self):
-        try:
-            if self.db._sql_type == 1:
-                self.db.SELECT(p_sql=self.db._sql, logger=True, direct=self.ui.chk_run_user_local.isChecked() )
-                if self.db.status_code == 0:
-                    self.db.col_data = self.db.cur.fetchmany(20)
-            else:
-                self.db.EXECUTE(p_sql=self.db._sql, logger=True, direct=self.ui.chk_run_user_local.isChecked())
-        except Exception as e:
-            self.db.status_code = -1
-            self.db.status_msg = str(e)
-        self.db_timer_stop = True
-
-
-    def executeSQL(self):
-        self.ui.grid_select.setRowCount(0)
-        self.ui.grid_select.setColumnCount(0)
-
-        if self.db.prepare() == False:
-            QMessageBox.about(None, "Message", self.db.status_msg) 
-            return
-
-        self.db._sql        = self.pegaSQL()
-        self.db._sql_type   = dm.tipoSQL(self.db._sql)                     
-        self.ui.bt_fetch.setVisible(self.db._sql_type == 1)
-
-        if self.db._sql != None:
-            self.db.in_execution = True
-            self.tabTextIcon(Icon=dm.iconRed)
-            dm.f_principal.pc_editor_tabchange()
-            self.db_timer.thread.start()   
-            self.th = dm.Worker(proc_run=self.th_process_exec, proc_fim=self.th_process_exec_grid)
-
-
-
-    ## ==============================================================================================
     ## toolbar - botoes grid
     ## ==============================================================================================
-
-
 
     def bt_tool_delete_clicked(self):
         v_rowid = None
@@ -351,18 +278,18 @@ class form(QWidget):
             if self.ui.grid_select.horizontalHeaderItem(x).text() == 'ROWID':
                 v_rowid = self.ui.grid_select.item(self.ui.grid_select.currentIndex().row(),x).text()
         if v_rowid == None:
-            QMessageBox.about(None, "Message", "No rowid found!") 
+            dm.messageBox("No rowid found!") 
         else:
             self.db.EXECUTE(p_sql=f" delete (\n{self.db._sql}\n) where rowid = '{v_rowid}' ")
             if self.db.status_code != 0:
-                QMessageBox.about(None, "Message", self.db.status_msg ) 
+                dm.messageBox(self.db.status_msg ) 
             else:    
                 self.ui.grid_select.removeRow( self.ui.grid_select.currentIndex().row() )
                 dm.f_principal.pc_editor_tabchange()
 
     ##-------------
                 
-    def bt_fetch_clicked_thread(self):
+    def bt_fetch_clicked_start(self):
         try:
             while self.bt.isVisible():
                 data = self.db.cur.fetchmany(500)
@@ -378,11 +305,11 @@ class form(QWidget):
 
     def bt_fetch_clicked(self):
         self.bt        = dm.createButtonWork()
-        self.th        = dm.Worker(proc_run=self.bt_fetch_clicked_thread)
+        self.th        = dm.Worker(proc_run=self.bt_fetch_clicked_start)
 
     ##-------------
 
-    def bt_tool_insert_clicked_thread(self):
+    def bt_tool_insert_clicked_start(self):
         try:
             self.db.SELECT(p_sql=self.pegaSQL(),direct=self.ui.chk_run_user_local.isChecked() )
             if self.db.status_code == 0:
@@ -407,18 +334,18 @@ class form(QWidget):
 
     def bt_tool_insert_clicked(self):
         if self.db.prepare() == False:
-            QMessageBox.about(None, "Message", self.db.status_msg) 
+            dm.messageBox(self.db.status_msg) 
             return
                 
         table_name, ok = QInputDialog().getText(self, "Export Data" , "Type TableName",  QLineEdit.Normal, "__tablename__")                        
         if ok:    
             self.bt              = dm.createButtonWork()
             self.bt.H_table_name = table_name           
-            self.th              = dm.Worker(proc_run=self.bt_tool_insert_clicked_thread)
+            self.th              = dm.Worker(proc_run=self.bt_tool_insert_clicked_start)
 
     ##-------------
 
-    def bt_tool_csv_clicked_thread(self):
+    def bt_tool_csv_clicked_start(self):
         try:
             self.db.SELECT(p_sql=self.pegaSQL(), direct=self.ui.chk_run_user_local.isChecked() )
             if self.db.status_code == 0:
@@ -433,7 +360,6 @@ class form(QWidget):
                         break
                     arq.writerows(data)
                     self.bt.setText( f"Exporting ... {qtd}" )
-                         
                 csv_file.close()
                 self.bt.setText(f"Saved File exported.csv: {qtd} rows")
             else:
@@ -444,12 +370,12 @@ class form(QWidget):
 
     def bt_tool_csv_clicked(self):
         if self.db.prepare() == False:
-            QMessageBox.about(None, "Message", self.db.status_msg) 
+            dm.messageBox(self.db.status_msg) 
             return
                 
         if QMessageBox.question(self,"Confirm","Confirm export to csv?",QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
             self.bt = dm.createButtonWork()
-            self.th = dm.Worker(proc_run=self.bt_tool_csv_clicked_thread)
+            self.th = dm.Worker(proc_run=self.bt_tool_csv_clicked_start)
 
     ##-------------
 
@@ -469,4 +395,111 @@ class form(QWidget):
             for r in table:
                 stream = stream + "\t".join(r) + "\n"
             dm.clipboard.setText(stream)
-        QMessageBox.about(self, "Message", "Copied to Clipboard")
+            dm.messageBox("Copied to Clipboard")
+
+    ## ==============================================================================================
+    ## executar SQL
+    ## ==============================================================================================
+
+    def db_timer_thread(self):
+        dt_ini = datetime.now()
+        t = 1
+        while self.db.in_execution:
+            if t == 1:
+                self.tabTextIcon(Icon=dm.iconRed)
+                dm.f_principal.pc_editor_tabchange()
+                t = 2
+            self.ui.lb_timer.setText(  str(datetime.now() - dt_ini).split(".")[0]  )
+            time.sleep(1)
+        self.tabTextIcon(Icon=dm.iconBlue)
+        dm.f_principal.pc_editor_tabchange()
+
+
+
+    def pegaSQL(self):
+        sql = self.ui.mem_editor.toPlainText()
+
+        if not self.ui.chk_all_text.isChecked():
+            sql = self.ui.mem_editor.textCursor().selection().toPlainText()
+            if len(sql.strip()) == 0:
+                x = self.ui.mem_editor.textCursor().position().real
+                t = ""
+                for sql in self.ui.mem_editor.toPlainText().split(";"):
+                    if len(t+sql) >= x:
+                        break
+                    t = t + sql
+
+        if self.ui.chk_parameters.isChecked() == False and self.objectname == None and "&" in sql:
+            while "&" in sql:
+                idx = sql.find("&")
+                x   = sql[idx:]
+                for i in range( len(x) ):
+                    if x[i:i+1] in ['"',"'",";"," ","\n","",","]:
+                        text, ok = QInputDialog().getText(self, "value" , f"Type Value Of: {x[0:i]}",  QLineEdit.Normal, "")                        
+                        if ok:
+                            print(x[0:i] + "-" + text)
+                            sql = sql.replace( x[0:i] , text )
+                        else:
+                            return None
+                        break
+        return sql
+
+
+
+    def executeSQL_finish(self):
+        if self.getEditorType() == dm_const.C_EDITOR_PYC:
+            dm.messageBox(self.db.status_msg, printable=(self.db.status_code != 0))
+
+        elif self.objectname != None:
+            if self.db.status_code != 0:
+                dm.messageBox(self.db.status_msg)               
+            else:
+                ii = self.objectname.split(".")
+                self.db.SELECT(p_sql=dm_const.C_SQL_ALL_ERRORS % (ii[0], ii[1]), direct=True, fetchSize=0 )
+                dm.populateGrid(self.ui.grid_select, data=self.db.col_data,columnNames=self.db.col_names, columnTypes=self.db.col_types)
+                for ii in range(len(self.db.col_data)):
+                    self.ui.grid_select.setColumnWidth(2, 650)
+                    self.ui.grid_select.setRowHeight(ii, 100)
+
+        else:
+            if self.db.status_code != 0 or self.db._sql_type != 1:
+                dm.messageBox(self.db.status_msg)               
+            elif self.db._sql_type == 1:
+                dm.populateGrid(grid=self.ui.grid_select, data=self.db.col_data, columnNames=self.db.col_names, columnTypes=self.db.col_types)
+        
+        self.ui.mem_dbms.setPlainText(self.db.dbms_output)
+
+
+    def executeSQL_start(self):
+        self.db_timer.start()
+
+        try:
+            if self.getEditorType() == dm_const.C_EDITOR_PYC:
+                self.db.EVALPY(self.db._sql)
+
+            elif self.db._sql_type == 1:
+                self.db.SELECT(p_sql=self.db._sql, logger=True, direct=self.ui.chk_run_user_local.isChecked(), fetchSize=20 )
+            else:
+                self.db.EXECUTE(p_sql=self.db._sql, logger=True, direct=self.ui.chk_run_user_local.isChecked())
+
+        except Exception as e:
+            self.db.status_code = -1
+            self.db.status_msg = str(e)
+
+
+    def executeSQL(self):
+        if self.getEditorType() != dm_const.C_EDITOR_TXT:
+            if self.db.prepare() == False:
+                dm.messageBox(self.db.status_msg) 
+                return
+            
+            self.ui.grid_select.setRowCount(0)
+            self.ui.grid_select.setColumnCount(0)
+
+            self.db._sql        = self.ui.mem_editor.toPlainText() if self.getEditorType() == dm_const.C_EDITOR_PYC else self.pegaSQL()
+            self.db._sql_type   = dm.tipoSQL(self.db._sql)                     
+
+            self.ui.bt_fetch.setVisible(self.db._sql_type == 1)
+
+            if self.db._sql != None:
+                self.th = dm.Worker(proc_run=self.executeSQL_start, proc_fim=self.executeSQL_finish)

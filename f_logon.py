@@ -56,4 +56,4 @@ class form(QDialog):
             dm.f_principal.tree_objetos_montar()
             self.close()
         else:
-            QMessageBox.about(None, "Message", dm.db.status_msg)
+            dm.messageBox(dm.db.status_msg)

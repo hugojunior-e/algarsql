@@ -1,5 +1,6 @@
 import lib.d_editor_find as d_editor_find
 import re
+import dm
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
@@ -27,7 +28,7 @@ class form(QDialog):
 
     def select(self):
         if len(self.locates) == 0 or self.select_idx == len(self.locates):
-            QMessageBox.about(None, "Message", "no occurrence found")
+            dm.messageBox("no occurrence found")
             return False
         cursor = self.editor.textCursor()
         cursor.setPosition( self.locates[self.select_idx].start())

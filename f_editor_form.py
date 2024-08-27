@@ -58,7 +58,7 @@ class form(QDialog):
                         o_col   = o_col + 1
                 dm.f_principal.pc_editor_tabchange()
 
-            QMessageBox.about(self, "Message", self.db.status_msg )   
+            dm.messageBox(self.db.status_msg )   
 
     def grid_doubleclicked(self):
         if self.ui.grid.currentIndex().column().real == 0:

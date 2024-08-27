@@ -2,6 +2,11 @@
 ## Constantes
 ## ==============================================================================================
 
+C_EDITOR_SQL         = 0
+C_EDITOR_TXT         = 1
+C_EDITOR_PYC         = 2
+
+
 C_APP_VERSION         = "AlgarSQL 2.3"
 C_SQL_SELECT          = "user_exec.pc_exec_dml.pr_exec_select"
 C_SQL_EXEC            = "user_exec.pc_exec_dml.pr_exec_dml"

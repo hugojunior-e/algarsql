@@ -3,6 +3,7 @@ import dm
 import os
 import dm_const
 import sqlite3
+import webbrowser
 import f_editor_tti
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -18,7 +19,7 @@ class form(QMainWindow):
         self.ui.actionLogon.triggered.connect( lambda: dm.f_logon.showLogin() )
         self.ui.actionLogoff.triggered.connect(self.actionLogoff_click)
         self.ui.actionNewEditor.triggered.connect(self.actionNewEditor_click)
-        self.ui.actionRunSQL.triggered.connect( lambda: self.ui.pc_editor.currentWidget().executeSQL() )
+        self.ui.actionRunSQL.triggered.connect(self.actionRunSQL_click)
         self.ui.actionStopSQL.triggered.connect( lambda: self.ui.pc_editor.currentWidget().db.stopSQL() )
         self.ui.actionCommit.triggered.connect(self.actionCommit_click)
         self.ui.actionRollback.triggered.connect(self.actionRollback_click)
@@ -46,14 +47,14 @@ class form(QMainWindow):
         for txt in dm.db.status_msg.split("<end_package_spec>"):
             tab                = self.actionNewEditor_click()
             tab.ui.mem_editor.setPlainText(txt)
-            tab.db_hide_grid_opts( False )
+            tab.visibility_controls( False )
             tab.objectname = self.bt.info
             tab.tabTextIcon()
             self.bt.close()
 
     def extrai_ddl(self, owner, type, name):
         if dm.db.prepare() == False:
-            QMessageBox.about(None, "Message", self.db.status_msg) 
+            dm.messageBox(self.db.status_msg) 
             return
         self.bt      = dm.createButtonWork(Run=lambda:(self.th.thread.terminate(),self.bt.close()), Text=f"Extracting DML {owner + '.' + name}")
         self.bt.info = owner + '.' + name
@@ -115,8 +116,11 @@ class form(QMainWindow):
                 v_OBJECT_TYPE = x[1]
 
     ## ==============================================================================================
-    ## botoes do toolbar
+    ## botoes do toolbar 
     ## ==============================================================================================
+
+    def actionRunSQL_click(self):
+        self.ui.pc_editor.currentWidget().executeSQL()
 
     def actionLogoff_click(self):
         dm.db.disconnect()
@@ -147,7 +151,7 @@ class form(QMainWindow):
         A,B          = dm.tipoSQL(dados,checkCreateObj=True)
         if  A == 3:
             tab.objectname = B
-            tab.db_hide_grid_opts( False )
+            tab.visibility_controls( False )
 
         tab.ui.mem_editor.setPlainText(dados)
         tab.tabTextIcon()
@@ -251,7 +255,16 @@ class form(QMainWindow):
         filePath = self.ui.tree_templates.model().filePath(index)
         fullName = (filePath + os.path.pathsep + fileName).split(":")[0]
         if os.path.isfile(fullName):
-            self.actionOpenEditor_loadfromfile(fileName=fullName)
+            if os.path.splitext(fullName)[1].upper() in ['.TXT','.DAT','.SQL']:
+                self.actionOpenEditor_loadfromfile(fileName=fullName)
+
+            elif os.path.splitext(fullName)[1].upper() == '.PY':
+                self.actionOpenEditor_loadfromfile(fileName=fullName)
+                self.ui.pc_editor.currentWidget().visibility_controls()
+                
+            else:
+                webbrowser.open_new_tab(fullName)
+
 
     def montaTreeTemplate(self):
         dir_path = dm.configValue(tag="template_dir")

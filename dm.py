@@ -33,6 +33,11 @@ def loadFromFile(fileName):
     r.close()
     return linhas 
 
+
+def messageBox(mensagem, printable=True):
+    if printable:
+        QMessageBox.about(None, "Message", mensagem)     
+
 ## ==============================================================================================
 ##
 ## ==============================================================================================
@@ -134,7 +139,7 @@ def configSave(tagName, tagValue, p_tipo):
 ## 
 ## ==============================================================================================
 
-def populateGrid(grid: QTableWidget, data , columnNames=None, columnTypes=None, editableColumns="", appending=False):
+def populateGrid(grid: QTableWidget, data , columnNames=None, columnTypes=None, editableColumns="", appending=False, columnWidth=200):
     row_idx = 0 if appending == False else grid.rowCount()
     
     grid.setRowCount( len(data) + row_idx )
@@ -149,7 +154,7 @@ def populateGrid(grid: QTableWidget, data , columnNames=None, columnTypes=None, 
                 item  = QTableWidgetItem()
                 item.setText(x)
                 grid.setHorizontalHeaderItem(i, item) 
-                grid.setColumnWidth(i, 200)
+                grid.setColumnWidth(i, columnWidth)
 
     for i,x in enumerate(data):
         for j,a in enumerate(x):
@@ -341,6 +346,7 @@ class ORACLE:
         self.p_usuario      = None
         self.p_senha        = None
         self.p_tns          = None
+        self.dbms_output    = ""
 
 
     def value(self, v):
@@ -447,8 +453,8 @@ class ORACLE:
     def prepareVars(self, p_sql, logger):
         self.dbms_output  = ""
         self.col_names    = []
-        self.col_data     = []
         self.col_types    = []
+        self.col_data  = []        
         self.in_execution = True
         if logger and self.last_sql != p_sql:
             configSave(self.login_global_name, p_sql,"SQL_HISTORY")
@@ -501,7 +507,7 @@ class ORACLE:
 
 
 
-    def SELECT(self, p_sql, direct=False, logger=False):
+    def SELECT(self, p_sql, direct=False, logger=False, fetchSize=None):
         self.prepareVars(p_sql, logger)
         try:
             if direct or self.is_direct:
@@ -515,12 +521,13 @@ class ORACLE:
             self.col_types     = [  str(self.cur.description[i][1]) for i in range(0, len(self.cur.description))  ]
             self.status_code   = 0
             self.status_msg    = "SUCESSO"
+
+            if fetchSize != None:
+                self.col_data = self.cur.fetchall() if fetchSize == 0 else self.cur.fetchmany(fetchSize)
         except Exception as e:
             self.status_code = -1
             self.status_msg  = str(e)
         self.in_execution = False
-
-
 
 
 
@@ -545,6 +552,11 @@ class ORACLE:
         self.SELECT(p_sql=dm_const.C_SQL_EXPLAIN,direct=True)
 
 
+    def EVALPY(self, p_code):
+        self.in_execution = True
+        codevars = {"db": self.con, 'messageBox': messageBox}
+        exec(p_code,codevars)
+        self.in_execution = False
 
 
 ## ==============================================================================================

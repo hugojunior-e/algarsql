@@ -45,7 +45,7 @@
        <enum>QPlainTextEdit::NoWrap</enum>
       </property>
      </widget>
-     <widget class="QWidget" name="widget" native="true">
+     <widget class="QWidget" name="pan_baixo" native="true">
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <property name="spacing">
         <number>0</number>
@@ -63,7 +63,7 @@
         <number>0</number>
        </property>
        <item>
-        <widget class="QFrame" name="frame">
+        <widget class="QFrame" name="pan_baixo_botoes">
          <property name="minimumSize">
           <size>
            <width>0</width>
@@ -228,7 +228,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QTabWidget" name="tabWidget">
+        <widget class="QTabWidget" name="pc_baixo_grid">
          <property name="tabPosition">
           <enum>QTabWidget::South</enum>
          </property>
