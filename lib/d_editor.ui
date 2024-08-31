@@ -35,7 +35,7 @@
    <item row="0" column="0">
     <widget class="QTabWidget" name="tabWidget">
      <property name="currentIndex">
-      <number>0</number>
+      <number>5</number>
      </property>
      <widget class="QWidget" name="tab_editor">
       <attribute name="title">
@@ -58,17 +58,7 @@
         <number>9</number>
        </property>
        <item>
-        <widget class="QTextEdit" name="mem_editor">
-         <property name="font">
-          <font>
-           <family>Monospace</family>
-           <pointsize>10</pointsize>
-          </font>
-         </property>
-         <property name="lineWrapMode">
-          <enum>QTextEdit::NoWrap</enum>
-         </property>
-        </widget>
+        <widget class="QPlainTextEdit" name="mem_editor"/>
        </item>
       </layout>
      </widget>
@@ -231,25 +221,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QTextEdit" name="mem_explain">
-         <property name="minimumSize">
-          <size>
-           <width>0</width>
-           <height>200</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>16777215</width>
-           <height>200</height>
-          </size>
-         </property>
-         <property name="font">
-          <font>
-           <family>Monospace</family>
-          </font>
-         </property>
-        </widget>
+        <widget class="QPlainTextEdit" name="mem_explain"/>
        </item>
        <item>
         <widget class="QTreeWidget" name="tree_explain">

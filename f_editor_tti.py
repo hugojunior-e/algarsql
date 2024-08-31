@@ -1,6 +1,7 @@
 import lib.d_editor_tti as d_editor_tti
 import dm
 import dm_const
+import dm_editor
 import os
 import subprocess
 import time
@@ -29,14 +30,12 @@ class form(QWidget):
         self.ui.bt_tool_column.clicked.connect(lambda: dm.f_editor_form.showForm(self.ui.grid_select, self.db) )
         self.ui.bt_tool_delete.clicked.connect( self.bt_tool_delete_clicked )
         self.ui.bt_fetch.clicked.connect(self.bt_fetch_clicked)
-        self.ui.mem_editor.keyPressEvent = self.mem_editor_keyPressEvent
-        self.ui.mem_editor.setFont(dm.fontSQL)
+        
         self.ui.mem_editor.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui.mem_editor.customContextMenuRequested.connect( lambda position: self.G_popup_editor.exec_(self.ui.mem_editor.viewport().mapToGlobal(position)) )
         self.ui.mem_editor.setPlainText("SELECT * FROM DUAL")
         self.ui.mem_editor.textChanged.connect(self.mem_editor_textchanged)
-        self.G_mem_editor_highlight = dm.SyntaxHighlighter(self.ui.mem_editor.document())
-        self.ui.mem_dbms.setFont(dm.fontSQL)
+        
         self.G_popup_editor = dm.createMenu(self, ["Format SQL|Ctrl+Alt+F", "UPPERCASE|Ctrl+U", "lowercase|Ctrl+L", "-", "Paste with UNION", "Paste with ITENS", "-", "Comment", "Uncomment", "-", "Describe", "Properties"],self.popup_editor_item_click)
         self.ui.grid_select.doubleClicked.connect( lambda: dm.f_editor_form.showForm(self.ui.grid_select, self.db) )
         self.ui.grid_select.verticalHeader().setDefaultSectionSize(20)
@@ -48,6 +47,9 @@ class form(QWidget):
         self.ui.bt_fetch.setVisible(False)
         self.filename    = None
         self.objectname  = None
+
+        self.ui.mem_editor._ = dm_editor.QEditorConfig(self.ui.mem_editor, keyPressEvt=self.mem_editor_keyPressEvent)
+
 
 
     ## ==============================================================================================
@@ -94,7 +96,6 @@ class form(QWidget):
     def visibility_controls(self, b=False):
         if self.getEditorType() == dm_const.C_EDITOR_PYC:
             self.ui.pan_baixo.hide()
-            self.G_mem_editor_highlight = None
         else:
             self.ui.chk_all_text.setChecked(True)
             self.ui.chk_run_user_local.setChecked(True)        
@@ -116,6 +117,7 @@ class form(QWidget):
             
     def popup_editor_item_click(self):
         txt = self.ui.mem_editor.textCursor().selection().toPlainText()
+        
         if self.sender().text() == "UPPERCASE":
             self.ui.mem_editor.textCursor().insertText(txt.upper())
 
@@ -148,7 +150,7 @@ class form(QWidget):
             self.ui.mem_editor.textCursor().insertText(x)
 
         if self.sender().text() == "Comment":
-            x = "/*" + txt.replace("\*", "|*").replace("*/", "*|") + "*/"
+            x = "/*" + txt.replace(r"\*", "|*").replace("*/", "*|") + "*/"
             self.ui.mem_editor.textCursor().insertText(x)
 
         if self.sender().text() == "Uncomment":
@@ -156,17 +158,17 @@ class form(QWidget):
             self.ui.mem_editor.textCursor().insertText(x)
 
         if self.sender().text() == "Describe":
-            x = dm.db.SELECT(p_sql=dm_const.C_SQL_DESCRIBE % (txt.upper()))
+            x = dm.db.SELECT(p_sql=dm_const.C_SQL_DESCRIBE % (txt.upper()), fetchSize=0)
             if dm.db.status_code == 0:
                 self.grid_describe = QTableWidget()
-                dm.populateGrid(self.grid_describe, dm.db.cur.fetchall(), dm.db.col_names)
+                dm.populateGrid(self.grid_describe, dm.db.col_data, dm.db.col_names)
                 self.grid_describe.show()
 
         if self.sender().text() == "Properties":
-            x = dm.db.SELECT(p_sql=dm_const.C_SQL_PROPERTIES % (txt.upper()))
+            x = dm.db.SELECT(p_sql=dm_const.C_SQL_PROPERTIES % (txt.upper()), fetchSize=0)
             if dm.db.status_code == 0:
                 col_data = []
-                for r in dm.db.cur.fetchall():
+                for r in dm.db.col_data:
                     for i, info in enumerate(r):
                         col_data = col_data + [(dm.db.col_names[i], info)]
                 self.grid_props = QTableWidget()
@@ -200,52 +202,21 @@ class form(QWidget):
             return
         QListWidget.keyPressEvent(self.ui.code_completation, event)
 
-    def mem_editor_linenumber(self):
-        x     = self.ui.mem_editor.textCursor().position().real
-        block = self.ui.mem_editor.toPlainText()[1 : x]
-        self.ui.lb_row.setText( str( block.count("\n") + 1) )
-
     def mem_editor_keyPressEvent(self, event):
         try:
             tc = self.ui.mem_editor.textCursor()
-
-            if event.key() == Qt.Key_Return:
-                y = tc.blockNumber()
-                i = -1
-                for i,tt in enumerate(  self.ui.mem_editor.document().findBlockByLineNumber(y).text() ):
-                    if tt != ' ':
-                        break
-                tc.insertText("\n" + ("" if i == -1 else (" " * i) )  )
-                self.mem_editor_linenumber()
-                return
-
-            if event.key() in [Qt.Key_Tab, Qt.Key_Backtab]:
-                if tc.hasSelection():
-                    i_start = tc.selectionStart().real
-                    if event.key() == Qt.Key_Tab:
-                        new_text = "\n".join(["  " + x for x in tc.selection().toPlainText().split("\n")])
-                    else:
-                        new_text = "\n".join([x.replace("  ", "", 1) for x in tc.selection().toPlainText().split("\n")])
-                    tc.insertText(new_text)
-                    tc.setPosition(i_start)
-                    tc.setPosition(i_start + len(new_text), QTextCursor.KeepAnchor)
-                    self.ui.mem_editor.setTextCursor(tc)
-                else:
-                    tc.insertText("  ")
-                self.mem_editor_linenumber()
-                return
 
             if event.key() == 46:
                 tc.select(QTextCursor.WordUnderCursor)
                 lista = []
 
                 if tc.selectedText().upper() in dm.all_users:
-                    dm.db.SELECT(p_sql=dm_const.C_SQL_ALL_TABLES % (tc.selectedText()))
-                    lista = [x[0] for x in dm.db.cur.fetchall()]
+                    dm.db.SELECT(p_sql=dm_const.C_SQL_ALL_TABLES % (tc.selectedText()), fetchSize=0)
+                    lista = [x[0] for x in dm.db.col_data]
 
                 elif tc.selectedText().upper() in dm.all_tables:
-                    dm.db.SELECT(p_sql=dm_const.C_SQL_ALL_TAB_COLUMNS % (tc.selectedText()))
-                    lista = [x[0] for x in dm.db.cur.fetchall()]
+                    dm.db.SELECT(p_sql=dm_const.C_SQL_ALL_TAB_COLUMNS % (tc.selectedText()), fetchSize=0)
+                    lista = [x[0] for x in dm.db.col_data]
 
                 else:
                     x = self.ui.mem_editor.toPlainText().upper().replace(';', ' ').replace(',', ' ').replace("\n", ' ').replace('\t', ' ').replace('.', ' ').replace('*', ' ').replace(' SELECT ', ' ')
@@ -254,8 +225,8 @@ class form(QWidget):
                     info_a = x.split(' ')
                     for i, info in enumerate(info_a):
                         if tc.selectedText().upper() == info.upper() and info_a[i-1] in dm.all_tables:
-                            dm.db.SELECT(p_sql=dm_const.C_SQL_ALL_TAB_COLUMNS % (info_a[i-1]))
-                            lista = [x[0] for x in dm.db.cur.fetchall()]
+                            dm.db.SELECT(p_sql=dm_const.C_SQL_ALL_TAB_COLUMNS % (info_a[i-1]), fetchSize=0)
+                            lista = [x[0] for x in dm.db.col_data]
                             break
 
                 if len(lista) > 0:
@@ -265,7 +236,6 @@ class form(QWidget):
         except Exception as e:
             print( str(e) )
         QPlainTextEdit.keyPressEvent(self.ui.mem_editor, event)
-        self.mem_editor_linenumber()
 
 
     ## ==============================================================================================
@@ -409,8 +379,8 @@ class form(QWidget):
                 self.tabTextIcon(Icon=dm.iconRed)
                 dm.f_principal.pc_editor_tabchange()
                 t = 2
-            self.ui.lb_timer.setText(  str(datetime.now() - dt_ini).split(".")[0]  )
-            time.sleep(1)
+            self.ui.lb_timer.setText(  str(datetime.now() - dt_ini)[0:-3]  )
+            time.sleep(0.5)
         self.tabTextIcon(Icon=dm.iconBlue)
         dm.f_principal.pc_editor_tabchange()
 
@@ -476,7 +446,6 @@ class form(QWidget):
         try:
             if self.getEditorType() == dm_const.C_EDITOR_PYC:
                 self.db.EVALPY(self.db._sql)
-
             elif self.db._sql_type == 1:
                 self.db.SELECT(p_sql=self.db._sql, logger=True, direct=self.ui.chk_run_user_local.isChecked(), fetchSize=20 )
             else:

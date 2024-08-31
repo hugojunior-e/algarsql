@@ -1,6 +1,5 @@
 import oracledb
 import os
-import re
 import sys
 import sqlite3
 import platform
@@ -210,94 +209,6 @@ def tipoSQL(SQL,checkCreateObj=False):
     if x.strip().startswith('SELECT') or x.strip().startswith('WITH'):
         return 1
     return 2
-
-
-## ==============================================================================================
-## SQLHigLigth
-## ==============================================================================================
-
-class SyntaxHighlighter(QSyntaxHighlighter):
-    def __init__(self, parent=None):
-        super(SyntaxHighlighter, self).__init__(parent)
-
-        self.highlightingRules = []
-        self._mapping = {}
-        is_dm = configValue(tag="EditorSqlDarkMode") == "1"
-
-        stringF = QTextCharFormat()
-        stringF.setForeground(Qt.magenta if is_dm else Qt.blue)
-        stringPatterns = [ "'([^'']*)'"]
-
-        funcF = QTextCharFormat()
-        funcF.setForeground(Qt.cyan)
-        funcPatterns = ['UTL_FILE', 'UTL_HTTP', 'MOD', 'REPLACE','TRANSLATE','INSTR','REVERSE','REGEXP_INSTR','REGEXP_REPLACE','REGEXP_SUBSTR','REGEXP_COUNT','ADD_MONTHS', 'LPAD','RPAD','TRUNC','TO_DATE','TO_CHAR','TO_NUMBER','NVL','DECODE','SYSDATE', 'COUNT','AVG','SUM','MAX','MIN','CASE','NVL2','TRIM','SUBSTR','UPPER','LOWER','INITCAP']
-
-        typeF = QTextCharFormat()
-        typeF.setForeground(Qt.magenta)
-        typePatterns = ['TYPE','PLS_INTEGER','LONG','RAW','NUMBER','VARCHAR','VARCHAR2','CLOB','INTEGER','CHAR','DATE','TIMESTAMP','INT','BLOB']
-
-        reservedF = QTextCharFormat()
-        reservedF.setForeground(Qt.yellow if is_dm else QColor(0,128,128))
-        reservedPatterns = ['INTO','EXECUTE', 'IMMEDIATE', 'ROWNUM', 'VALUES', 'GROUP','HAVING','ORDER','WITH','AS','UNION','ALL','DESC','ASC',
-                            'TO','PUBLIC','GRANT','DROP','ALTER','SET','IS','NOT','DISTINCT','DEFAULT',
-                            'BY','SELECT','INSERT','UPDATE','DELETE','FROM', 'WHERE', 'AND', 'TABLESPACE','THEN', 'BEFORE','AFTER','REFERENCING',
-                            'LEVEL','CONNECT','COMPILE','PRIOR','SYNONYM','LIKE','SEGMENT','CREATION','EACH', 'ROW',
-                            'IN', 'FOR','BREAK','LOOP','BEGIN','DECLARE','EXCEPTION','WHEN','STORAGE','OLD','NEW',
-                            'PCTFREE','PCTUSED','INITRANS','MAXTRANS','NOCOMPRESS','LOGGING','ENABLE','DISABLE','OUT',
-                            'END','INNER','LEFT','JOIN','ON','CURSOR','ROWTYPE','OTHERS','UNIQUE','INDEX','ROLLBACK',
-                            'ELSE',' THEN','IF','ELSIF','CREATE','OR','FORCE','EDITIONABLE','BETWEEN',
-                            'VIEW','TABLE','PROCEDURE','PACKAGE','BODY','TRIGGER','FUNCTION','FREELIST',
-                            'MODIFY', 'RENAME', 'ADD','COLUMN','GLOBAL','TEMPORARY','COMMIT','PRESERVE','ROWS',
-                            'USING','COMPUTE','STATISTICS','BUFFER_POOL','FLASH_CACHE','CELL_FLASH_CACHE','EXISTS','SQLERRM','RETURN','EXIT','NULL',
-                            'INITIAL','NEXT','MINEXTENTS','MAXEXTENTS','PCTINCREASE','FREELISTS','GROUPS']
-
-
-        self.commentF = QTextCharFormat()
-        self.commentF.setForeground(Qt.gray)
-        self.commentF.setFontItalic(True)
-        commentPatterns = [ r'--.*$' ]
-
-        for r in typePatterns:
-            self._mapping["\\b" + r + "\\b"] = typeF
-
-        for r in reservedPatterns:
-            self._mapping["\\b" + r + "\\b"] = reservedF
-
-        for r in funcPatterns:
-            self._mapping["\\b" + r + "\\b"] = funcF
-
-        for r in stringPatterns:
-            self._mapping[r] = stringF
-
-        for r in commentPatterns:
-            self._mapping[r] = self.commentF
-
-     
-
-    def highlightBlock(self, text_block):
-        for pattern, fmt in self._mapping.items():
-            for match in re.finditer(pattern,text_block, re.I):
-                start,end = match.span()
-                self.setFormat(start,end-start,fmt)
-
-        commentStartExpression = QRegExp("/\\*")
-        commentEndExpression = QRegExp("\\*/")  
-        self.setCurrentBlockState(0)
-        startIndex = 0
-        if self.previousBlockState() != 1:
-            startIndex = commentStartExpression.indexIn(text_block)
-        while startIndex >= 0:
-            endIndex      = commentEndExpression.indexIn(text_block, startIndex)
-            commentLength = 0
-            if endIndex == -1:
-                self.setCurrentBlockState(1)
-                commentLength = len(text_block) - startIndex
-            else:
-                commentLength = endIndex - startIndex + commentEndExpression.matchedLength()
-            self.setFormat(startIndex, commentLength, self.commentF)
-            startIndex = commentStartExpression.indexIn(text_block, startIndex + commentLength);            
-
-
 
 ## ==============================================================================================
 ## thread
@@ -519,11 +430,12 @@ class ORACLE:
                 self.cur    = myvar.getvalue()
             self.col_names     = [  self.cur.description[i][0] for i in range(0, len(self.cur.description))  ]
             self.col_types     = [  str(self.cur.description[i][1]) for i in range(0, len(self.cur.description))  ]
-            self.status_code   = 0
-            self.status_msg    = "SUCESSO"
 
             if fetchSize != None:
                 self.col_data = self.cur.fetchall() if fetchSize == 0 else self.cur.fetchmany(fetchSize)
+
+            self.status_code   = 0
+            self.status_msg    = "SUCESSO"
         except Exception as e:
             self.status_code = -1
             self.status_msg  = str(e)
@@ -565,13 +477,15 @@ class ORACLE:
 
 app           = QApplication(sys.argv)
 setDarkMode(app)
-fontSQL       = QFont()
-fontSQL.setFamily( "Monospace" if platform.system() == "Linux" else "Courier New")
-fontSQL.setPointSize(10)
 
 all_tables    = []
 all_users     = []
 db            = ORACLE()
+
+fontSQL       = QFont()
+fontSQL.setFamily( "Monospace" if platform.system() == "Linux" else "Courier New")
+fontSQL.setPointSize(10)
+
 
 iconBlue      = QIcon()
 iconRed       = QIcon()
@@ -593,7 +507,7 @@ def main():
     try:
         od = configValue(tag="OracleInstantClientDir")
         if len(od) > 1 and os.path.exists(od):
-            oracledb.init_oracle_client(lib_dir=od)    
+            oracledb.init_oracle_client()#lib_dir=od)    
     except Exception as e:
         print(str(e))
 

@@ -13,7 +13,6 @@ class form(QDialog):
         self.ui.setupUi(self)
         self.ui.bt_salvar.clicked.connect(self.bt_salvar_clicked)
         self.ui.grid.doubleClicked.connect(self.grid_doubleclicked)
-        self.ui.mem_grid.setFont(dm.fontSQL)
         self.ui.grid.verticalHeader().setDefaultSectionSize(20)
 
     def bt_salvar_clicked(self):

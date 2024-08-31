@@ -1,5 +1,6 @@
 import lib.d_editor as d_editor
 import dm
+import dm_editor
 import dm_const
 
 from PyQt5.QtWidgets import *
@@ -25,20 +26,11 @@ class form(QDialog):
         self.ui.grid_csv.setHorizontalHeaderLabels( ('Field Name/Value','-') )
         self.ui.grid_objetos.verticalHeader().setDefaultSectionSize(20)
 
-        self.mem_csv_highlight     = dm.SyntaxHighlighter(self.ui.mem_csv.document())
-        self.mem_explain           = dm.SyntaxHighlighter(self.ui.mem_explain.document())
-        self.mem_editor_highlight  = dm.SyntaxHighlighter(self.ui.mem_editor.document())
-        self.mem_session_highlight = dm.SyntaxHighlighter(self.ui.mem_sessions.document())
-        self.mem_recall_highlight  = dm.SyntaxHighlighter(self.ui.mem_recall.document())
-
-        self.ui.mem_cfg_tns.setFont(dm.fontSQL)
-        self.ui.mem_recall.setFont(dm.fontSQL)
-        self.ui.mem_cfg_tns_saved.setFont(dm.fontSQL)
-        self.ui.mem_csv.setFont(dm.fontSQL)
-        self.ui.mem_editor.setFont(dm.fontSQL)
-        self.ui.mem_explain.setFont(dm.fontSQL)
-        self.ui.mem_sessions.setFont(dm.fontSQL)
-
+        self.ui.mem_csv._      = dm_editor.QEditorConfig(self.ui.mem_csv)
+        self.ui.mem_explain._  = dm_editor.QEditorConfig(self.ui.mem_explain)
+        self.ui.mem_editor._   = dm_editor.QEditorConfig(self.ui.mem_editor)
+        self.ui.mem_sessions._ = dm_editor.QEditorConfig(self.ui.mem_sessions)
+        self.ui.mem_recall._   = dm_editor.QEditorConfig(self.ui.mem_recall)
 
         self.ui.edt_recall.textEdited.connect(self.edt_recall_edited)
 
@@ -130,9 +122,9 @@ class form(QDialog):
                 for i,v in enumerate(a_linha):
                     sql_temp = sql_temp.replace( f"<{i+1}>", v )
                 
-                dm.db.SELECT(p_sql=sql_temp, direct=True)
+                dm.db.SELECT(p_sql=sql_temp, direct=True,fetchSize=1)
                 if dm.db.status_code == 0:
-                    retorno = dm.db.cur.fetchone()
+                    retorno = dm.db.col_data[0]
                     if retorno != None:
                         r.write(s_linha.strip() + ";" + ( ";".join([str(i) for i in retorno]) )   + "\n")
                     else:
@@ -221,9 +213,9 @@ class form(QDialog):
         
         self.ui.grid_objetos.setRowCount(0)
         ot = [  "'" + x.text() + "'" if x.isChecked() else "'-'" for  x in self.lista_chk_obj ]
-        dm.db.SELECT(p_sql=dm_const.C_SQL_FIND_OBJECT % ( self.ui.edt_objetos.text() , ",".join(ot) ) )
+        dm.db.SELECT(p_sql=dm_const.C_SQL_FIND_OBJECT % ( self.ui.edt_objetos.text() , ",".join(ot) ), fetchSize=0 )
         if dm.db.status_code == 0:
-            dm.populateGrid(grid=self.ui.grid_objetos,data=dm.db.cur.fetchall(),columnNames=dm.db.col_names, columnTypes=dm.db.col_types)
+            dm.populateGrid(grid=self.ui.grid_objetos,data=dm.db.col_data,columnNames=dm.db.col_names, columnTypes=dm.db.col_types)
         else:
             dm.messageBox(dm.db.status_msg)
 
@@ -240,7 +232,7 @@ class form(QDialog):
     ## ==============================================================================================
         
     def bt_sessions_exec_click(self):
-        dm.db.SELECT(p_sql=dm.db.sql_session.replace("<WHERE>", self.ui.cbo_sessions.currentText() ))
+        dm.db.SELECT(p_sql=dm.db.sql_session.replace("<WHERE>", self.ui.cbo_sessions.currentText() ), fetchSize=0)
         if dm.db.status_code == 0:
             parent_id = "-"
             status    = "-"
@@ -250,7 +242,7 @@ class form(QDialog):
                 self.ui.tree_sessions.headerItem().setText(i, dm.db.col_names[i+2] )
                 self.ui.tree_sessions.setColumnWidth(i,150)
            
-            for reg in dm.db.cur.fetchall():
+            for reg in dm.db.col_data:
                 if parent_id != reg[0]:
                     pai = QTreeWidgetItem([ reg[0] ])
                     self.ui.tree_sessions.addTopLevelItem(pai)                

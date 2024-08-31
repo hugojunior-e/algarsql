@@ -88,13 +88,13 @@ class form(QMainWindow):
 
     def tree_objetos_montar(self):
         self.ui.tree_objetos.clear()
-        dm.db.SELECT( p_sql=dm_const.C_SQL_TREE )
+        dm.db.SELECT( p_sql=dm_const.C_SQL_TREE, fetchSize=0 )
         dm.all_tables = []
         dm.all_users  = []
         if dm.db.status_code == 0:
             v_OWNER       = '-'
             v_OBJECT_TYPE = '-'            
-            for x in dm.db.cur.fetchall():
+            for x in dm.db.col_data:
                 if x[0] != v_OWNER:
                     dm.all_users   = dm.all_users + [x[0]]
                     pai = QTreeWidgetItem([ x[0] ])
@@ -187,13 +187,12 @@ class form(QMainWindow):
     ## ==============================================================================================
 
     def popup_config_recompile(self):
-        dm.db.SELECT(p_sql=dm_const.C_SQL_RECOMPILE, direct=True)
+        dm.db.SELECT(p_sql=dm_const.C_SQL_RECOMPILE, direct=True, fetchSize=0)
         if dm.db.status_code == 0:
-            listagem = dm.db.cur.fetchall()
             self.bt.H_msg_ret = []
-            for x in listagem:
+            for x in dm.db.col_data:
                 self.bt.setText( x[0] )
-                dm.db.SELECT(p_sql=x[1],direct=True)
+                dm.db.EXECUTE(p_sql=x[1],direct=True)
 
                 self.bt.H_msg_ret.append( x[0] )
                 self.bt.H_msg_ret.append( dm.db.status_msg )
@@ -255,15 +254,15 @@ class form(QMainWindow):
         filePath = self.ui.tree_templates.model().filePath(index)
         fullName = (filePath + os.path.pathsep + fileName).split(":")[0]
         if os.path.isfile(fullName):
-            if os.path.splitext(fullName)[1].upper() in ['.TXT','.DAT','.SQL']:
-                self.actionOpenEditor_loadfromfile(fileName=fullName)
+            if os.path.splitext(fullName)[1].upper() in ['.PDF','.HTML']:
+                webbrowser.open_new_tab(fullName)
 
             elif os.path.splitext(fullName)[1].upper() == '.PY':
                 self.actionOpenEditor_loadfromfile(fileName=fullName)
                 self.ui.pc_editor.currentWidget().visibility_controls()
                 
             else:
-                webbrowser.open_new_tab(fullName)
+                self.actionOpenEditor_loadfromfile(fileName=fullName)
 
 
     def montaTreeTemplate(self):

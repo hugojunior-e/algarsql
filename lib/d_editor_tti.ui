@@ -176,27 +176,14 @@
          <widget class="QLabel" name="lb_timer">
           <property name="geometry">
            <rect>
-            <x>741</x>
+            <x>708</x>
             <y>8</y>
-            <width>58</width>
-            <height>18</height>
+            <width>121</width>
+            <height>20</height>
            </rect>
           </property>
           <property name="text">
            <string>00:00:00</string>
-          </property>
-         </widget>
-         <widget class="QLabel" name="lb_row">
-          <property name="geometry">
-           <rect>
-            <x>820</x>
-            <y>8</y>
-            <width>58</width>
-            <height>18</height>
-           </rect>
-          </property>
-          <property name="text">
-           <string>row:0</string>
           </property>
          </widget>
          <widget class="QCheckBox" name="chk_parameters">
@@ -232,8 +219,14 @@
          <property name="tabPosition">
           <enum>QTabWidget::South</enum>
          </property>
+         <property name="tabShape">
+          <enum>QTabWidget::Rounded</enum>
+         </property>
          <property name="currentIndex">
           <number>0</number>
+         </property>
+         <property name="tabBarAutoHide">
+          <bool>false</bool>
          </property>
          <widget class="QWidget" name="tab">
           <attribute name="title">
