@@ -278,27 +278,38 @@ class ORACLE:
             self.CONNECT(db.p_usuario, db.p_senha, db.p_tns, db.is_direct)
         return self.is_connected
     
-
+    def __connect(self):
+        try:
+            self.con          = oracledb.connect( user=self.p_usuario, password=self.p_senha, dsn=self.p_tns )
+        except Exception as e:
+            self.status_code = -1
+            self.status_msg  = str(e)
 
     def CONNECT(self, p_usuario, p_senha, p_tns, p_is_direct):
-        global C_SQL_SESSIONS
         self.in_transaction = False
         self.in_execution   = False
         self.is_connected   = False
         self.is_direct      = p_is_direct
-
-        if p_usuario == None or p_senha == None or p_tns == None:
-            return (-1,"Parameter User/Pass Invalid!")
+        self.login_sid      = 0
+        self.status_code    = 0
+        self.status_msg     = 'OK'
         try:
+            if p_usuario == None or p_senha == None or p_tns == None:
+                raise ValueError("Parameter User/Pass Invalid!")
+            
             self.p_usuario    = p_usuario
             self.p_senha      = p_senha
             self.p_tns        = p_tns
 
-            print( f"logging into {self.p_usuario}@{self.p_tns}")
-            self.con          = oracledb.connect( user=self.p_usuario, password=self.p_senha, dsn=self.p_tns)
+            t1 = Thread(target=self.__connect)
+            t1.start()
+            t1.join(5)
+            if t1.is_alive():
+                raise ValueError("Timeout Connection Required...")
+            if self.status_code != 0:
+                raise ValueError(self.status_msg)
+            
             self.cur          = self.con.cursor()
-            self.login_sid    = 0
-            self.login_serial = 0
             self.cur.execute(dm_const.C_SQL_START)
             self.cur.execute(dm_const.C_SQL_ENABLE_WARN)
 
@@ -316,8 +327,6 @@ class ORACLE:
 
             self.con.autocommit = False
             self.is_connected   = True
-            self.status_code = 0
-            self.status_msg  = 'OK'
         except Exception as e:
             self.status_code = -1
             self.status_msg  = str(e)
@@ -325,13 +334,10 @@ class ORACLE:
 
 
     def disconnect(self):
-        try:
-            if self.con != None:
-                t1 = Thread(target=lambda: self.con.close())
-                t1.start()
-                t1.join(3)
-        except:
-            print("Not Connected")
+        if self.con != None:
+            t1 = Thread(target=lambda: self.con.close())
+            t1.start()
+            t1.join(3)
         self.p_usuario      = None
         self.is_connected   = False  
         self.in_transaction = False
@@ -365,7 +371,7 @@ class ORACLE:
         self.dbms_output  = ""
         self.col_names    = []
         self.col_types    = []
-        self.col_data  = []        
+        self.col_data     = []        
         self.in_execution = True
         if logger and self.last_sql != p_sql:
             configSave(self.login_global_name, p_sql,"SQL_HISTORY")

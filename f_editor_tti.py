@@ -373,16 +373,15 @@ class form(QWidget):
 
     def db_timer_thread(self):
         dt_ini = datetime.now()
-        t = 1
+        self.tabTextIcon(Icon=dm.iconRed)
+        dm.f_principal.pc_editor_tabchange()
         while self.db.in_execution:
-            if t == 1:
-                self.tabTextIcon(Icon=dm.iconRed)
-                dm.f_principal.pc_editor_tabchange()
-                t = 2
-            self.ui.lb_timer.setText(  str(datetime.now() - dt_ini)[0:-3]  )
+            dt_fim = datetime.now()
+            self.ui.lb_timer.setText(  str(dt_fim-dt_ini)[0:-7]  )
             time.sleep(0.5)
         self.tabTextIcon(Icon=dm.iconBlue)
         dm.f_principal.pc_editor_tabchange()
+        self.ui.lb_timer.setText(  str(dt_fim - dt_ini)[0:-3]  )
 
 
 

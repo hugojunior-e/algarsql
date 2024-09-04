@@ -116,7 +116,7 @@ class QEditorConfig:
         while max_block >= 10:
             max_block //= 10
             digits += 1
-        space = 10 + self.editor.fontMetrics().horizontalAdvance('9') * digits
+        space = 20 + self.editor.fontMetrics().horizontalAdvance('9') * digits
         return space
 
     def updateLineNumberAreaWidth(self, _):
@@ -136,6 +136,19 @@ class QEditorConfig:
         self.editor.lineNumberArea.setGeometry(QRect(cr.left(), cr.top(), self.lineNumberAreaWidth(), cr.height()))
 
     def lineNumberAreaPaintEvent(self, event):
+        """
+        extraSelections = []
+        lineColor = QColor('#C0C0C0').lighter(160)
+        selection = QTextEdit.ExtraSelection()
+        selection.format.setBackground(lineColor)
+        selection.format.setProperty(QTextFormat.FullWidthSelection, True)
+        selection.cursor = self.editor.textCursor()
+        selection.cursor.clearSelection()
+        extraSelections.append(selection)
+        self.editor.setExtraSelections(extraSelections)
+        """
+        
+
         painter = QPainter(self.editor.lineNumberArea)
         ###painter.fillRect(event.rect(), QColor('#C0C0C0'))
         painter.setFont(dm.fontSQL)
@@ -143,10 +156,12 @@ class QEditorConfig:
         block_number = block.blockNumber() + 1
         top          = self.editor.blockBoundingGeometry(block).translated(self.editor.contentOffset()).top()
         bottom       = top + self.editor.blockBoundingRect(block).height()
-
+        
         while block.isValid() and top <= event.rect().bottom():
             if block.isVisible() and bottom >= event.rect().top():
                 number = str(block_number)
+                if self.editor.textCursor().block() == block:
+                    number = f"[{number}]"
                 painter.setPen(QColor('white'))
                 paint_rect = QRect(0, int(top), self.editor.lineNumberArea.width(), self.editor.fontMetrics().height())
                 painter.drawText(paint_rect, Qt.AlignCenter, number)

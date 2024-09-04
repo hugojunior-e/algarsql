@@ -64,7 +64,7 @@ class form(QDialog):
         if formName == "Explain Query":
             self.ui.tree_explain.clear()
             self.ui.tabWidget.setCurrentWidget(self.ui.tab_explain)
-            self.ui.mem_explain.setText( info )
+            self.ui.mem_explain.setPlainText( info )
         if formName == "CSV Updater":
             self.ui.mem_csv.setPlainText( dm.configValue("csv_sql") )
             self.ui.tabWidget.setCurrentWidget(self.ui.tab_csv_updater)
@@ -234,6 +234,8 @@ class form(QDialog):
     def bt_sessions_exec_click(self):
         dm.db.SELECT(p_sql=dm.db.sql_session.replace("<WHERE>", self.ui.cbo_sessions.currentText() ), fetchSize=0)
         if dm.db.status_code == 0:
+            self.ui.tree_sessions.clear()
+            
             parent_id = "-"
             status    = "-"
 
