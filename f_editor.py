@@ -1,6 +1,5 @@
 import lib.d_editor as d_editor
 import dm
-import dm_editor
 import dm_const
 
 from PyQt5.QtWidgets import *
@@ -25,12 +24,6 @@ class form(QDialog):
         self.ui.grid_csv.setColumnWidth(0,200)
         self.ui.grid_csv.setHorizontalHeaderLabels( ('Field Name/Value','-') )
         self.ui.grid_objetos.verticalHeader().setDefaultSectionSize(20)
-
-        self.ui.mem_csv._      = dm_editor.QEditorConfig(self.ui.mem_csv)
-        self.ui.mem_explain._  = dm_editor.QEditorConfig(self.ui.mem_explain)
-        self.ui.mem_editor._   = dm_editor.QEditorConfig(self.ui.mem_editor)
-        self.ui.mem_sessions._ = dm_editor.QEditorConfig(self.ui.mem_sessions)
-        self.ui.mem_recall._   = dm_editor.QEditorConfig(self.ui.mem_recall)
 
         self.ui.edt_recall.textEdited.connect(self.edt_recall_edited)
 

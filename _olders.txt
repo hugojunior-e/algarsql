@@ -1,25 +1,13 @@
-import dm
-import re
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
-from PyQt5.QtWidgets import *
-
-
-## =============================================================================================
-## classe de highligther
-## =============================================================================================
-
-
-class SyntaxHighlighter(QSyntaxHighlighter):
-    def __init__(self, parent=None):
-        super(SyntaxHighlighter, self).__init__(parent)
-
+class EditorSyntaxHighlighter(QSyntaxHighlighter):
+    def __init__(self, parent: QPlainTextEdit):
+        self.editor            = parent
         self.highlightingRules = []
-        self._mapping = {}
-        is_dm = True
+        self.mapping           = {}
+        is_dm                  = True
+        super(EditorSyntaxHighlighter, self).__init__(parent.document())
 
         stringF = QTextCharFormat()
-        stringF.setForeground(Qt.magenta if is_dm else Qt.blue)
+        stringF.setForeground(QColor("#56B6C2") if is_dm else Qt.blue)
         stringPatterns = [ "'([^'']*)'"]
 
         funcF = QTextCharFormat()
@@ -45,29 +33,29 @@ class SyntaxHighlighter(QSyntaxHighlighter):
                             'USING','COMPUTE','STATISTICS','BUFFER_POOL','FLASH_CACHE','CELL_FLASH_CACHE','EXISTS','SQLERRM','RETURN','EXIT','NULL',
                             'INITIAL','NEXT','MINEXTENTS','MAXEXTENTS','PCTINCREASE','FREELISTS','GROUPS']
 
-
         self.commentF = QTextCharFormat()
         self.commentF.setForeground(Qt.gray)
         self.commentF.setFontItalic(True)
         commentPatterns = [ r'--.*$' ]
 
         for r in typePatterns:
-            self._mapping["\\b" + r + "\\b"] = typeF
+            self.mapping["\\b" + r + "\\b"] = typeF
 
         for r in reservedPatterns:
-            self._mapping["\\b" + r + "\\b"] = reservedF
+            self.mapping["\\b" + r + "\\b"] = reservedF
 
         for r in funcPatterns:
-            self._mapping["\\b" + r + "\\b"] = funcF
+            self.mapping["\\b" + r + "\\b"] = funcF
 
         for r in stringPatterns:
-            self._mapping[r] = stringF
+            self.mapping[r] = stringF
 
         for r in commentPatterns:
-            self._mapping[r] = self.commentF
+            self.mapping[r] = self.commentF
+
 
     def highlightBlock(self, text_block):
-        for pattern, fmt in self._mapping.items():
+        for pattern, fmt in self.mapping.items():
             for match in re.finditer(pattern,text_block, re.I):
                 start,end = match.span()
                 self.setFormat(start,end-start,fmt)
@@ -89,93 +77,86 @@ class SyntaxHighlighter(QSyntaxHighlighter):
             self.setFormat(startIndex, commentLength, self.commentF)
             startIndex = commentStartExpression.indexIn(text_block, startIndex + commentLength);    
 
-## =============================================================================================
-## classe de configuracao do Editor
-## =============================================================================================
 
-class QEditorConfig:
-    def __init__(self, editor: QPlainTextEdit, keyPressEvt=None):
-        self.editor        = editor
-        self.__keyPressEvt = keyPressEvt
 
-        self.editor.lineNumberArea = QWidget(self.editor)
-        self.editor.resizeEvent = self.resizeEvent
-        self.editor.lineNumberArea.paintEvent = self.lineNumberAreaPaintEvent
-        self.editor.keyPressEvent = self.editor_keyPressEvent
 
-        self.editor.blockCountChanged.connect(self.updateLineNumberAreaWidth)
+
+class EditorLineNumberArea(QWidget):
+    def __init__(self, editor):
+        super().__init__(editor)
+        self.editor = editor
+
+    def sizeHint(self):
+        return QSize(50, 0)
+    
+
+    def paintEvent(self, event):
+        painter     = QPainter(self)
+        block       = self.editor.firstVisibleBlock()
+        blockNumber = block.blockNumber()
+        top         = int(self.editor.blockBoundingGeometry(block).translated(self.editor.contentOffset()).top())
+        bottom      = top + int(self.editor.blockBoundingRect(block).height())
+
+        while block.isValid() and top <= event.rect().bottom():
+            if block.isVisible() and bottom >= event.rect().top():
+                number = str(blockNumber + 1)
+                if self.editor.textCursor().block() == block:
+                    number = f"[{number}]"                    
+                
+                painter.setPen(QColor("#CCCCCC"))
+                painter.drawText(0, top, self.width(), self.editor.fontMetrics().height(), Qt.AlignCenter, number)
+
+            block        = block.next()
+            blockNumber += 1
+            top          = bottom
+            bottom       = top + int(self.editor.blockBoundingRect(block).height())
+
+
+
+
+class EDITOR:
+    def __init__(self, parent: QPlainTextEdit, text="", customContextMenu=None, customKeyPressEvent=None):
+        self.editor              = parent
+        self.lineNumberArea      = EditorLineNumberArea(self.editor)
+        self.customKeyPressEvent = customKeyPressEvent
+        self._                   = EditorSyntaxHighlighter(self.editor)
+        
+        self.editor.setViewportMargins(50, 0, 0, 0)
         self.editor.updateRequest.connect(self.updateLineNumberArea)
+        self.editor.setFont(fontSQL)
+        self.editor.setPlainText(text)
+        self.editor.keyPressEvent = self.editorKeyPressEvent
 
-        self.updateLineNumberAreaWidth(0)
-        self.editor.setFont(dm.fontSQL)
-        self._ = SyntaxHighlighter(self.editor.document())
+        if customContextMenu:
+            self.editor.setContextMenuPolicy(Qt.CustomContextMenu )
+            self.editor.customContextMenuRequested.connect(customContextMenu)        
 
-    def lineNumberAreaWidth(self):
-        digits = 1
-        max_block = max(1, self.editor.blockCount())
-        while max_block >= 10:
-            max_block //= 10
-            digits += 1
-        space = 20 + self.editor.fontMetrics().horizontalAdvance('9') * digits
-        return space
+    def wordOnCursor(self):
+        tc = self.editor.textCursor()
+        tc.select(QTextCursor.WordUnderCursor)
+        return tc.selectedText()
+        
+    def selectedText(self):
+        return self.editor.textCursor().selection().toPlainText()
 
-    def updateLineNumberAreaWidth(self, _):
-        self.editor.setViewportMargins(self.lineNumberAreaWidth(), 0, 0, 0)
+    def replaceSelectedText(self, x):
+        return self.editor.textCursor().insertText(x)
+        
+    def currentPosition(self):
+        return self.editor.textCursor().position().real
 
     def updateLineNumberArea(self, rect, dy):
         if dy:
-            self.editor.lineNumberArea.scroll(0, dy)
+            self.lineNumberArea.scroll(0, dy)
         else:
-            self.editor.lineNumberArea.update(0, rect.y(), self.editor.lineNumberArea.width(), rect.height())
+            self.lineNumberArea.update(0, rect.y(), 50, rect.height())
 
-        if rect.contains(self.editor.viewport().rect()):
-            self.updateLineNumberAreaWidth(0)
-
-    def resizeEvent(self, event):
         cr = self.editor.contentsRect()
-        self.editor.lineNumberArea.setGeometry(QRect(cr.left(), cr.top(), self.lineNumberAreaWidth(), cr.height()))
+        self.lineNumberArea.setGeometry(QRect(cr.left(), cr.top(), 50, cr.height()))
 
-    def lineNumberAreaPaintEvent(self, event):
-        """
-        extraSelections = []
-        lineColor = QColor('#C0C0C0').lighter(160)
-        selection = QTextEdit.ExtraSelection()
-        selection.format.setBackground(lineColor)
-        selection.format.setProperty(QTextFormat.FullWidthSelection, True)
-        selection.cursor = self.editor.textCursor()
-        selection.cursor.clearSelection()
-        extraSelections.append(selection)
-        self.editor.setExtraSelections(extraSelections)
-        """
-        
-
-        painter = QPainter(self.editor.lineNumberArea)
-        ###painter.fillRect(event.rect(), QColor('#C0C0C0'))
-        painter.setFont(dm.fontSQL)
-        block        = self.editor.firstVisibleBlock()
-        block_number = block.blockNumber() + 1
-        top          = self.editor.blockBoundingGeometry(block).translated(self.editor.contentOffset()).top()
-        bottom       = top + self.editor.blockBoundingRect(block).height()
-        
-        while block.isValid() and top <= event.rect().bottom():
-            if block.isVisible() and bottom >= event.rect().top():
-                number = str(block_number)
-                if self.editor.textCursor().block() == block:
-                    number = f"[{number}]"
-                painter.setPen(QColor('white'))
-                paint_rect = QRect(0, int(top), self.editor.lineNumberArea.width(), self.editor.fontMetrics().height())
-                painter.drawText(paint_rect, Qt.AlignCenter, number)
-
-            block = block.next()
-            top = bottom
-            bottom = top + self.editor.blockBoundingRect(block).height()
-            block_number += 1
-        painter.end()
-
-
-    def editor_keyPressEvent(self, event):
+    def editorKeyPressEvent(self, event):
         tc = self.editor.textCursor()
-        
+
         if event.key() == Qt.Key_Return:
             y = tc.blockNumber()
             i = -1
@@ -199,9 +180,6 @@ class QEditorConfig:
             else:
                 tc.insertText("  ")
             return
-        
-        if self.__keyPressEvt:
-            self.__keyPressEvt(event)
-        else:
-            QPlainTextEdit.keyPressEvent(self.editor, event)
-
+        if self.customKeyPressEvent:
+            self.customKeyPressEvent(event)
+        QPlainTextEdit.keyPressEvent(self.editor, event)

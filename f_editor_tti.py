@@ -1,7 +1,6 @@
 import lib.d_editor_tti as d_editor_tti
 import dm
 import dm_const
-import dm_editor
 import os
 import subprocess
 import time
@@ -11,32 +10,26 @@ from datetime import datetime
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
-
-
+from PyQt5.Qsci import *
 
 class form(QWidget):
     def __init__(self):
-        self.db            = dm.ORACLE()
-        self.db_timer      = dm.Worker(self.db_timer_thread, autostart=False)
-        
         super(form, self).__init__()
+
+        self.db               = dm.ORACLE()
+        self.db_timer         = dm.Worker(proc_run=self.db_timer_run, proc_fim=self.db_timer_stop, autostart=False)
+        self.mem_editor_popup = dm.MENU(["Find|Ctrl+F", "-", "Format SQL|Ctrl+Alt+F", "UPPERCASE|Ctrl+U", "lowercase|Ctrl+L", "-", "Paste with UNION|-", "Paste with ITENS|-", "-", "Comment|-", "Uncomment|-", "-", "Describe|-", "Properties|-",'Drop Table|-'],self.mem_editor_popup_click, self)
+        
         self.ui = d_editor_tti.Ui_d_editor_tti()
         self.ui.setupUi(self)
-        self.msgSc = QShortcut(QKeySequence('Ctrl+F'), self)
-        self.msgSc.activated.connect( lambda : dm.f_editor_find.showFindReplace(self.ui.mem_editor) )
+
         self.ui.bt_tool_clip.clicked.connect(self.bt_tool_clip_clicked)
         self.ui.bt_tool_csv.clicked.connect(self.bt_tool_csv_clicked)
         self.ui.bt_tool_insert.clicked.connect(self.bt_tool_insert_clicked)
         self.ui.bt_tool_column.clicked.connect(lambda: dm.f_editor_form.showForm(self.ui.grid_select, self.db) )
         self.ui.bt_tool_delete.clicked.connect( self.bt_tool_delete_clicked )
         self.ui.bt_fetch.clicked.connect(self.bt_fetch_clicked)
-        
-        self.ui.mem_editor.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.ui.mem_editor.customContextMenuRequested.connect( lambda position: self.G_popup_editor.exec_(self.ui.mem_editor.viewport().mapToGlobal(position)) )
-        self.ui.mem_editor.setPlainText("SELECT * FROM DUAL")
-        self.ui.mem_editor.textChanged.connect(self.mem_editor_textchanged)
-        
-        self.G_popup_editor = dm.createMenu(self, ["Format SQL|Ctrl+Alt+F", "UPPERCASE|Ctrl+U", "lowercase|Ctrl+L", "-", "Paste with UNION", "Paste with ITENS", "-", "Comment", "Uncomment", "-", "Describe", "Properties"],self.popup_editor_item_click)
+
         self.ui.grid_select.doubleClicked.connect( lambda: dm.f_editor_form.showForm(self.ui.grid_select, self.db) )
         self.ui.grid_select.verticalHeader().setDefaultSectionSize(20)
         self.ui.code_completation = QListWidget()
@@ -48,23 +41,10 @@ class form(QWidget):
         self.filename    = None
         self.objectname  = None
 
-        self.ui.mem_editor._ = dm_editor.QEditorConfig(self.ui.mem_editor, keyPressEvt=self.mem_editor_keyPressEvent)
-
-
-
-    ## ==============================================================================================
-    ## Tipo do Editor SQL PY OU TEXTO
-    ## ==============================================================================================
-
-    def getEditorType(self):
-        if self.filename != None:
-            if os.path.splitext(self.filename)[1].upper() == '.PY':
-                return dm_const.C_EDITOR_PYC
-            if os.path.splitext(self.filename)[1].upper() == '.SQL':
-                return dm_const.C_EDITOR_SQL
-            return dm_const.C_EDITOR_TXT
-
-        return dm_const.C_EDITOR_SQL
+        self.editorSQL = dm.EDITOR_SQL(text="SELECT * FROM DUAL", customContextMenu=self.mem_editor_popup_show)
+        self.editorSQL.textChanged.connect(self.mem_editor_textchanged)
+        self.editorSQL.keyPressEvent = self.mem_editor_keyPressEvent
+        self.ui.editorLayout.addWidget(self.editorSQL)
 
     ## ==============================================================================================
     ## TabSheets Titles and Icons
@@ -79,10 +59,8 @@ class form(QWidget):
             nome1 = "" if self.filename   == None else os.path.basename(self.filename) + changed
             nome2 = "" if self.objectname == None else "@" + self.objectname
             nome3 = "" if  nome1 == "" or nome2 == "" else " | " 
-
             if len(nome1 + nome2) == 0:
                 nome1 = f"SID={self.db.login_sid}"
-
             tab_pai.setTabText(tab_idx, (nome2 + nome3 + nome1).strip() )           
         if Icon != None:
             tab_pai.setTabIcon(tab_idx,Icon)   
@@ -94,38 +72,45 @@ class form(QWidget):
 
 
     def visibility_controls(self, b=False):
-        if self.getEditorType() == dm_const.C_EDITOR_PYC:
-            self.ui.pan_baixo.hide()
-        else:
-            self.ui.chk_all_text.setChecked(True)
-            self.ui.chk_run_user_local.setChecked(True)        
-            self.ui.bt_fetch.setVisible(b)
-            self.ui.bt_tool_clip.setVisible(b)
-            self.ui.bt_tool_column.setVisible(b)
-            self.ui.bt_tool_csv.setVisible(b)
-            self.ui.bt_tool_insert.setVisible(b)
-            self.ui.bt_tool_delete.setVisible(b)
-            self.ui.chk_all_text.setVisible(b)
-            self.ui.chk_parameters.setVisible(b)
-            self.ui.chk_run_user_local.setVisible(b)
-            self.ui.pc_baixo_grid.setTabVisible(1,False)
+        self.ui.chk_all_text.setChecked(True)
+        self.ui.chk_run_user_local.setChecked(True)        
+        self.ui.bt_fetch.setVisible(b)
+        self.ui.bt_tool_clip.setVisible(b)
+        self.ui.bt_tool_column.setVisible(b)
+        self.ui.bt_tool_csv.setVisible(b)
+        self.ui.bt_tool_insert.setVisible(b)
+        self.ui.bt_tool_delete.setVisible(b)
+        self.ui.chk_all_text.setVisible(b)
+        self.ui.chk_parameters.setVisible(b)
+        self.ui.chk_run_user_local.setVisible(b)
+        self.ui.pc_baixo_grid.setTabVisible(1,False)
 
 
     ## ==============================================================================================
     ## menu popup do editor
     ## ==============================================================================================
-            
-    def popup_editor_item_click(self):
-        txt = self.ui.mem_editor.textCursor().selection().toPlainText()
+    def mem_editor_popup_show(self, position):
+        txt = self.editorSQL.selectedText()
+        txt = "" if txt == None else txt
+        self.mem_editor_popup.showAction("drop_table",  txt.upper() in dm.all_tables)
+        self.mem_editor_popup.showAction("format_sql",  len(txt) > 0)
+        self.mem_editor_popup.exec_(self.editorSQL.viewport().mapToGlobal(position))
+
+
+    def mem_editor_popup_click(self):
+        txt = self.editorSQL.selectedText()
         
+        if self.sender().text() == "Find":
+            dm.f_editor_find.showFindReplace(self.editorSQL)
+
         if self.sender().text() == "UPPERCASE":
-            self.ui.mem_editor.textCursor().insertText(txt.upper())
+            self.editorSQL.replaceSelectedText(txt.upper())
 
         if self.sender().text() == "lowercase":
-            self.ui.mem_editor.textCursor().insertText(txt.lower())
+            self.editorSQL.replaceSelectedText(txt.lower())
 
         if self.sender().text() == "Format SQL":
-            txt = self.ui.mem_editor.textCursor().selection().toPlainText()
+            txt = self.editorSQL.selectedText()
             if len(txt) > 1:
                 arq = dm.generateFileName("fmt.sql")
                 jar = dm.generateFileName("dm_format_sql.jar")
@@ -134,28 +119,33 @@ class form(QWidget):
                     o.write(txt)
                     o.close()
                     x = subprocess.run(['java', '-jar', jar, arq ], capture_output=True, text=True).stdout
-                    self.ui.mem_editor.textCursor().insertText(x)
+                    self.editorSQL.replaceSelectedText(x)
                     os.remove(arq)
                 else:
                     dm.messageBox("dm_format_sql.jar not found")
             else:
                 dm.messageBox("No SQL Selected")            
 
+        if self.sender().text() == "Drop Table":
+            if txt in dm.all_tables:
+                dm.db.EXECUTE(p_sql='DROP TABLE ' + txt, direct=True)
+                dm.messageBox( mensagem=dm.db.status_msg )
+
         if self.sender().text() == "Paste with ITENS":
             x = ",\n".join( dm.clipboard.text().strip().split("\n") )
-            self.ui.mem_editor.textCursor().insertText( x.strip() )
+            self.editorSQL.replaceSelectedText( x.strip() )
 
         if self.sender().text() == "Paste with UNION":
             x = "\nUNION ALL\n".join(["SELECT '" + d.strip() + "' o from dual" for d in dm.clipboard.text().strip().split("\n")])
-            self.ui.mem_editor.textCursor().insertText(x)
+            self.editorSQL.replaceSelectedText(x)
 
         if self.sender().text() == "Comment":
             x = "/*" + txt.replace(r"\*", "|*").replace("*/", "*|") + "*/"
-            self.ui.mem_editor.textCursor().insertText(x)
+            self.editorSQL.replaceSelectedText(x)
 
         if self.sender().text() == "Uncomment":
             x = txt.replace("/*", "").replace("*/", "").replace("|*", "/*").replace("*|", "*/")
-            self.ui.mem_editor.textCursor().insertText(x)
+            self.editorSQL.replaceSelectedText(x)
 
         if self.sender().text() == "Describe":
             x = dm.db.SELECT(p_sql=dm_const.C_SQL_DESCRIBE % (txt.upper()), fetchSize=0)
@@ -198,45 +188,39 @@ class form(QWidget):
             event.ignore()
             self.ui.code_completation.close()
             if event.key() != Qt.Key_Escape:
-                self.ui.mem_editor.textCursor().insertText( self.ui.code_completation.currentItem().text() )
+                self.editorSQL.replaceSelectedText( self.ui.code_completation.currentItem().text() )
             return
         QListWidget.keyPressEvent(self.ui.code_completation, event)
 
     def mem_editor_keyPressEvent(self, event):
-        try:
-            tc = self.ui.mem_editor.textCursor()
+        if event.key() == 46:
+            word  = self.editorSQL.wordOnCursor()
+            lista = []
 
-            if event.key() == 46:
-                tc.select(QTextCursor.WordUnderCursor)
-                lista = []
+            if word.upper() in dm.all_users:
+                dm.db.SELECT(p_sql=dm_const.C_SQL_ALL_TABLES % (word), fetchSize=0)
+                lista = [x[0] for x in dm.db.col_data]
 
-                if tc.selectedText().upper() in dm.all_users:
-                    dm.db.SELECT(p_sql=dm_const.C_SQL_ALL_TABLES % (tc.selectedText()), fetchSize=0)
-                    lista = [x[0] for x in dm.db.col_data]
+            elif word.upper() in dm.all_tables:
+                dm.db.SELECT(p_sql=dm_const.C_SQL_ALL_TAB_COLUMNS % (word), fetchSize=0)
+                lista = [x[0] for x in dm.db.col_data]
 
-                elif tc.selectedText().upper() in dm.all_tables:
-                    dm.db.SELECT(p_sql=dm_const.C_SQL_ALL_TAB_COLUMNS % (tc.selectedText()), fetchSize=0)
-                    lista = [x[0] for x in dm.db.col_data]
+            else:
+                x = self.editorSQL.text().upper().replace(';', ' ').replace(',', ' ').replace("\n", ' ').replace('\t', ' ').replace('.', ' ').replace('*', ' ').replace(' SELECT ', ' ')
+                while x.find('  ') > 0:
+                    x = x.replace('  ', ' ')
+                info_a = x.split(' ')
+                for i, info in enumerate(info_a):
+                    if word.upper() == info.upper() and info_a[i-1] in dm.all_tables:
+                        dm.db.SELECT(p_sql=dm_const.C_SQL_ALL_TAB_COLUMNS % (info_a[i-1]), fetchSize=0)
+                        lista = [x[0] for x in dm.db.col_data]
+                        break
 
-                else:
-                    x = self.ui.mem_editor.toPlainText().upper().replace(';', ' ').replace(',', ' ').replace("\n", ' ').replace('\t', ' ').replace('.', ' ').replace('*', ' ').replace(' SELECT ', ' ')
-                    while x.find('  ') > 0:
-                        x = x.replace('  ', ' ')
-                    info_a = x.split(' ')
-                    for i, info in enumerate(info_a):
-                        if tc.selectedText().upper() == info.upper() and info_a[i-1] in dm.all_tables:
-                            dm.db.SELECT(p_sql=dm_const.C_SQL_ALL_TAB_COLUMNS % (info_a[i-1]), fetchSize=0)
-                            lista = [x[0] for x in dm.db.col_data]
-                            break
-
-                if len(lista) > 0:
-                    cr = self.ui.mem_editor.cursorRect()
-                    tt = self.ui.mem_editor.viewport().mapToGlobal(cr.topLeft())
-                    self.codeCompletation(lista, tt.x(), tt.y())
-        except Exception as e:
-            print( str(e) )
-        QPlainTextEdit.keyPressEvent(self.ui.mem_editor, event)
-
+            if len(lista) > 0:
+                cr = self.editorSQL.cursorRect()
+                tt = self.editorSQL.viewport().mapToGlobal(cr.topLeft())
+                self.codeCompletation(lista, tt.x(), tt.y())
+        QsciScintilla.keyPressEvent(self.editorSQL, event)
 
     ## ==============================================================================================
     ## toolbar - botoes grid
@@ -299,6 +283,7 @@ class form(QWidget):
                 self.bt.setText(f"Saved File generated_inserts.sql: {qtd} rows")
             else:
                 self.bt.setText(self.db.status_msg)
+
         except Exception as e:
             self.bt.setText(f"Error: { str(e) }")
 
@@ -346,6 +331,21 @@ class form(QWidget):
         if QMessageBox.question(self,"Confirm","Confirm export to csv?",QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
             self.bt = dm.createButtonWork()
             self.th = dm.Worker(proc_run=self.bt_tool_csv_clicked_start)
+            """
+            workbook = xlsxwriter.Workbook('/algar/relatorio.xlsx')
+            sheet = workbook.add_worksheet()
+
+            self.db.SELECT(p_sql=self.pegaSQL(), direct=self.ui.chk_run_user_local.isChecked(), fetchSize=0 )
+            for r, row in enumerate(self.db.col_data):
+                    for c, col in enumerate(row):
+                            if "LOB" in str(type(col)).upper():
+                                info = col.read()
+                            else:
+                                info = col
+                            sheet.write(r, c, info)
+
+            workbook.close()
+            """
 
     ##-------------
 
@@ -371,29 +371,37 @@ class form(QWidget):
     ## executar SQL
     ## ==============================================================================================
 
-    def db_timer_thread(self):
-        dt_ini = datetime.now()
-        self.tabTextIcon(Icon=dm.iconRed)
-        dm.f_principal.pc_editor_tabchange()
-        while self.db.in_execution:
-            dt_fim = datetime.now()
-            self.ui.lb_timer.setText(  str(dt_fim-dt_ini)[0:-7]  )
-            time.sleep(0.5)
+    def db_timer_stop(self):
+        self.ui.lb_timer.setText(  str(self.db_timer.dt_fim - self.db_timer.dt_ini)[0:-3]  )
         self.tabTextIcon(Icon=dm.iconBlue)
         dm.f_principal.pc_editor_tabchange()
-        self.ui.lb_timer.setText(  str(dt_fim - dt_ini)[0:-3]  )
+
+    def db_timer_start(self):
+        self.db_timer.stop   = False
+        self.db_timer.dt_ini = datetime.now()
+        self.db.in_execution = True
+        self.tabTextIcon(Icon=dm.iconRed)
+        dm.f_principal.pc_editor_tabchange()
+        self.db_timer.start()
+
+    def db_timer_run(self):
+        while self.db_timer.stop == False:
+            self.db_timer.dt_fim = datetime.now()
+            self.ui.lb_timer.setText(  str(self.db_timer.dt_fim-self.db_timer.dt_ini)[0:-7]  )
+            time.sleep(0.5)
+
 
 
 
     def pegaSQL(self):
-        sql = self.ui.mem_editor.toPlainText()
+        sql = self.editorSQL.text()
 
         if not self.ui.chk_all_text.isChecked():
-            sql = self.ui.mem_editor.textCursor().selection().toPlainText()
+            sql = self.editorSQL.selectedText()
             if len(sql.strip()) == 0:
-                x = self.ui.mem_editor.textCursor().position().real
+                x = self.editorSQL.currentPosition()
                 t = ""
-                for sql in self.ui.mem_editor.toPlainText().split(";"):
+                for sql in (self.editorSQL.text() + "\n").split(";\n"):
                     if len(t+sql) >= x:
                         break
                     t = t + sql
@@ -416,10 +424,7 @@ class form(QWidget):
 
 
     def executeSQL_finish(self):
-        if self.getEditorType() == dm_const.C_EDITOR_PYC:
-            dm.messageBox(self.db.status_msg, printable=(self.db.status_code != 0))
-
-        elif self.objectname != None:
+        if self.objectname != None:
             if self.db.status_code != 0:
                 dm.messageBox(self.db.status_msg)               
             else:
@@ -440,12 +445,8 @@ class form(QWidget):
 
 
     def executeSQL_start(self):
-        self.db_timer.start()
-
         try:
-            if self.getEditorType() == dm_const.C_EDITOR_PYC:
-                self.db.EVALPY(self.db._sql)
-            elif self.db._sql_type == 1:
+            if self.db._sql_type == 1:
                 self.db.SELECT(p_sql=self.db._sql, logger=True, direct=self.ui.chk_run_user_local.isChecked(), fetchSize=20 )
             else:
                 self.db.EXECUTE(p_sql=self.db._sql, logger=True, direct=self.ui.chk_run_user_local.isChecked())
@@ -453,21 +454,22 @@ class form(QWidget):
         except Exception as e:
             self.db.status_code = -1
             self.db.status_msg = str(e)
+            
+        self.db_timer.stop = True
 
 
     def executeSQL(self):
-        if self.getEditorType() != dm_const.C_EDITOR_TXT:
-            if self.db.prepare() == False:
-                dm.messageBox(self.db.status_msg) 
-                return
-            
-            self.ui.grid_select.setRowCount(0)
-            self.ui.grid_select.setColumnCount(0)
+        if self.db.prepare() == False:
+            dm.messageBox(self.db.status_msg) 
+            return
+        
+        self.ui.grid_select.setRowCount(0)
+        self.ui.grid_select.setColumnCount(0)
+        self.db._sql        = self.pegaSQL()
+        self.db._sql_type   = dm.tipoSQL(self.db._sql)                     
 
-            self.db._sql        = self.ui.mem_editor.toPlainText() if self.getEditorType() == dm_const.C_EDITOR_PYC else self.pegaSQL()
-            self.db._sql_type   = dm.tipoSQL(self.db._sql)                     
+        self.ui.bt_fetch.setVisible(self.db._sql_type == 1)
 
-            self.ui.bt_fetch.setVisible(self.db._sql_type == 1)
-
-            if self.db._sql != None:
-                self.th = dm.Worker(proc_run=self.executeSQL_start, proc_fim=self.executeSQL_finish)
+        if self.db._sql != None:
+            self.db_timer_start()
+            self.th = dm.Worker(proc_run=self.executeSQL_start, proc_fim=self.executeSQL_finish)

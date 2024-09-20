@@ -14,8 +14,9 @@ class form(QMainWindow):
         super(form, self).__init__()
         self.ui = d_principal.Ui_d_principal()
         self.ui.setupUi(self)
-        self.popup_config = dm.createMenu(self, ["Recall SQL|Ctrl+E", "View Sessions", "Find Objects", "Explain Query|F5", "CSV Updater", "-", "Recompile Invalid Objects", "-", "Reload Templates","-", "Config Tools","-","Export data Table"],self.popup_config_click)        
-        self.popup_tree   = dm.createMenu(self, ["View Code", "Query Data"],self.tree_objetos_popup_click)
+        self.actionConfigs_popup = dm.MENU(["Recall SQL|Ctrl+E", "View Sessions|-", "Find Objects|-", "Explain Query|F5", "CSV Updater|-", "-", "Recompile Invalid Objects|-", "-", "Reload Templates|-","-", "Config Tools|-","-","Export data Table|-"],self.actionConfigs_popup_click, self)        
+        self.tree_objetos_popup  = dm.MENU(["View Code|-", "Query Data|-"],self.tree_objetos_popup_click, self)
+
         self.ui.actionLogon.triggered.connect( lambda: dm.f_logon.showLogin() )
         self.ui.actionLogoff.triggered.connect(self.actionLogoff_click)
         self.ui.actionNewEditor.triggered.connect(self.actionNewEditor_click)
@@ -23,7 +24,7 @@ class form(QMainWindow):
         self.ui.actionStopSQL.triggered.connect( lambda: self.ui.pc_editor.currentWidget().db.stopSQL() )
         self.ui.actionCommit.triggered.connect(self.actionCommit_click)
         self.ui.actionRollback.triggered.connect(self.actionRollback_click)
-        self.ui.actionConfigs.triggered.connect( lambda: self.popup_config.exec_(QCursor.pos()) )
+        self.ui.actionConfigs.triggered.connect( lambda: self.actionConfigs_popup.exec_(QCursor.pos()) )
         self.ui.actionOpenEditor.triggered.connect(self.actionOpenEditor_click)
         self.ui.actionSaveEditor.triggered.connect(self.actionSaveEditor_click)
         self.ui.pc_editor.currentChanged.connect(self.pc_editor_tabchange)
@@ -31,10 +32,10 @@ class form(QMainWindow):
         self.ui.pc_editor.removeTab(0)
         self.ui.pc_editor.tabCloseRequested.connect( lambda index: (self.ui.pc_editor.widget(index).db.disconnect(), self.ui.pc_editor.removeTab(index)) )
         self.ui.tree_objetos.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.ui.tree_objetos.customContextMenuRequested.connect(self.tree_objetos_popup)   
+        self.ui.tree_objetos.customContextMenuRequested.connect(self.tree_objetos_popup_show)   
         self.ui.tree_templates.doubleClicked.connect( self.tree_templates_doubleclicked )
         self.ui.splitter.setSizes([300, 1000])
-        self.montaTreeTemplate()
+        self.tree_templates_montar()
         self.setWindowTitle(dm_const.C_APP_VERSION)
         
     
@@ -46,7 +47,7 @@ class form(QMainWindow):
     def tree_objetos_popup_view_code_finish(self):
         for txt in dm.db.status_msg.split("<end_package_spec>"):
             tab                = self.actionNewEditor_click()
-            tab.ui.mem_editor.setPlainText(txt)
+            tab.editorSQL(txt)
             tab.visibility_controls( False )
             tab.objectname = self.bt.info
             tab.tabTextIcon()
@@ -61,6 +62,11 @@ class form(QMainWindow):
         self.th      = dm.Worker(proc_run=lambda:(dm.db.DDL(owner, type, name)), proc_fim=self.tree_objetos_popup_view_code_finish)
 
 
+    def tree_objetos_popup_show(self, position):
+        x = self.ui.tree_objetos.currentItem().text(1)
+        if x:
+            self.tree_objetos_popup.showAction('query_data', "/TABLE/" in x or "/VIEW/" in x )
+            self.tree_objetos_popup.exec_(self.ui.tree_objetos.viewport().mapToGlobal(position))
 
 
     def tree_objetos_popup_click(self):
@@ -73,17 +79,8 @@ class form(QMainWindow):
         if self.sender().text() == "Query Data":
             xx  = self.ui.tree_objetos.currentItem().text(1).split("/")
             tab = self.actionNewEditor_click()
-            tab.ui.mem_editor.setPlainText("SELECT * FROM " + xx[0] + "." + xx[2])
+            tab.editorSQL.setText("SELECT * FROM " + xx[0] + "." + xx[2])
             tab.executeSQL()
-
-
-
-    def tree_objetos_popup(self, position):
-        x = self.ui.tree_objetos.currentItem().text(1)
-        if x:
-            self.popup_tree.actions()[1].setVisible( "/TABLE/" in x or "/VIEW/" in x )
-            self.popup_tree.exec_(self.ui.tree_objetos.viewport().mapToGlobal(position))
-
 
 
     def tree_objetos_montar(self):
@@ -153,7 +150,7 @@ class form(QMainWindow):
             tab.objectname = B
             tab.visibility_controls( False )
 
-        tab.ui.mem_editor.setPlainText(dados)
+        tab.editorSQL.setText(dados)
         tab.tabTextIcon()
 
     def actionOpenEditor_click(self):
@@ -175,11 +172,11 @@ class form(QMainWindow):
             if nome:
                 tab.filename = nome
                 xx = open(nome, "w")
-                xx.write(tab.ui.mem_editor.toPlainText())
+                xx.write(tab.editorSQL.text())
                 xx.close()
                 tab.tabTextIcon()
                 if novo:
-                    self.montaTreeTemplate()
+                    self.tree_templates_montar()
             
 
     ## ==============================================================================================
@@ -226,9 +223,9 @@ class form(QMainWindow):
         tab.tabTextIcon(Icon=dm.iconBlue)
 
 
-    def popup_config_click(self):
+    def actionConfigs_popup_click(self):
         if self.sender().text() == "Reload Templates":
-            self.montaTreeTemplate()
+            self.tree_templates_montar()
 
         elif self.sender().text() == "Export data Table":
             if self.ui.pc_editor.currentWidget():
@@ -242,7 +239,7 @@ class form(QMainWindow):
             self.th = dm.Worker(proc_run=self.popup_config_recompile, proc_fim=x)
         else:
             ff = self.ui.pc_editor.currentWidget()
-            dm.f_editor.showForm( self.sender().text() , "" if ff == None else ff.ui.mem_editor.toPlainText() )
+            dm.f_editor.showForm( self.sender().text() , "" if ff == None else ff.editorSQL.text() )
 
 
     ## ==============================================================================================
@@ -258,14 +255,15 @@ class form(QMainWindow):
                 webbrowser.open_new_tab(fullName)
 
             elif os.path.splitext(fullName)[1].upper() == '.PY':
-                self.actionOpenEditor_loadfromfile(fileName=fullName)
-                self.ui.pc_editor.currentWidget().visibility_controls()
-                
+                os.system( f"code {fullName}" )
+                #self.actionOpenEditor_loadfromfile(fileName=fullName)
+                #self.ui.pc_editor.currentWidget().visibility_controls()
+                #dm.f_editor.showForm("Editor", "\n".join( dm.loadFromFile(fullName)) )
             else:
                 self.actionOpenEditor_loadfromfile(fileName=fullName)
 
 
-    def montaTreeTemplate(self):
+    def tree_templates_montar(self):
         dir_path = dm.configValue(tag="template_dir")
         model    = QFileSystemModel()
         model.setRootPath(dir_path)        

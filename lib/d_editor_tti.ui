@@ -6,14 +6,14 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1059</width>
+    <width>815</width>
     <height>512</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
+  <layout class="QVBoxLayout" name="verticalLayout_5">
    <property name="spacing">
     <number>0</number>
    </property>
@@ -34,16 +34,8 @@
      <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
-     <widget class="QPlainTextEdit" name="mem_editor">
-      <property name="font">
-       <font>
-        <family>Monospace</family>
-        <pointsize>11</pointsize>
-       </font>
-      </property>
-      <property name="lineWrapMode">
-       <enum>QPlainTextEdit::NoWrap</enum>
-      </property>
+     <widget class="QWidget" name="verticalLayoutWidget">
+      <layout class="QVBoxLayout" name="editorLayout"/>
      </widget>
      <widget class="QWidget" name="pan_baixo" native="true">
       <layout class="QVBoxLayout" name="verticalLayout_2">

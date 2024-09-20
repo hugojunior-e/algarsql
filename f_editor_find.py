@@ -23,23 +23,23 @@ class form(QDialog):
         self.editor     = editor
         self.locates    = []
         self.select_idx = 0
-        self.ui.edt_text.setText( editor.textCursor().selectedText() )
+        self.ui.edt_text.setText( editor.selectedText() )
         self.show()
 
     def select(self):
         if len(self.locates) == 0 or self.select_idx == len(self.locates):
             dm.messageBox("no occurrence found")
             return False
-        cursor = self.editor.textCursor()
-        cursor.setPosition( self.locates[self.select_idx].start())
-        cursor.setPosition( self.locates[self.select_idx].start() + len(self.ui.edt_text.text()) , QTextCursor.KeepAnchor)
-        self.editor.setTextCursor(cursor)
+        x = self.locates[self.select_idx].start()
+        self.editor.setPosition(x)
+        self.editor.setPositionSel(x + len(self.ui.edt_text.text()))
+
         self.select_idx = self.select_idx + 1
         return True
 
     def find(self):
         flags    = re.IGNORECASE
-        txt_full = self.editor.toPlainText()
+        txt_full = self.editor.text()
         txt_find = re.escape(self.ui.edt_text.text())
 
         if self.ui.chk_match_case.isChecked():
@@ -56,15 +56,13 @@ class form(QDialog):
 
     def replace(self):
         self.find()
-        cursor = self.editor.textCursor()
-        if cursor.hasSelection():
-            cursor.insertText(self.ui.edt_replace.text())
+        if self.editor.hasSelectedText():
+            self.editor.replaceSelectedText(self.ui.edt_replace.text())
             
     def replace_all(self):
         while True:
             self.find()
-            cursor = self.editor.textCursor()
-            if cursor.hasSelection():
-                cursor.insertText(self.ui.edt_replace.text())
+            if self.editor.hasSelectedText():
+                self.editor.replaceSelectedText(self.ui.edt_replace.text())
             else:
                 break

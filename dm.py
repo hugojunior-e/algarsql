@@ -2,7 +2,8 @@ import oracledb
 import os
 import sys
 import sqlite3
-import platform
+import platform 
+import re
 
 import f_principal
 import f_logon
@@ -14,6 +15,8 @@ import dm_const
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import *
+from PyQt5.Qsci import *
+
 from threading import Thread
 
 ## ==============================================================================================
@@ -77,29 +80,6 @@ def createButtonWork(Run=None, Size=QSize(600, 100), Text="wait a few seconds...
     G.show()
     return G
 
-
-
- 
-
-## ==============================================================================================
-## create menus
-## ==============================================================================================
-
-def createMenu(obj, items, procmenuClick):
-    menu = QMenu()
-    menu.setStyleSheet("QMenu {background-color:white; color:black} QMenu::item:selected {background:blue; color:white}") 
-    for x in items:
-        if x == "-":
-            menu.addSeparator()
-        else:
-            a = QAction(x.split("|")[0], obj)
-            if "|" in x:
-                a.setShortcut(QKeySequence(x.split("|")[1]))
-                a.setShortcutVisibleInContextMenu(True)
-            a.triggered.connect(procmenuClick)
-            obj.addAction(a)
-            menu.addAction(a)
-    return menu
 
 ## ==============================================================================================
 ## funcoes de leitura/escrita de configuracoes/
@@ -210,6 +190,110 @@ def tipoSQL(SQL,checkCreateObj=False):
         return 1
     return 2
 
+
+## ==============================================================================================
+## create menus
+## ==============================================================================================
+
+class MENU(QMenu):
+    def __init__(self, items, procmenuClick, parent=None):
+        super(MENU, self).__init__("menu")
+        self.acoes = [ "-" if x == "-" else (x.split("|")[0]).lower().replace(" ","_") for x in items ]
+        self.setStyleSheet("QMenu {background-color:white; color:black} QMenu::item:selected {background:blue; color:white}") 
+
+        for x in items:
+            if x == "-":
+                self.addSeparator()
+            else:
+                inf = x.split("|")
+                a   = QAction( inf[0], parent)
+                if len(inf[1]) > 1:
+                    a.setShortcut(QKeySequence(inf[1]))
+                    a.setShortcutVisibleInContextMenu(True)
+                a.triggered.connect(procmenuClick)
+                self.addAction(a)
+                parent.addAction(a)
+
+    def showAction(self, n, b): 
+        self.actions()[ self.acoes.index(n)  ].setDisabled( not b )
+        
+## ==============================================================================================
+## SQLEditor Personalizado
+## ==============================================================================================
+
+class EDITOR_SQL(QsciScintilla):
+    def __init__(self, text="", customContextMenu=None):
+        super().__init__()
+        fontSQL       = QFont()
+        fontSQL.setFamily("Monospace")
+        fontSQL.setPointSize(10)
+
+        self.setFont(fontSQL)     
+
+        # Configurações básicas do editor
+        self.setUtf8(True)
+        self.setAutoIndent(True)
+        self.setIndentationGuides(True)  # Mostra guias de indentação
+        self.setIndentationsUseTabs(False)  # Usa espaços em vez de tabs
+        self.setTabWidth(2)  # Define a largura da indentação em 4 espaços
+        
+        # Adicionando a numeração de linhas
+        self.setMarginsFont(fontSQL)
+        self.setMarginWidth(0, "00000")  # Margem 0 para números de linha
+        self.setMarginLineNumbers(0, True)
+        
+
+        # Lexer SQL para realce de sintaxe
+        self.sql_lexer = QsciLexerSQL()
+        self.sql_lexer.setFont(fontSQL)
+        self.sql_lexer.setColor(  Qt.yellow , QsciLexerSQL.Keyword)
+        self.sql_lexer.setColor(  QColor("#56B6C2") , QsciLexerSQL.SingleQuotedString)
+        
+        self.setLexer(self.sql_lexer)        
+
+        # Destacar a Linha corrente
+        self.setCaretLineVisible(False)
+        self.setCaretLineBackgroundColor(QColor('000000'))   
+        self.setCaretForegroundColor(QColor('#FFFFFF'))
+
+        # Ativar o pareamento de parênteses
+        self.setBraceMatching(QsciScintilla.SloppyBraceMatch)  # Pode ser 'StrictBraceMatch' ou 'SloppyBraceMatch'
+        ##self.setMatchedBraceForegroundColor(Qt.green)
+        ##self.setMatchedBraceBackgroundColor(Qt.black)
+        ##self.setUnmatchedBraceForegroundColor( QColor("black") )
+
+        if customContextMenu:
+            self.setContextMenuPolicy(Qt.CustomContextMenu )
+            self.customContextMenuRequested.connect(customContextMenu)        
+
+        self.setText(text)
+
+    def wordOnCursor(self):
+        line, index = self.getCursorPosition()
+        word = self.wordAtPosition(self.positionFromLineIndex(line, index))
+        return word
+
+    def currentPosition(self):
+        return self.SendScintilla(QsciScintilla.SCI_GETCURRENTPOS)
+    
+    def setPosition(self, pos):
+            self.SendScintilla(QsciScintilla.SCI_GOTOPOS, pos)
+            self.ensureCursorVisible()    
+
+    def setPositionSel(self, pos):
+            self.SendScintilla(QsciScintilla.SCI_SETCURRENTPOS, pos)
+            self.ensureCursorVisible()    
+    
+    def unselect(self):
+        self.SendScintilla(QsciScintilla.SCI_CLEARSELECTIONS)
+
+    def cursorRect(self):
+        position = self.SendScintilla(QsciScintilla.SCI_GETCURRENTPOS)
+        x = self.SendScintilla(QsciScintilla.SCI_POINTXFROMPOSITION, 0, position)
+        y = self.SendScintilla(QsciScintilla.SCI_POINTYFROMPOSITION, 0, position)
+        line_height = self.SendScintilla(QsciScintilla.SCI_TEXTHEIGHT, 0)
+        return QRect(x, y, 1, line_height) 
+    
 ## ==============================================================================================
 ## thread
 ## ==============================================================================================
@@ -267,8 +351,6 @@ class ORACLE:
             return f"to_date('{v}','YYYY-MM-DD HH24:MI:SS')"
         else:
             return f"'{str(v)}'"
-        
-
 
     def prepare(self):
         try:
@@ -384,7 +466,7 @@ class ORACLE:
             if direct or self.is_direct:
                 (self.cur.executemany if p_many else self.cur.execute) ( statement=p_sql , parameters=p_bind_values)
                 self.status_code   = 0
-                self.status_msg    = "SUCESSO"
+                self.status_msg    = f"SUCESSO - {self.cur.rowcount} rows"
             else:
                 ret1  = self.cur.var(int)
                 ret2  = self.cur.var(str)
@@ -468,12 +550,19 @@ class ORACLE:
         self.EXECUTE(p_sql='DELETE FROM PLAN_TABLES',direct=True)
         self.EXECUTE(p_sql='EXPLAIN PLAN FOR\n' + p_sql,direct=True)
         self.SELECT(p_sql=dm_const.C_SQL_EXPLAIN,direct=True)
+        
 
 
     def EVALPY(self, p_code):
-        self.in_execution = True
-        codevars = {"db": self.con, 'messageBox': messageBox}
-        exec(p_code,codevars)
+        self.status_code = 0
+        self.status_msg  = "OK"
+        try:
+            self.in_execution = True
+            codevars = {"db": self.con, 'messageBox': messageBox}
+            exec(p_code,codevars)
+        except Exception as e:
+            self.status_code = -1
+            self.status_msg  = str(e)
         self.in_execution = False
 
 
