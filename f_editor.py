@@ -152,7 +152,7 @@ class form(QDialog):
             return
 
         self.bt = dm.createButtonWork() 
-        self.th = dm.Worker(proc_run=self.bt_csv_populate_thread)
+        self.th = dm.WORKER(proc_run=self.bt_csv_populate_thread)
 
 
     def bt_csv_of_clicked(self):
@@ -170,8 +170,9 @@ class form(QDialog):
     ## ==============================================================================================
 
     def bt_explain_clicked(self):
+        self.ui.tree_explain.clear()
         nos = [ None for i in range(5000) ]
-        dm.db.EXPLAIN(p_sql=dm_const.C_SQL_EXPLAIN)        
+        dm.db.EXPLAIN(p_sql=self.ui.mem_explain.toPlainText())        
         if dm.db.status_code == 0:
             for reg in dm.db.cur.fetchall():
                 id = reg[0]

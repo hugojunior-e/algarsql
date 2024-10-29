@@ -17,8 +17,8 @@ class form(QWidget):
         super(form, self).__init__()
 
         self.db               = dm.ORACLE()
-        self.db_timer         = dm.Worker(proc_run=self.db_timer_run, proc_fim=self.db_timer_stop, autostart=False)
-        self.mem_editor_popup = dm.MENU(["Find|Ctrl+F", "-", "Format SQL|Ctrl+Alt+F", "UPPERCASE|Ctrl+U", "lowercase|Ctrl+L", "-", "Paste with UNION|-", "Paste with ITENS|-", "-", "Comment|-", "Uncomment|-", "-", "Describe|-", "Properties|-",'Drop Table|-'],self.mem_editor_popup_click, self)
+        self.db_timer         = dm.WORKER(proc_run=self.db_timer_run, proc_fim=self.db_timer_stop, autostart=False)
+        self.mem_editor_popup = dm.MENU(["Find|Ctrl+F", "-", "Format SQL|Ctrl+Alt+F", "UPPERCASE|Ctrl+U", "lowercase|Ctrl+L", "-", "Paste with UNION|-", "Paste with ITENS|-", "-", "Comment|-", "Uncomment|-", "-", "Describe|-", "Properties|-",'Drop Table|-',"-","Line Guides|-"],self.mem_editor_popup_click, self)
         
         self.ui = d_editor_tti.Ui_d_editor_tti()
         self.ui.setupUi(self)
@@ -92,6 +92,8 @@ class form(QWidget):
     def mem_editor_popup_show(self, position):
         txt = self.editorSQL.selectedText()
         txt = "" if txt == None else txt
+        self.mem_editor_popup.showAction("describe",    txt.upper() in dm.all_tables)
+        self.mem_editor_popup.showAction("properties",  txt.upper() in dm.all_tables)
         self.mem_editor_popup.showAction("drop_table",  txt.upper() in dm.all_tables)
         self.mem_editor_popup.showAction("format_sql",  len(txt) > 0)
         self.mem_editor_popup.exec_(self.editorSQL.viewport().mapToGlobal(position))
@@ -103,13 +105,21 @@ class form(QWidget):
         if self.sender().text() == "Find":
             dm.f_editor_find.showFindReplace(self.editorSQL)
 
-        if self.sender().text() == "UPPERCASE":
+        elif self.sender().text() == "Line Guides":
+            self.editorSQL.setIndentationGuides(True)
+            self.sender().setText("Hide Line Guides")
+
+        elif self.sender().text() == "Hide Line Guides":
+            self.editorSQL.setIndentationGuides(False)
+            self.sender().setText("Line Guides")
+
+        elif self.sender().text() == "UPPERCASE":
             self.editorSQL.replaceSelectedText(txt.upper())
 
-        if self.sender().text() == "lowercase":
+        elif self.sender().text() == "lowercase":
             self.editorSQL.replaceSelectedText(txt.lower())
 
-        if self.sender().text() == "Format SQL":
+        elif self.sender().text() == "Format SQL":
             txt = self.editorSQL.selectedText()
             if len(txt) > 1:
                 arq = dm.generateFileName("fmt.sql")
@@ -126,35 +136,35 @@ class form(QWidget):
             else:
                 dm.messageBox("No SQL Selected")            
 
-        if self.sender().text() == "Drop Table":
+        elif self.sender().text() == "Drop Table":
             if txt in dm.all_tables:
                 dm.db.EXECUTE(p_sql='DROP TABLE ' + txt, direct=True)
                 dm.messageBox( mensagem=dm.db.status_msg )
 
-        if self.sender().text() == "Paste with ITENS":
+        elif self.sender().text() == "Paste with ITENS":
             x = ",\n".join( dm.clipboard.text().strip().split("\n") )
             self.editorSQL.replaceSelectedText( x.strip() )
 
-        if self.sender().text() == "Paste with UNION":
+        elif self.sender().text() == "Paste with UNION":
             x = "\nUNION ALL\n".join(["SELECT '" + d.strip() + "' o from dual" for d in dm.clipboard.text().strip().split("\n")])
             self.editorSQL.replaceSelectedText(x)
 
-        if self.sender().text() == "Comment":
+        elif self.sender().text() == "Comment":
             x = "/*" + txt.replace(r"\*", "|*").replace("*/", "*|") + "*/"
             self.editorSQL.replaceSelectedText(x)
 
-        if self.sender().text() == "Uncomment":
+        elif self.sender().text() == "Uncomment":
             x = txt.replace("/*", "").replace("*/", "").replace("|*", "/*").replace("*|", "*/")
             self.editorSQL.replaceSelectedText(x)
 
-        if self.sender().text() == "Describe":
+        elif self.sender().text() == "Describe":
             x = dm.db.SELECT(p_sql=dm_const.C_SQL_DESCRIBE % (txt.upper()), fetchSize=0)
             if dm.db.status_code == 0:
                 self.grid_describe = QTableWidget()
                 dm.populateGrid(self.grid_describe, dm.db.col_data, dm.db.col_names)
                 self.grid_describe.show()
 
-        if self.sender().text() == "Properties":
+        elif self.sender().text() == "Properties":
             x = dm.db.SELECT(p_sql=dm_const.C_SQL_PROPERTIES % (txt.upper()), fetchSize=0)
             if dm.db.status_code == 0:
                 col_data = []
@@ -259,7 +269,7 @@ class form(QWidget):
 
     def bt_fetch_clicked(self):
         self.bt        = dm.createButtonWork()
-        self.th        = dm.Worker(proc_run=self.bt_fetch_clicked_start)
+        self.th        = dm.WORKER(proc_run=self.bt_fetch_clicked_start)
 
     ##-------------
 
@@ -296,7 +306,7 @@ class form(QWidget):
         if ok:    
             self.bt              = dm.createButtonWork()
             self.bt.H_table_name = table_name           
-            self.th              = dm.Worker(proc_run=self.bt_tool_insert_clicked_start)
+            self.th              = dm.WORKER(proc_run=self.bt_tool_insert_clicked_start)
 
     ##-------------
 
@@ -330,7 +340,7 @@ class form(QWidget):
                 
         if QMessageBox.question(self,"Confirm","Confirm export to csv?",QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
             self.bt = dm.createButtonWork()
-            self.th = dm.Worker(proc_run=self.bt_tool_csv_clicked_start)
+            self.th = dm.WORKER(proc_run=self.bt_tool_csv_clicked_start)
             """
             workbook = xlsxwriter.Workbook('/algar/relatorio.xlsx')
             sheet = workbook.add_worksheet()
@@ -442,7 +452,7 @@ class form(QWidget):
                 dm.populateGrid(grid=self.ui.grid_select, data=self.db.col_data, columnNames=self.db.col_names, columnTypes=self.db.col_types)
         
         self.ui.mem_dbms.setPlainText(self.db.dbms_output)
-
+        self.db_timer.stop = True
 
     def executeSQL_start(self):
         try:
@@ -450,13 +460,9 @@ class form(QWidget):
                 self.db.SELECT(p_sql=self.db._sql, logger=True, direct=self.ui.chk_run_user_local.isChecked(), fetchSize=20 )
             else:
                 self.db.EXECUTE(p_sql=self.db._sql, logger=True, direct=self.ui.chk_run_user_local.isChecked())
-
         except Exception as e:
             self.db.status_code = -1
             self.db.status_msg = str(e)
-            
-        self.db_timer.stop = True
-
 
     def executeSQL(self):
         if self.db.prepare() == False:
@@ -472,4 +478,4 @@ class form(QWidget):
 
         if self.db._sql != None:
             self.db_timer_start()
-            self.th = dm.Worker(proc_run=self.executeSQL_start, proc_fim=self.executeSQL_finish)
+            self.th = dm.WORKER(proc_run=self.executeSQL_start, proc_fim=self.executeSQL_finish)

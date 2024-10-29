@@ -47,7 +47,7 @@ class form(QMainWindow):
     def tree_objetos_popup_view_code_finish(self):
         for txt in dm.db.status_msg.split("<end_package_spec>"):
             tab                = self.actionNewEditor_click()
-            tab.editorSQL(txt)
+            tab.editorSQL.setText(txt)
             tab.visibility_controls( False )
             tab.objectname = self.bt.info
             tab.tabTextIcon()
@@ -59,7 +59,7 @@ class form(QMainWindow):
             return
         self.bt      = dm.createButtonWork(Run=lambda:(self.th.thread.terminate(),self.bt.close()), Text=f"Extracting DML {owner + '.' + name}")
         self.bt.info = owner + '.' + name
-        self.th      = dm.Worker(proc_run=lambda:(dm.db.DDL(owner, type, name)), proc_fim=self.tree_objetos_popup_view_code_finish)
+        self.th      = dm.WORKER(proc_run=lambda:(dm.db.DDL(owner, type, name)), proc_fim=self.tree_objetos_popup_view_code_finish)
 
 
     def tree_objetos_popup_show(self, position):
@@ -83,11 +83,11 @@ class form(QMainWindow):
             tab.executeSQL()
 
 
-    def tree_objetos_montar(self):
-        self.ui.tree_objetos.clear()
+    def tree_objetos_montar_start(self):
         dm.db.SELECT( p_sql=dm_const.C_SQL_TREE, fetchSize=0 )
         dm.all_tables = []
         dm.all_users  = []
+        topLevelItems = []
         if dm.db.status_code == 0:
             v_OWNER       = '-'
             v_OBJECT_TYPE = '-'            
@@ -96,7 +96,7 @@ class form(QMainWindow):
                     dm.all_users   = dm.all_users + [x[0]]
                     pai = QTreeWidgetItem([ x[0] ])
                     pai.setIcon(0,dm.iconUser)
-                    self.ui.tree_objetos.addTopLevelItem(pai)
+                    topLevelItems.append(pai)
 
                 if x[0] + x[1] != v_OWNER + v_OBJECT_TYPE:
                     meio            = QTreeWidgetItem([ x[1] ])
@@ -111,6 +111,11 @@ class form(QMainWindow):
                     dm.all_tables = dm.all_tables + [ x[2] ]
                 v_OWNER       = x[0]
                 v_OBJECT_TYPE = x[1]
+        self.ui.tree_objetos.__topLevelItems = topLevelItems
+
+    def tree_objetos_montar(self):
+        self.ui.tree_objetos.clear()
+        self.th1 = dm.WORKER(proc_run=self.tree_objetos_montar_start, proc_fim=lambda: self.ui.tree_objetos.addTopLevelItems(self.ui.tree_objetos.__topLevelItems) )
 
     ## ==============================================================================================
     ## botoes do toolbar 
@@ -230,13 +235,13 @@ class form(QMainWindow):
         elif self.sender().text() == "Export data Table":
             if self.ui.pc_editor.currentWidget():
                 self.bt = dm.createButtonWork()
-                self.th = dm.Worker(proc_run=self.popup_config_export_data)
+                self.th = dm.WORKER(proc_run=self.popup_config_export_data)
 
 
         elif self.sender().text() == "Recompile Invalid Objects":
             x       = lambda: dm.f_editor.showForm("Editor", "\n".join( self.bt.H_msg_ret ) )
             self.bt = dm.createButtonWork(Run=lambda:(self.th.thread.terminate(),self.bt.close(), x))
-            self.th = dm.Worker(proc_run=self.popup_config_recompile, proc_fim=x)
+            self.th = dm.WORKER(proc_run=self.popup_config_recompile, proc_fim=x)
         else:
             ff = self.ui.pc_editor.currentWidget()
             dm.f_editor.showForm( self.sender().text() , "" if ff == None else ff.editorSQL.text() )

@@ -215,11 +215,25 @@ class MENU(QMenu):
                 parent.addAction(a)
 
     def showAction(self, n, b): 
-        self.actions()[ self.acoes.index(n)  ].setDisabled( not b )
+        self.actions()[ self.acoes.index(n)  ].setVisible( b )
         
 ## ==============================================================================================
 ## SQLEditor Personalizado
 ## ==============================================================================================
+class CustomSQLLexer(QsciLexerSQL):
+    def __init__(self, parent=None):
+        super(CustomSQLLexer, self).__init__(parent)
+
+    def keywords(self, set_number):
+        if set_number == 5:
+            return QsciLexerSQL.keywords(self, set_number) + " utl_file utl_http mod replace translate instr reverse regexp_instr regexp_replace regexp_substr regexp_count add_months lpad rpad trunc to_date to_char to_number nvl decode sysdate count avg sum max min case nvl2 trim substr upper lower initcap"
+        elif set_number == 6:
+            return 'type pls_integer binary_integer long raw number varchar varchar2 clob integer char date timestamp int blob'
+        elif set_number == QsciLexerSQL.Keyword:
+            return QsciLexerSQL.keywords(self, QsciLexerSQL.Keyword) + " bulk collect record elsif loop package body"
+        else:
+            return QsciLexerSQL.keywords(self, set_number)
+
 
 class EDITOR_SQL(QsciScintilla):
     def __init__(self, text="", customContextMenu=None):
@@ -233,7 +247,7 @@ class EDITOR_SQL(QsciScintilla):
         # Configurações básicas do editor
         self.setUtf8(True)
         self.setAutoIndent(True)
-        self.setIndentationGuides(True)  # Mostra guias de indentação
+        self.setIndentationGuides(False)  # Mostra guias de indentação
         self.setIndentationsUseTabs(False)  # Usa espaços em vez de tabs
         self.setTabWidth(2)  # Define a largura da indentação em 4 espaços
         
@@ -244,12 +258,17 @@ class EDITOR_SQL(QsciScintilla):
         
 
         # Lexer SQL para realce de sintaxe
-        self.sql_lexer = QsciLexerSQL()
+        self.sql_lexer = CustomSQLLexer()
         self.sql_lexer.setFont(fontSQL)
         self.sql_lexer.setColor(  Qt.yellow , QsciLexerSQL.Keyword)
         self.sql_lexer.setColor(  QColor("#56B6C2") , QsciLexerSQL.SingleQuotedString)
-        
+        self.sql_lexer.setColor(  QColor("#56B6C2") , QsciLexerSQL.DoubleQuotedString)
+        self.sql_lexer.setColor(  Qt.cyan , QsciLexerSQL.KeywordSet5)
+        self.sql_lexer.setColor(  Qt.magenta , QsciLexerSQL.KeywordSet6)
+        self.sql_lexer.setColor(  Qt.magenta , QsciLexerSQL.Number)
         self.setLexer(self.sql_lexer)        
+
+        print(self.sql_lexer.keywords(8))
 
         # Destacar a Linha corrente
         self.setCaretLineVisible(False)
@@ -267,10 +286,10 @@ class EDITOR_SQL(QsciScintilla):
             self.customContextMenuRequested.connect(customContextMenu)        
 
         self.setText(text)
-
+    
     def wordOnCursor(self):
         line, index = self.getCursorPosition()
-        word = self.wordAtPosition(self.positionFromLineIndex(line, index))
+        word = self.wordAtLineIndex(line, index)
         return word
 
     def currentPosition(self):
@@ -298,12 +317,12 @@ class EDITOR_SQL(QsciScintilla):
 ## thread
 ## ==============================================================================================
 
-
-class Worker(QObject):
+class WORKER(QObject):
     finished = pyqtSignal()
-    def __init__(self, proc_run, proc_fim=None, autostart=True):
+    def __init__(self, proc_run=None, proc_fim=None, autostart=True):
         super().__init__()
         self.thread = QThread()
+
         self.proc_run = proc_run
         self.moveToThread(self.thread)
         self.finished.connect(self.thread.quit)        
@@ -317,7 +336,8 @@ class Worker(QObject):
         self.thread.start()
 
     def run(self):
-        self.proc_run()
+        if self.proc_run:
+            self.proc_run()
         self.finished.emit()  
 
 
@@ -362,7 +382,7 @@ class ORACLE:
     
     def __connect(self):
         try:
-            self.con          = oracledb.connect( user=self.p_usuario, password=self.p_senha, dsn=self.p_tns )
+            self.con = oracledb.connect( user=self.p_usuario, password=self.p_senha, dsn=self.p_tns )
         except Exception as e:
             self.status_code = -1
             self.status_msg  = str(e)
@@ -393,7 +413,6 @@ class ORACLE:
             
             self.cur          = self.con.cursor()
             self.cur.execute(dm_const.C_SQL_START)
-            self.cur.execute(dm_const.C_SQL_ENABLE_WARN)
 
             for r in self.cur.execute("select global_name, banner, Sys_Context('USERENV', 'SID') from global_name, v$version").fetchall():
                 self.login_global_name = r[0]
@@ -547,7 +566,7 @@ class ORACLE:
 
 
     def EXPLAIN(self, p_sql):
-        self.EXECUTE(p_sql='DELETE FROM PLAN_TABLES',direct=True)
+        self.EXECUTE(p_sql='DELETE FROM PLAN_TABLE',direct=True)
         self.EXECUTE(p_sql='EXPLAIN PLAN FOR\n' + p_sql,direct=True)
         self.SELECT(p_sql=dm_const.C_SQL_EXPLAIN,direct=True)
         
