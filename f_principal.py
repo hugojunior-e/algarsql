@@ -1,4 +1,4 @@
-import lib.d_principal as d_principal
+import ui.d_principal as d_principal
 import dm
 import os
 import dm_const
@@ -204,7 +204,7 @@ class form(QMainWindow):
         
     def popup_config_export_data(self):
         tab = self.ui.pc_editor.currentWidget()
-        ff  = dm.generateFileName('export_data.db')
+        ff  = dm.generateFileName('export_data.db',inOutputDir=True)
         if os.path.exists(ff):
             os.remove(ff)
         tab.tabTextIcon(Icon=dm.iconRed)
@@ -221,9 +221,21 @@ class form(QMainWindow):
             qtd = qtd + len(row)
             if len(row) == 0:
                 break
-            self.bt.setText( f"{qtd} records" )
-            sqlite_cursor.executemany(insert_table_query, row)
+
+            dados = []
+            for xx in row:
+                dados_item = []
+                for item in xx:
+                    if "LOB" in str(type(item)).upper():
+                        dados_item.append( item.read() )
+                    else:
+                        dados_item.append( item )
+                dados.append(dados_item)
+
+            sqlite_cursor.executemany(insert_table_query, dados)
             sqlite_conn.commit()
+
+            self.bt.setText( f"{qtd} records" )
         sqlite_conn.close()
         tab.tabTextIcon(Icon=dm.iconBlue)
 

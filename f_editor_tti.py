@@ -1,4 +1,4 @@
-import lib.d_editor_tti as d_editor_tti
+import ui.d_editor_tti as d_editor_tti
 import dm
 import dm_const
 import os
@@ -278,7 +278,7 @@ class form(QWidget):
             self.db.SELECT(p_sql=self.pegaSQL(),direct=self.ui.chk_run_user_local.isChecked() )
             if self.db.status_code == 0:
                 qtd            = 0 
-                ins_file       = open( file=dm.generateFileName("generated_inserts.sql",path="output_dir"), mode="w", encoding="utf-8")
+                ins_file       = open( file=dm.generateFileName("generated_inserts.sql",inOutputDir=True), mode="w", encoding="utf-8")
                 s_insert_title = f"""insert into {self.bt.H_table_name}({",".join(self.db.col_names)}) """
                 while self.bt.isVisible():
                     data = self.db.cur.fetchmany(5000)
@@ -315,7 +315,7 @@ class form(QWidget):
             self.db.SELECT(p_sql=self.pegaSQL(), direct=self.ui.chk_run_user_local.isChecked() )
             if self.db.status_code == 0:
                 qtd      = 0 
-                csv_file = open( file=dm.generateFileName("exported.csv",path="output_dir"), mode="w", encoding="utf-8")
+                csv_file = open( file=dm.generateFileName("exported.csv",inOutputDir=True), mode="w", encoding="utf-8")
                 arq      = csv.writer(csv_file,delimiter=";",quotechar='"', escapechar="\\",quoting=csv.QUOTE_ALL)
                 arq.writerow( self.db.col_names )
                 while self.bt.isVisible():

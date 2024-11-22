@@ -23,8 +23,8 @@ from threading import Thread
 ## operacoes com arquivos
 ## ==============================================================================================
 
-def generateFileName(filename, path="root"):
-    v_path = os.path.dirname(sys.argv[0]) if path == "root" else configValue(tag="output_dir")
+def generateFileName(filename, inOutputDir=False):
+    v_path = configValue(tag="output_dir") if inOutputDir else os.path.dirname(sys.argv[0])
     return os.path.join( v_path, filename )
 
 
@@ -268,8 +268,6 @@ class EDITOR_SQL(QsciScintilla):
         self.sql_lexer.setColor(  Qt.magenta , QsciLexerSQL.Number)
         self.setLexer(self.sql_lexer)        
 
-        print(self.sql_lexer.keywords(8))
-
         # Destacar a Linha corrente
         self.setCaretLineVisible(False)
         self.setCaretLineBackgroundColor(QColor('000000'))   
@@ -277,9 +275,9 @@ class EDITOR_SQL(QsciScintilla):
 
         # Ativar o pareamento de parênteses
         self.setBraceMatching(QsciScintilla.SloppyBraceMatch)  # Pode ser 'StrictBraceMatch' ou 'SloppyBraceMatch'
-        ##self.setMatchedBraceForegroundColor(Qt.green)
-        ##self.setMatchedBraceBackgroundColor(Qt.black)
-        ##self.setUnmatchedBraceForegroundColor( QColor("black") )
+        self.setMatchedBraceForegroundColor(Qt.red)
+        self.setMatchedBraceBackgroundColor(Qt.black)
+        #self.setUnmatchedBraceForegroundColor(Qt.black)
 
         if customContextMenu:
             self.setContextMenuPolicy(Qt.CustomContextMenu )

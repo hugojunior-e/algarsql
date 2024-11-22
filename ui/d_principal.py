@@ -157,4 +157,4 @@ class Ui_d_principal(object):
         self.actionCommit.setText(_translate("d_principal", "Commit"))
         self.actionRollback.setText(_translate("d_principal", "Rollback"))
         self.actionConfigs.setText(_translate("d_principal", "Configs"))
-from lib import menus_rc
+from ui import menus_rc

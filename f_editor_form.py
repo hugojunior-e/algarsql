@@ -1,4 +1,4 @@
-import lib.d_editor_form as d_editor_form
+import ui.d_editor_form as d_editor_form
 import dm
 
 from PyQt5.QtGui import *
@@ -14,6 +14,7 @@ class form(QDialog):
         self.ui.bt_salvar.clicked.connect(self.bt_salvar_clicked)
         self.ui.grid.doubleClicked.connect(self.grid_doubleclicked)
         self.ui.grid.verticalHeader().setDefaultSectionSize(20)
+        self.setMinimumWidth(900)
 
     def bt_salvar_clicked(self):
         if self.ui.bt_salvar.text().find("#") >= 0:
@@ -91,6 +92,6 @@ class form(QDialog):
             else:
                 t.append( [ grid_orig.horizontalHeaderItem(x).text() ,  grid_orig.item(rowIndex,x).text()  ] )
 
-        dm.populateGrid( self.ui.grid, t, editableColumns="-1-" )
+        dm.populateGrid( self.ui.grid, t, editableColumns="-1-",columnWidth=400, columnNames=["FIeldName", "Value"] )
         self.ui.bt_salvar.setText(self.bt_salvar_text)
         self.show()
