@@ -4,7 +4,7 @@ if [ "$1" = "1" ]; then
     rm AlgarSQL
     rm __pycache__ -rf
     rm ui/__pycache__ -rf
-    zip -r AlgarSQL.zip *py *ui* -x "*ui" -x "*qrc"
+    zip -r AlgarSQL.zip *py *ui* *png* -x "*ui" -x "*qrc"
     
     echo '#!/usr/bin/env python3' | cat - AlgarSQL.zip > AlgarSQL
     chmod 755 AlgarSQL

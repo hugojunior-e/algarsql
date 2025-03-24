@@ -14,7 +14,7 @@
    <string>AlgarSQL</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QHBoxLayout" name="horizontalLayout">
+   <layout class="QVBoxLayout" name="verticalLayout_3">
     <property name="spacing">
      <number>0</number>
     </property>
@@ -98,8 +98,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>98</width>
-          <height>70</height>
+          <width>561</width>
+          <height>549</height>
          </rect>
         </property>
         <attribute name="label">
@@ -165,6 +165,9 @@
    </property>
    <property name="toolButtonStyle">
     <enum>Qt::ToolButtonIconOnly</enum>
+   </property>
+   <property name="floatable">
+    <bool>true</bool>
    </property>
    <attribute name="toolBarArea">
     <enum>TopToolBarArea</enum>

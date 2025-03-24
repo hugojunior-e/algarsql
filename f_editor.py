@@ -26,6 +26,7 @@ class form(QDialog):
         self.ui.grid_objetos.verticalHeader().setDefaultSectionSize(20)
 
         self.ui.edt_recall.textEdited.connect(self.edt_recall_edited)
+        self.ui.edt_recall_database.textEdited.connect(self.edt_recall_edited)
 
         self.lista_chk_obj = [self.ui.chk_obj_table,self.ui.chk_obj_view,self.ui.chk_obj_trigger,self.ui.chk_obj_package,self.ui.chk_obj_procedure,self.ui.chk_obj_funcion]
         for x in self.lista_chk_obj:
@@ -117,8 +118,8 @@ class form(QDialog):
                 
                 dm.db.SELECT(p_sql=sql_temp, direct=True,fetchSize=1)
                 if dm.db.status_code == 0:
-                    retorno = dm.db.col_data[0]
-                    if retorno != None:
+                    if len(dm.db.col_data) > 0:
+                        retorno = dm.db.col_data[0]
                         r.write(s_linha.strip() + ";" + ( ";".join([str(i) for i in retorno]) )   + "\n")
                     else:
                         r.write(s_linha.strip() + ";\n")
@@ -219,7 +220,8 @@ class form(QDialog):
     ## ==============================================================================================
 
     def edt_recall_edited(self):
-        dm.populateGrid(self.ui.grid_recall, dm.configValue(tag="*recall", w=self.ui.edt_recall.text()) )
+        params= [self.ui.edt_recall.text(), self.ui.edt_recall_database.text()]
+        dm.populateGrid(self.ui.grid_recall, dm.configValue(tag="*recall", params=params) )
 
     ## ==============================================================================================
     ## tab mostra as sessoes do banco

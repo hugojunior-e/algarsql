@@ -3,7 +3,6 @@ import os
 import sys
 import sqlite3
 import platform 
-import re
 
 import f_principal
 import f_logon
@@ -85,7 +84,7 @@ def createButtonWork(Run=None, Size=QSize(600, 100), Text="wait a few seconds...
 ## funcoes de leitura/escrita de configuracoes/
 ## ==============================================================================================
 
-def configValue(tag=None, w="%"):
+def configValue(tag=None, params=["%","%"]):
     fileConfig       = generateFileName("AlgarSQL.db")
     if os.path.exists(fileConfig) == False:
         return ""
@@ -93,7 +92,7 @@ def configValue(tag=None, w="%"):
     cursor  = conn.cursor()
     ret     = None
     if tag == "*recall":
-        ret     = cursor.execute( f"select * from sql_history where 1=1 and info like '{w}' order by 1 desc").fetchall()
+        ret     = cursor.execute( f"select * from sql_history where 1=1 and info like '{params[0]}' and dbname like '{params[1]}' order by 1 desc").fetchall()
     else:
         reg     = cursor.execute( f"select info from config where node = '{tag}'" ).fetchall()
         ret     = "" if len(reg) == 0 else reg[0][0]
@@ -277,7 +276,7 @@ class EDITOR_SQL(QsciScintilla):
         self.setBraceMatching(QsciScintilla.SloppyBraceMatch)  # Pode ser 'StrictBraceMatch' ou 'SloppyBraceMatch'
         self.setMatchedBraceForegroundColor(Qt.red)
         self.setMatchedBraceBackgroundColor(Qt.black)
-        #self.setUnmatchedBraceForegroundColor(Qt.black)
+        self.setUnmatchedBraceForegroundColor(Qt.black)
 
         if customContextMenu:
             self.setContextMenuPolicy(Qt.CustomContextMenu )
@@ -375,7 +374,13 @@ class ORACLE:
             self.con.ping()
             self.is_connected = True
         except:
-            self.CONNECT(db.p_usuario, db.p_senha, db.p_tns, db.is_direct)
+            try:
+                t1 = Thread(target=self.CONNECT, args=(db.p_usuario, db.p_senha, db.p_tns, db.is_direct, ) )
+                t1.start()
+                t1.join(3)
+            except:
+                return False
+            #self.CONNECT(db.p_usuario, db.p_senha, db.p_tns, db.is_direct)
         return self.is_connected
     
     def __connect(self):
@@ -403,7 +408,7 @@ class ORACLE:
 
             t1 = Thread(target=self.__connect)
             t1.start()
-            t1.join(5)
+            t1.join(30)
             if t1.is_alive():
                 raise ValueError("Timeout Connection Required...")
             if self.status_code != 0:
