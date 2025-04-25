@@ -3,8 +3,6 @@ import dm
 import os
 import dm_const
 import sqlite3
-import webbrowser
-import f_logon
 import f_editor_tti
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -55,9 +53,8 @@ class form(QMainWindow):
             self.bt.close()
 
     def extrai_ddl(self, owner, type, name):
-        if dm.db.prepare() == False:
-            dm.messageBox(self.db.status_msg) 
-            return
+        if dm.db.prepare() == False: return
+        
         self.bt      = dm.createButtonWork(Run=lambda:(self.th.thread.terminate(),self.bt.close()), Text=f"Extracting DML {owner + '.' + name}")
         self.bt.info = owner + '.' + name
         self.th      = dm.WORKER(proc_run=lambda:(dm.db.DDL(owner, type, name)), proc_fim=self.tree_objetos_popup_view_code_finish)
@@ -269,14 +266,8 @@ class form(QMainWindow):
         filePath = self.ui.tree_templates.model().filePath(index)
         fullName = (filePath + os.path.pathsep + fileName).split(":")[0]
         if os.path.isfile(fullName):
-            if os.path.splitext(fullName)[1].upper() in ['.PDF','.HTML']:
-                webbrowser.open_new_tab(fullName)
-
-            elif os.path.splitext(fullName)[1].upper() == '.PY':
+            if os.path.splitext(fullName)[1].upper() == '.PY':
                 os.system( f"code {fullName}" )
-                #self.actionOpenEditor_loadfromfile(fileName=fullName)
-                #self.ui.pc_editor.currentWidget().visibility_controls()
-                #dm.f_editor.showForm("Editor", "\n".join( dm.loadFromFile(fullName)) )
             else:
                 self.actionOpenEditor_loadfromfile(fileName=fullName)
 

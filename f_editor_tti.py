@@ -161,6 +161,7 @@ class form(QWidget):
             x = dm.db.SELECT(p_sql=dm_const.C_SQL_DESCRIBE % (txt.upper()), fetchSize=0)
             if dm.db.status_code == 0:
                 self.grid_describe = QTableWidget()
+                self.grid_describe.setWindowFlag(Qt.WindowStaysOnTopHint)
                 dm.populateGrid(self.grid_describe, dm.db.col_data, dm.db.col_names)
                 self.grid_describe.show()
 
@@ -172,6 +173,7 @@ class form(QWidget):
                     for i, info in enumerate(r):
                         col_data = col_data + [(dm.db.col_names[i], info)]
                 self.grid_props = QTableWidget()
+                self.grid_props.setWindowFlag(Qt.WindowStaysOnTopHint)
                 dm.populateGrid(self.grid_props,col_data, ["Property", "Value"] )
                 self.grid_props.show()
             else:
@@ -298,9 +300,7 @@ class form(QWidget):
             self.bt.setText(f"Error: { str(e) }")
 
     def bt_tool_insert_clicked(self):
-        if self.db.prepare() == False:
-            dm.messageBox(self.db.status_msg) 
-            return
+        if self.db.prepare() == False: return
                 
         table_name, ok = QInputDialog().getText(self, "Export Data" , "Type TableName",  QLineEdit.Normal, "__tablename__")                        
         if ok:    
@@ -334,9 +334,7 @@ class form(QWidget):
 
 
     def bt_tool_csv_clicked(self):
-        if self.db.prepare() == False:
-            dm.messageBox(self.db.status_msg) 
-            return
+        if self.db.prepare() == False: return
                 
         if QMessageBox.question(self,"Confirm","Confirm export to csv?",QMessageBox.Yes | QMessageBox.No) == QMessageBox.Yes:
             self.bt = dm.createButtonWork()
@@ -434,6 +432,7 @@ class form(QWidget):
 
 
     def executeSQL_finish(self):
+        self.db_timer.stop = True
         if self.objectname != None:
             if self.db.status_code != 0:
                 dm.messageBox(self.db.status_msg)               
@@ -452,7 +451,6 @@ class form(QWidget):
                 dm.populateGrid(grid=self.ui.grid_select, data=self.db.col_data, columnNames=self.db.col_names, columnTypes=self.db.col_types)
         
         self.ui.mem_dbms.setPlainText(self.db.dbms_output)
-        self.db_timer.stop = True
 
     def executeSQL_start(self):
         try:
@@ -465,9 +463,7 @@ class form(QWidget):
             self.db.status_msg = str(e)
 
     def executeSQL(self):
-        if self.db.prepare() == False:
-            dm.messageBox(self.db.status_msg) 
-            return
+        if self.db.prepare() == False: return
         
         self.ui.grid_select.setRowCount(0)
         self.ui.grid_select.setColumnCount(0)

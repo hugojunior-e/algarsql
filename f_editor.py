@@ -202,9 +202,7 @@ class form(QDialog):
         dm.f_principal.extrai_ddl( self.ui.grid_objetos.item(y,0).text(), self.ui.grid_objetos.item(y,5).text(), self.ui.grid_objetos.item(y,1).text() )
 
     def edt_objetos_edited(self):
-        if dm.db.prepare() == False:
-            dm.messageBox(self.db.status_msg) 
-            return
+        if dm.db.prepare() == False: return
         
         self.ui.grid_objetos.setRowCount(0)
         ot = [  "'" + x.text() + "'" if x.isChecked() else "'-'" for  x in self.lista_chk_obj ]

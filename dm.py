@@ -225,11 +225,11 @@ class CustomSQLLexer(QsciLexerSQL):
 
     def keywords(self, set_number):
         if set_number == 5:
-            return QsciLexerSQL.keywords(self, set_number) + " utl_file utl_http mod replace translate instr reverse regexp_instr regexp_replace regexp_substr regexp_count add_months lpad rpad trunc to_date to_char to_number nvl decode sysdate count avg sum max min case nvl2 trim substr upper lower initcap"
+            return QsciLexerSQL.keywords(self, set_number) + " listagg chr utl_file utl_http mod replace translate instr reverse regexp_instr regexp_replace regexp_substr regexp_count add_months lpad rpad trunc to_date to_char to_number nvl decode sysdate count avg sum max min case nvl2 trim substr upper lower initcap"
         elif set_number == 6:
-            return 'type pls_integer binary_integer long raw number varchar varchar2 clob integer char date timestamp int blob'
-        elif set_number == QsciLexerSQL.Keyword:
-            return QsciLexerSQL.keywords(self, QsciLexerSQL.Keyword) + " bulk collect record elsif loop package body"
+            return 'type xmltype rowid rownum xmltable pls_integer binary_integer long raw number varchar varchar2 clob integer char date timestamp int blob'
+        elif set_number == 1:
+            return QsciLexerSQL.keywords(self, set_number) + " bulk collect record elsif nested passing columns loop package body"
         else:
             return QsciLexerSQL.keywords(self, set_number)
 
@@ -374,13 +374,9 @@ class ORACLE:
             self.con.ping()
             self.is_connected = True
         except:
-            try:
-                t1 = Thread(target=self.CONNECT, args=(db.p_usuario, db.p_senha, db.p_tns, db.is_direct, ) )
-                t1.start()
-                t1.join(3)
-            except:
-                return False
-            #self.CONNECT(db.p_usuario, db.p_senha, db.p_tns, db.is_direct)
+            self.CONNECT(p_usuario=db.p_usuario, p_senha=db.p_senha, p_tns=db.p_tns, p_is_direct=db.is_direct)
+            if self.is_connected == False:
+                messageBox("(Re) Login Necessery...") 
         return self.is_connected
     
     def __connect(self):
