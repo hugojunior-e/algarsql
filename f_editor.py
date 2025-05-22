@@ -2,9 +2,9 @@ import ui.d_editor as d_editor
 import dm
 import dm_const
 
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from PyQt5.QtWidgets import (
+    QDialog, QFileDialog, QTableWidgetItem, QTreeWidgetItem
+)
 
 class form(QDialog):
     def __init__(self):

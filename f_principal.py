@@ -4,9 +4,9 @@ import os
 import dm_const
 import sqlite3
 import f_editor_tti
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
+from PyQt5.QtWidgets import QMainWindow, QTreeWidgetItem, QFileDialog, QFileSystemModel
+from PyQt5.QtGui import QCursor
+from PyQt5.QtCore import Qt
 
 class form(QMainWindow):
     def __init__(self):

@@ -1,3 +1,4 @@
+from f_editor_sql import CodeEditor
 import ui.d_editor_tti as d_editor_tti
 import dm
 import dm_const
@@ -7,18 +8,17 @@ import time
 import csv
 from datetime import datetime
 
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
-from PyQt5.Qsci import *
-
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (
+    QWidget, QListWidget, QListWidgetItem, QTableWidget, QMessageBox, QInputDialog, QLineEdit
+)
 class form(QWidget):
     def __init__(self):
         super(form, self).__init__()
 
         self.db               = dm.ORACLE()
         self.db_timer         = dm.WORKER(proc_run=self.db_timer_run, proc_fim=self.db_timer_stop, autostart=False)
-        self.mem_editor_popup = dm.MENU(["Find|Ctrl+F", "-", "Format SQL|Ctrl+Alt+F", "UPPERCASE|Ctrl+U", "lowercase|Ctrl+L", "-", "Paste with UNION|-", "Paste with ITENS|-", "-", "Comment|-", "Uncomment|-", "-", "Describe|-", "Properties|-",'Drop Table|-',"-","Line Guides|-"],self.mem_editor_popup_click, self)
+        self.mem_editor_popup = dm.MENU(["Find|Ctrl+F", "-", "Format SQL|Ctrl+Alt+F", "UPPERCASE|Ctrl+U", "lowercase|Ctrl+L", "-", "Paste with UNION|-", "Paste with ITENS|-", "-", "Comment|-", "Uncomment|-", "-", "Describe|-", "Properties|-",'Drop Table|-',"-"],self.mem_editor_popup_click, self)
         
         self.ui = d_editor_tti.Ui_d_editor_tti()
         self.ui.setupUi(self)
@@ -41,9 +41,9 @@ class form(QWidget):
         self.filename    = None
         self.objectname  = None
 
-        self.editorSQL = dm.EDITOR_SQL(text="SELECT * FROM DUAL", customContextMenu=self.mem_editor_popup_show)
+        self.editorSQL = CodeEditor(text="SELECT * FROM DUAL", customContextMenu=self.mem_editor_popup_show)# dm.EDITOR_SQL(text="SELECT * FROM DUAL", customContextMenu=self.mem_editor_popup_show)
         self.editorSQL.textChanged.connect(self.mem_editor_textchanged)
-        self.editorSQL.keyPressEvent = self.mem_editor_keyPressEvent
+        self.editorSQL.codeCompeteArea = self.mem_editor_keyPressEvent
         self.ui.editorLayout.addWidget(self.editorSQL)
 
     ## ==============================================================================================
@@ -105,14 +105,6 @@ class form(QWidget):
         if self.sender().text() == "Find":
             dm.f_editor_find.showFindReplace(self.editorSQL)
 
-        elif self.sender().text() == "Line Guides":
-            self.editorSQL.setIndentationGuides(True)
-            self.sender().setText("Hide Line Guides")
-
-        elif self.sender().text() == "Hide Line Guides":
-            self.editorSQL.setIndentationGuides(False)
-            self.sender().setText("Line Guides")
-
         elif self.sender().text() == "UPPERCASE":
             self.editorSQL.replaceSelectedText(txt.upper())
 
@@ -120,6 +112,8 @@ class form(QWidget):
             self.editorSQL.replaceSelectedText(txt.lower())
 
         elif self.sender().text() == "Format SQL":
+            self.editorSQL.formatSql()
+            """
             txt = self.editorSQL.selectedText()
             if len(txt) > 1:
                 arq = dm.generateFileName("fmt.sql")
@@ -135,7 +129,7 @@ class form(QWidget):
                     dm.messageBox("dm_format_sql.jar not found")
             else:
                 dm.messageBox("No SQL Selected")            
-
+            """
         elif self.sender().text() == "Drop Table":
             if txt in dm.all_tables:
                 dm.db.EXECUTE(p_sql='DROP TABLE ' + txt, direct=True)
@@ -205,34 +199,32 @@ class form(QWidget):
         QListWidget.keyPressEvent(self.ui.code_completation, event)
 
     def mem_editor_keyPressEvent(self, event):
-        if event.key() == 46:
-            word  = self.editorSQL.wordOnCursor()
-            lista = []
+        word  = self.editorSQL.wordOnCursor()
+        lista = []
 
-            if word.upper() in dm.all_users:
-                dm.db.SELECT(p_sql=dm_const.C_SQL_ALL_TABLES % (word), fetchSize=0)
-                lista = [x[0] for x in dm.db.col_data]
+        if word.upper() in dm.all_users:
+            dm.db.SELECT(p_sql=dm_const.C_SQL_ALL_TABLES % (word), fetchSize=0)
+            lista = [x[0] for x in dm.db.col_data]
 
-            elif word.upper() in dm.all_tables:
-                dm.db.SELECT(p_sql=dm_const.C_SQL_ALL_TAB_COLUMNS % (word), fetchSize=0)
-                lista = [x[0] for x in dm.db.col_data]
+        elif word.upper() in dm.all_tables:
+            dm.db.SELECT(p_sql=dm_const.C_SQL_ALL_TAB_COLUMNS % (word), fetchSize=0)
+            lista = [x[0] for x in dm.db.col_data]
 
-            else:
-                x = self.editorSQL.text().upper().replace(';', ' ').replace(',', ' ').replace("\n", ' ').replace('\t', ' ').replace('.', ' ').replace('*', ' ').replace(' SELECT ', ' ')
-                while x.find('  ') > 0:
-                    x = x.replace('  ', ' ')
-                info_a = x.split(' ')
-                for i, info in enumerate(info_a):
-                    if word.upper() == info.upper() and info_a[i-1] in dm.all_tables:
-                        dm.db.SELECT(p_sql=dm_const.C_SQL_ALL_TAB_COLUMNS % (info_a[i-1]), fetchSize=0)
-                        lista = [x[0] for x in dm.db.col_data]
-                        break
+        else:
+            x = self.editorSQL.text().upper().replace(';', ' ').replace(',', ' ').replace("\n", ' ').replace('\t', ' ').replace('.', ' ').replace('*', ' ').replace(' SELECT ', ' ')
+            while x.find('  ') > 0:
+                x = x.replace('  ', ' ')
+            info_a = x.split(' ')
+            for i, info in enumerate(info_a):
+                if word.upper() == info.upper() and info_a[i-1] in dm.all_tables:
+                    dm.db.SELECT(p_sql=dm_const.C_SQL_ALL_TAB_COLUMNS % (info_a[i-1]), fetchSize=0)
+                    lista = [x[0] for x in dm.db.col_data]
+                    break
 
-            if len(lista) > 0:
-                cr = self.editorSQL.cursorRect()
-                tt = self.editorSQL.viewport().mapToGlobal(cr.topLeft())
-                self.codeCompletation(lista, tt.x(), tt.y())
-        QsciScintilla.keyPressEvent(self.editorSQL, event)
+        if len(lista) > 0:
+            cr = self.editorSQL.cursorRect()
+            tt = self.editorSQL.viewport().mapToGlobal(cr.topLeft())
+            self.codeCompletation(lista, tt.x(), tt.y())
 
     ## ==============================================================================================
     ## toolbar - botoes grid

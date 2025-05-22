@@ -1,9 +1,7 @@
 import ui.d_editor_form as d_editor_form
 import dm
 
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
-from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import QDialog
 from datetime import datetime
 
 class form(QDialog):

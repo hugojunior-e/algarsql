@@ -1,9 +1,7 @@
 import ui.d_editor_find as d_editor_find
 import re
 import dm
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
-from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import QDialog
 
 class form(QDialog):
     def __init__(self):

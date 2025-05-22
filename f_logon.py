@@ -1,10 +1,8 @@
 import ui.d_logon as d_logon
 import dm
 
+from PyQt5.QtWidgets import QDialog, QTreeWidgetItem
 
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
-from PyQt5.QtWidgets import *
 
 class form(QDialog):
     def __init__(self):
