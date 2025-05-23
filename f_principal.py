@@ -36,6 +36,10 @@ class form(QMainWindow):
         self.ui.splitter.setSizes([300, 1000])
         self.tree_templates_montar()
         self.setWindowTitle(dm_const.C_APP_VERSION)
+        self.ui.bt_find.clicked.connect( lambda: self.findReplaceActions(1) )
+        self.ui.bt_find_next.clicked.connect( lambda: self.findReplaceActions(2))
+        self.ui.bt_find_replace.clicked.connect( lambda: self.findReplaceActions(3) )
+        self.ui.bt_find_replace_all.clicked.connect( lambda: self.findReplaceActions(4) )
         
     
     ## ==============================================================================================
@@ -301,3 +305,22 @@ class form(QMainWindow):
             self.ui.actionStopSQL.setEnabled(False)
             self.ui.actionCommit.setEnabled(False)
             self.ui.actionRollback.setEnabled(False)
+
+    ## ==============================================================================================
+    ##
+    ## ==============================================================================================
+
+    def findReplaceActions(self, action):
+        frm = self.ui.pc_editor.currentWidget()
+        if frm:
+            frm.editorSQL.finder_prepare([self.ui.edt_find_text.text(),self.ui.edt_find_replace.text(), self.ui.chk_find_match_case.isChecked(), self.ui.chk_find_match_whole_word.isChecked()])
+            if action == 1:
+                frm.editorSQL.finder()   
+            elif action == 2:
+                frm.editorSQL.finder_select()
+            elif action == 3:
+                frm.editorSQL.finder_replace()
+            elif action == 4:
+                frm.editorSQL.finder_replace_all()  
+
+

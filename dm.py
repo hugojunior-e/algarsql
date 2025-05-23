@@ -6,7 +6,6 @@ import platform
 
 import f_principal
 import f_logon
-import f_editor_find
 import f_editor_form
 import f_editor
 import dm_const
@@ -520,7 +519,6 @@ f_logon       = f_logon.form()
 f_principal   = f_principal.form()
 f_editor_form = f_editor_form.form()
 f_editor      = f_editor.form()
-f_editor_find = f_editor_find.form()
 
 def main():
     try:

@@ -103,7 +103,7 @@ class form(QWidget):
         txt = self.editorSQL.selectedText()
         
         if self.sender().text() == "Find":
-            dm.f_editor_find.showFindReplace(self.editorSQL)
+            self.editorSQL.finder_prepare()
 
         elif self.sender().text() == "UPPERCASE":
             self.editorSQL.replaceSelectedText(txt.upper())
@@ -112,8 +112,6 @@ class form(QWidget):
             self.editorSQL.replaceSelectedText(txt.lower())
 
         elif self.sender().text() == "Format SQL":
-            self.editorSQL.formatSql()
-            """
             txt = self.editorSQL.selectedText()
             if len(txt) > 1:
                 arq = dm.generateFileName("fmt.sql")
@@ -129,7 +127,7 @@ class form(QWidget):
                     dm.messageBox("dm_format_sql.jar not found")
             else:
                 dm.messageBox("No SQL Selected")            
-            """
+
         elif self.sender().text() == "Drop Table":
             if txt in dm.all_tables:
                 dm.db.EXECUTE(p_sql='DROP TABLE ' + txt, direct=True)

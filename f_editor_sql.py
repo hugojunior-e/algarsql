@@ -1,3 +1,5 @@
+import dm
+import re
 from PyQt5.QtWidgets import QPlainTextEdit, QWidget, QTextEdit
 from PyQt5.QtGui import QPainter, QTextFormat, QTextCharFormat, QColor, QFont, QSyntaxHighlighter, QTextCursor, QTextOption
 from PyQt5.QtCore import QRegExp, Qt, QRect, QSize
@@ -441,3 +443,58 @@ class CodeEditor(QPlainTextEdit):
                 indent += indent_size
 
         self.setPlainText("\n".join(result))
+
+
+
+    def finder_prepare(self, params=None):
+        if params:
+            self.finder_text         = params[0]
+            self.finder_replace      = params[1]
+            self.finder_flgCase      = params[2]
+            self.finder_flgWholeWord = params[3]
+        else:
+            self.locates    = []
+            self.select_idx = 0
+            dm.f_principal.ui.toolBox.setCurrentIndex(2)
+            dm.f_principal.ui.edt_find_text( self.selectedText() )
+
+
+    def finder_select(self):
+        if len(self.locates) == 0 or self.select_idx == len(self.locates):
+            dm.messageBox("no occurrence found")
+            return False
+        x = self.locates[self.select_idx].start()
+        self.setPosition(x)
+        self.setPositionSel(x + len(self.finder_text))
+
+        self.select_idx = self.select_idx + 1
+        return True
+
+    def finder(self):
+        flags          = re.IGNORECASE
+        txt_full       = self.toPlainText()
+        txt_find       = re.escape( self.finder_text )
+
+        if self.finder_flgCase:
+            flags=0
+
+        if self.finder_flgWholeWord:
+            txt_find = r"\b" + txt_find + r"\b"
+
+        p               = re.compile( txt_find ,flags=flags)
+        self.locates    = [ ii for ii in p.finditer(txt_full) ]
+        self.select_idx = 0
+        if len(self.locates) > 0:
+            self.finder_select()
+
+    def finder_replace(self):
+        self.finder()
+        self.replaceSelectedText( self.finder_replace )            
+
+    def finder_replace_all(self):
+        while True:
+            self.find()
+            if self.selectedText():
+                self.replaceSelectedText(self.ui.edt_replace.text())
+            else:
+                break        

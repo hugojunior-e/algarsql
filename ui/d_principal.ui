@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>928</width>
-    <height>653</height>
+    <height>455</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -57,7 +57,7 @@
           <x>0</x>
           <y>0</y>
           <width>561</width>
-          <height>549</height>
+          <height>319</height>
          </rect>
         </property>
         <attribute name="label">
@@ -99,7 +99,7 @@
           <x>0</x>
           <y>0</y>
           <width>561</width>
-          <height>549</height>
+          <height>517</height>
          </rect>
         </property>
         <attribute name="label">
@@ -129,6 +129,154 @@
           </widget>
          </item>
         </layout>
+       </widget>
+       <widget class="QWidget" name="page_3">
+        <attribute name="label">
+         <string>Find/Replace Text</string>
+        </attribute>
+        <widget class="QLabel" name="label">
+         <property name="geometry">
+          <rect>
+           <x>20</x>
+           <y>20</y>
+           <width>71</width>
+           <height>18</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Find Text:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+        <widget class="QLineEdit" name="edt_find_text">
+         <property name="geometry">
+          <rect>
+           <x>100</x>
+           <y>20</y>
+           <width>171</width>
+           <height>26</height>
+          </rect>
+         </property>
+        </widget>
+        <widget class="QLabel" name="label_2">
+         <property name="geometry">
+          <rect>
+           <x>11</x>
+           <y>60</y>
+           <width>81</width>
+           <height>18</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Replace By:</string>
+         </property>
+         <property name="alignment">
+          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+         </property>
+        </widget>
+        <widget class="QLineEdit" name="edt_find_replace">
+         <property name="geometry">
+          <rect>
+           <x>100</x>
+           <y>60</y>
+           <width>171</width>
+           <height>26</height>
+          </rect>
+         </property>
+        </widget>
+        <widget class="QGroupBox" name="groupBox">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>90</y>
+           <width>261</width>
+           <height>91</height>
+          </rect>
+         </property>
+         <property name="title">
+          <string>Options</string>
+         </property>
+         <widget class="QCheckBox" name="chk_find_match_case">
+          <property name="geometry">
+           <rect>
+            <x>30</x>
+            <y>30</y>
+            <width>111</width>
+            <height>24</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Match Case</string>
+          </property>
+         </widget>
+         <widget class="QCheckBox" name="chk_find_match_whole_word">
+          <property name="geometry">
+           <rect>
+            <x>30</x>
+            <y>60</y>
+            <width>151</width>
+            <height>24</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Match Whole Word</string>
+          </property>
+         </widget>
+        </widget>
+        <widget class="QPushButton" name="bt_find_next">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>220</y>
+           <width>101</width>
+           <height>26</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Find Next</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="bt_find">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>190</y>
+           <width>101</width>
+           <height>26</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Find</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="bt_find_replace_all">
+         <property name="geometry">
+          <rect>
+           <x>120</x>
+           <y>220</y>
+           <width>101</width>
+           <height>26</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Replace All</string>
+         </property>
+        </widget>
+        <widget class="QPushButton" name="bt_find_replace">
+         <property name="geometry">
+          <rect>
+           <x>120</x>
+           <y>190</y>
+           <width>101</width>
+           <height>26</height>
+          </rect>
+         </property>
+         <property name="text">
+          <string>Replace</string>
+         </property>
+        </widget>
        </widget>
       </widget>
       <widget class="QTabWidget" name="pc_editor">
