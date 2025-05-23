@@ -33,7 +33,7 @@ class form(QMainWindow):
         self.ui.tree_objetos.setContextMenuPolicy(Qt.CustomContextMenu)
         self.ui.tree_objetos.customContextMenuRequested.connect(self.tree_objetos_popup_show)   
         self.ui.tree_templates.doubleClicked.connect( self.tree_templates_doubleclicked )
-        self.ui.splitter.setSizes([300, 1000])
+        self.ui.splitter.setSizes([310, 1000])
         self.tree_templates_montar()
         self.setWindowTitle(dm_const.C_APP_VERSION)
         self.ui.bt_find.clicked.connect( lambda: self.findReplaceActions(1) )

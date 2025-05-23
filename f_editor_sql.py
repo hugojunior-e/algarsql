@@ -25,16 +25,16 @@ class SQLHighlighter(QSyntaxHighlighter):
         typesFormat = QTextCharFormat()
         typesFormat.setForeground(QColor("#B5CEA8"))
         types = [
-            "type","xmltype","rowid","rownum","xmltable","pls_integer","binary_integer","long","raw","number","varchar","varchar2","clob","integer","char","date","timestamp","int","blob"
+            "type","xmltype","rowid","rownum","xmltable","pls_integer","binary_integer","float", "long","raw","number","varchar","varchar2","clob","integer","char","date","timestamp","int","blob"
         ]
         for word in types:
             pattern = QRegExp(r"\b" + word + r"\b", Qt.CaseInsensitive)
             self.highlightingRules.append((pattern, typesFormat))
 
         functionFormat = QTextCharFormat()
-        functionFormat.setForeground(QColor("#B5CEA8"))
+        functionFormat.setForeground(Qt.magenta)
         functions = [
-            "dbms_output","listagg","chr","utl_file","utl_http","mod","replace","translate","instr","reverse","regexp_instr","regexp_replace","regexp_substr","regexp_count","add_months","lpad","rpad","trunc","to_date","to_char","to_number","nvl","decode","sysdate","count","avg","sum","max","min","case","nvl2","trim","substr","upper","lower","initcap"
+            "row_number", "dbms_output","listagg","chr","utl_file","utl_http","mod","replace","translate","instr","reverse","regexp_instr","regexp_replace","regexp_substr","regexp_count","add_months","lpad","rpad","trunc","to_date","to_char","to_number","nvl","decode","sysdate","count","avg","sum","max","min","case","nvl2","trim","substr","upper","lower","initcap"
         ]
         for word in functions:
             pattern = QRegExp(r"\b" + word + r"\b", Qt.CaseInsensitive)
@@ -42,7 +42,7 @@ class SQLHighlighter(QSyntaxHighlighter):
 
 
         keywordFormat = QTextCharFormat()
-        keywordFormat.setForeground(QColor("#0077aa"))
+        keywordFormat.setForeground( QColor("#0077aa")  ) 
         keywords = [
             "ABSOLUTE","ACTION","ADD","ADMIN","AFTER","AGGREGATE","ALIAS","ALL","ALLOCATE","ALTER",
             "AND","ANY","ARE","ARRAY","AS","ASC","ASSERTION","AT","AUTHORIZATION","BEFORE","BEGIN",
@@ -55,7 +55,7 @@ class SQLHighlighter(QSyntaxHighlighter):
             "DELETE","DEPTH","DEREF","DESC","DESCRIBE","DESCRIPTOR","DESTROY","DESTRUCTOR","DETERMINISTIC",
             "DICTIONARY","DIAGNOSTICS","DISCONNECT","DISTINCT","DOMAIN","DOUBLE","DROP","DYNAMIC","EACH",
             "ELSE","END","END-EXEC","EQUALS","ESCAPE","EVERY","EXCEPT","EXCEPTION","EXEC","EXECUTE","EXTERNAL",
-            "FALSE","FETCH","FIRST","FLOAT","FOR","FOREIGN","FOUND","FROM","FREE","FULL","FUNCTION",
+            "FALSE","FETCH","FIRST","FOR","FOREIGN","FOUND","FROM","FREE","FULL","FUNCTION",
             "GENERAL","GET","GLOBAL","GO","GOTO","GRANT","GROUP","GROUPING","HAVING","HOST","HOUR",
             "IDENTITY","IF","IGNORE","IMMEDIATE","IN","INDICATOR","INITIALIZE","INITIALLY","INNER",
             "INOUT","INPUT","INSERT","INT","INTEGER","INTERSECT","INTERVAL","INTO","IS","ISOLATION",
@@ -82,7 +82,7 @@ class SQLHighlighter(QSyntaxHighlighter):
             self.highlightingRules.append((pattern, keywordFormat))
 
         stringFormat = QTextCharFormat()
-        stringFormat.setForeground(QColor("#aa5500"))
+        stringFormat.setForeground( QColor("#CE9178") ) 
         self.highlightingRules.append((QRegExp(r"'[^']*'"), stringFormat))
 
         commentFormat = QTextCharFormat()
@@ -456,7 +456,7 @@ class CodeEditor(QPlainTextEdit):
             self.locates    = []
             self.select_idx = 0
             dm.f_principal.ui.toolBox.setCurrentIndex(2)
-            dm.f_principal.ui.edt_find_text( self.selectedText() )
+            dm.f_principal.ui.edt_find_text.setText( self.selectedText() )
 
 
     def finder_select(self):

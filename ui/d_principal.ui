@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>928</width>
-    <height>455</height>
+    <width>1180</width>
+    <height>521</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -56,8 +56,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>561</width>
-          <height>319</height>
+          <width>713</width>
+          <height>385</height>
          </rect>
         </property>
         <attribute name="label">
@@ -98,8 +98,8 @@
          <rect>
           <x>0</x>
           <y>0</y>
-          <width>561</width>
-          <height>517</height>
+          <width>713</width>
+          <height>385</height>
          </rect>
         </property>
         <attribute name="label">
@@ -131,67 +131,23 @@
         </layout>
        </widget>
        <widget class="QWidget" name="page_3">
+        <property name="geometry">
+         <rect>
+          <x>0</x>
+          <y>0</y>
+          <width>713</width>
+          <height>385</height>
+         </rect>
+        </property>
         <attribute name="label">
          <string>Find/Replace Text</string>
         </attribute>
-        <widget class="QLabel" name="label">
-         <property name="geometry">
-          <rect>
-           <x>20</x>
-           <y>20</y>
-           <width>71</width>
-           <height>18</height>
-          </rect>
-         </property>
-         <property name="text">
-          <string>Find Text:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-        <widget class="QLineEdit" name="edt_find_text">
-         <property name="geometry">
-          <rect>
-           <x>100</x>
-           <y>20</y>
-           <width>171</width>
-           <height>26</height>
-          </rect>
-         </property>
-        </widget>
-        <widget class="QLabel" name="label_2">
-         <property name="geometry">
-          <rect>
-           <x>11</x>
-           <y>60</y>
-           <width>81</width>
-           <height>18</height>
-          </rect>
-         </property>
-         <property name="text">
-          <string>Replace By:</string>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-         </property>
-        </widget>
-        <widget class="QLineEdit" name="edt_find_replace">
-         <property name="geometry">
-          <rect>
-           <x>100</x>
-           <y>60</y>
-           <width>171</width>
-           <height>26</height>
-          </rect>
-         </property>
-        </widget>
         <widget class="QGroupBox" name="groupBox">
          <property name="geometry">
           <rect>
            <x>10</x>
-           <y>90</y>
-           <width>261</width>
+           <y>160</y>
+           <width>281</width>
            <height>91</height>
           </rect>
          </property>
@@ -229,7 +185,7 @@
          <property name="geometry">
           <rect>
            <x>10</x>
-           <y>220</y>
+           <y>300</y>
            <width>101</width>
            <height>26</height>
           </rect>
@@ -242,7 +198,7 @@
          <property name="geometry">
           <rect>
            <x>10</x>
-           <y>190</y>
+           <y>270</y>
            <width>101</width>
            <height>26</height>
           </rect>
@@ -255,7 +211,7 @@
          <property name="geometry">
           <rect>
            <x>120</x>
-           <y>220</y>
+           <y>300</y>
            <width>101</width>
            <height>26</height>
           </rect>
@@ -268,7 +224,7 @@
          <property name="geometry">
           <rect>
            <x>120</x>
-           <y>190</y>
+           <y>270</y>
            <width>101</width>
            <height>26</height>
           </rect>
@@ -276,6 +232,71 @@
          <property name="text">
           <string>Replace</string>
          </property>
+        </widget>
+        <widget class="QGroupBox" name="groupBox_2">
+         <property name="geometry">
+          <rect>
+           <x>10</x>
+           <y>0</y>
+           <width>281</width>
+           <height>151</height>
+          </rect>
+         </property>
+         <property name="title">
+          <string/>
+         </property>
+         <widget class="QLineEdit" name="edt_find_replace">
+          <property name="geometry">
+           <rect>
+            <x>10</x>
+            <y>100</y>
+            <width>261</width>
+            <height>26</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QLabel" name="label">
+          <property name="geometry">
+           <rect>
+            <x>10</x>
+            <y>20</y>
+            <width>71</width>
+            <height>18</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Find Text:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          </property>
+         </widget>
+         <widget class="QLineEdit" name="edt_find_text">
+          <property name="geometry">
+           <rect>
+            <x>10</x>
+            <y>40</y>
+            <width>261</width>
+            <height>26</height>
+           </rect>
+          </property>
+         </widget>
+         <widget class="QLabel" name="label_2">
+          <property name="geometry">
+           <rect>
+            <x>10</x>
+            <y>80</y>
+            <width>81</width>
+            <height>18</height>
+           </rect>
+          </property>
+          <property name="text">
+           <string>Replace By:</string>
+          </property>
+          <property name="alignment">
+           <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+          </property>
+         </widget>
         </widget>
        </widget>
       </widget>
