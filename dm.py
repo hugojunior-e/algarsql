@@ -318,6 +318,8 @@ class ORACLE:
             self.cur          = self.con.cursor()
             self.cur.execute(dm_const.C_SQL_START)
 
+            
+
             for r in self.cur.execute("select global_name, banner, Sys_Context('USERENV', 'SID') from global_name, v$version").fetchall():
                 self.login_global_name = r[0]
                 self.login_banner      = r[1]
@@ -473,20 +475,7 @@ class ORACLE:
         self.EXECUTE(p_sql='DELETE FROM PLAN_TABLE',direct=True)
         self.EXECUTE(p_sql='EXPLAIN PLAN FOR\n' + p_sql,direct=True)
         self.SELECT(p_sql=dm_const.C_SQL_EXPLAIN,direct=True)
-        
 
-
-    def EVALPY(self, p_code):
-        self.status_code = 0
-        self.status_msg  = "OK"
-        try:
-            self.in_execution = True
-            codevars = {"db": self.con, 'messageBox': messageBox}
-            exec(p_code,codevars)
-        except Exception as e:
-            self.status_code = -1
-            self.status_msg  = str(e)
-        self.in_execution = False
 
 
 ## ==============================================================================================

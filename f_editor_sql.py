@@ -4,11 +4,55 @@ from PyQt5.QtWidgets import QPlainTextEdit, QWidget, QTextEdit
 from PyQt5.QtGui import QPainter, QTextFormat, QTextCharFormat, QColor, QFont, QSyntaxHighlighter, QTextCursor, QTextOption
 from PyQt5.QtCore import QRegExp, Qt, QRect, QSize
 
+C_types = [
+    "localtimestamp","nchar","nclob","numeric","smallint","type","xmltype",
+    "rowid","real","rownum","xmltable","pls_integer","varying","binary_integer",
+    "long","raw","number","varchar","varchar2","clob","integer","char","date","timestamp",
+    "decimal","int","blob"
+]
+C_functions = [
+    "current_time","current_timestamp","current_user","row_number","dbms_output",
+    "listagg","distinct","chr","utl_file","utl_http","mod","replace","translate","instr",
+    "reverse","regexp_instr","regexp_replace","regexp_substr","regexp_count","add_months",
+    "lpad","rpad","trunc","to_date","to_char","to_number","nvl","decode","sysdate","count",
+    "avg","sum","max","min","case","nvl2","trim","substr","upper","lower","initcap"
+]
+C_keywords = [
+    "absolute","action","add","admin","after","aggregate","alias","all","allocate","alter",
+    "and","any","are","array","as","asc","assertion","at","authorization","before","begin",
+    "binary","bit","blob","boolean","both","breadth","by","call","cascade","cascaded","case",
+    "cast","catalog","character","check","class","close","collate","collation",
+    "column","commit","completion","connect","connection","constraint","constraints","constructor",
+    "continue","corresponding","create","cross","cube","current","current_date","current_path",
+    "current_role","cursor","cycle","data",
+    "day","deallocate","dec","declare","default","deferrable","deferred",
+    "delete","depth","deref","desc","describe","descriptor","destroy","destructor","deterministic",
+    "dictionary","diagnostics","disconnect","domain","double","drop","dynamic","each",
+    "else","end","end-exec","equals","escape","every","except","exception","exec","execute","external",
+    "false","fetch","first","for","foreign","found","from","free","full","function",
+    "general","get","global","go","goto","grant","group","grouping","having","host","hour",
+    "identity","if","ignore","immediate","in","indicator","initialize","initially","inner",
+    "inout","input","insert","intersect","interval","into","is","isolation",
+    "iterate","join","key","language","large","last","lateral","leading","left","less","level",
+    "like","limit","local","localtime","locator","map","match","minute","package","body",
+    "modifies","modify","module","month","names","national","natural","new",
+    "next","no","none","not","null","object","of","off","old","on","only","open",
+    "operation","option","or","order","ordinality","out","outer","output","pad","parameter",
+    "parameters","partial","path","postfix","precision","prefix","preorder","prepare","preserve",
+    "primary","prior","privileges","procedure","public","read","reads","recursive","ref",
+    "references","referencing","relative","restrict","result","return","returns","revoke","right",
+    "role","rollback","rollup","routine","row","rows","savepoint","schema","scroll","scope","search",
+    "second","section","select","sequence","session","session_user","set","sets","size",
+    "some","space","specific","specifictype","sql","sqlexception","sqlstate","sqlwarning",
+    "start","state","statement","static","structure","system_user","table","temporary","terminate",
+    "than","then","time","timestamp","timezone_hour","timezone_minute","to","trailing","transaction",
+    "translation","treat","trigger","true","under","union","unique","unknown","unnest","update","usage",
+    "user","using","value","values","variable","view","when","whenever","where","with",
+    "without","work","write","year","zone","bulk","collect","record","elsif","nested","passing","columns","loop"
+] 
 
 
-#---------------------------------------------------------
-#
-#---------------------------------------------------------
+############################################################################################
 
 class SQLHighlighter(QSyntaxHighlighter):
     def __init__(self, document):
@@ -24,60 +68,20 @@ class SQLHighlighter(QSyntaxHighlighter):
 
         typesFormat = QTextCharFormat()
         typesFormat.setForeground(QColor("#B5CEA8"))
-        types = [
-            "type","xmltype","rowid","rownum","xmltable","pls_integer","binary_integer","float", "long","raw","number","varchar","varchar2","clob","integer","char","date","timestamp","int","blob"
-        ]
-        for word in types:
+        for word in C_types:
             pattern = QRegExp(r"\b" + word + r"\b", Qt.CaseInsensitive)
             self.highlightingRules.append((pattern, typesFormat))
 
         functionFormat = QTextCharFormat()
         functionFormat.setForeground(Qt.magenta)
-        functions = [
-            "row_number", "dbms_output","listagg","chr","utl_file","utl_http","mod","replace","translate","instr","reverse","regexp_instr","regexp_replace","regexp_substr","regexp_count","add_months","lpad","rpad","trunc","to_date","to_char","to_number","nvl","decode","sysdate","count","avg","sum","max","min","case","nvl2","trim","substr","upper","lower","initcap"
-        ]
-        for word in functions:
+        for word in C_functions:
             pattern = QRegExp(r"\b" + word + r"\b", Qt.CaseInsensitive)
             self.highlightingRules.append((pattern, functionFormat))
 
 
         keywordFormat = QTextCharFormat()
         keywordFormat.setForeground( QColor("#0077aa")  ) 
-        keywords = [
-            "ABSOLUTE","ACTION","ADD","ADMIN","AFTER","AGGREGATE","ALIAS","ALL","ALLOCATE","ALTER",
-            "AND","ANY","ARE","ARRAY","AS","ASC","ASSERTION","AT","AUTHORIZATION","BEFORE","BEGIN",
-            "BINARY","BIT","BLOB","BOOLEAN","BOTH","BREADTH","BY","CALL","CASCADE","CASCADED","CASE",
-            "CAST","CATALOG","CHAR","CHARACTER","CHECK","CLASS","CLOB","CLOSE","COLLATE","COLLATION",
-            "COLUMN","COMMIT","COMPLETION","CONNECT","CONNECTION","CONSTRAINT","CONSTRAINTS","CONSTRUCTOR",
-            "CONTINUE","CORRESPONDING","CREATE","CROSS","CUBE","CURRENT","CURRENT_DATE","CURRENT_PATH",
-            "CURRENT_ROLE","CURRENT_TIME","CURRENT_TIMESTAMP","CURRENT_USER","CURSOR","CYCLE","DATA",
-            "DATE","DAY","DEALLOCATE","DEC","DECIMAL","DECLARE","DEFAULT","DEFERRABLE","DEFERRED",
-            "DELETE","DEPTH","DEREF","DESC","DESCRIBE","DESCRIPTOR","DESTROY","DESTRUCTOR","DETERMINISTIC",
-            "DICTIONARY","DIAGNOSTICS","DISCONNECT","DISTINCT","DOMAIN","DOUBLE","DROP","DYNAMIC","EACH",
-            "ELSE","END","END-EXEC","EQUALS","ESCAPE","EVERY","EXCEPT","EXCEPTION","EXEC","EXECUTE","EXTERNAL",
-            "FALSE","FETCH","FIRST","FOR","FOREIGN","FOUND","FROM","FREE","FULL","FUNCTION",
-            "GENERAL","GET","GLOBAL","GO","GOTO","GRANT","GROUP","GROUPING","HAVING","HOST","HOUR",
-            "IDENTITY","IF","IGNORE","IMMEDIATE","IN","INDICATOR","INITIALIZE","INITIALLY","INNER",
-            "INOUT","INPUT","INSERT","INT","INTEGER","INTERSECT","INTERVAL","INTO","IS","ISOLATION",
-            "ITERATE","JOIN","KEY","LANGUAGE","LARGE","LAST","LATERAL","LEADING","LEFT","LESS","LEVEL",
-            "LIKE","LIMIT","LOCAL","LOCALTIME","LOCALTIMESTAMP","LOCATOR","MAP","MATCH","MINUTE",
-            "MODIFIES","MODIFY","MODULE","MONTH","NAMES","NATIONAL","NATURAL","NCHAR","NCLOB","NEW",
-            "NEXT","NO","NONE","NOT","NULL","NUMERIC","OBJECT","OF","OFF","OLD","ON","ONLY","OPEN",
-            "OPERATION","OPTION","OR","ORDER","ORDINALITY","OUT","OUTER","OUTPUT","PAD","PARAMETER",
-            "PARAMETERS","PARTIAL","PATH","POSTFIX","PRECISION","PREFIX","PREORDER","PREPARE","PRESERVE",
-            "PRIMARY","PRIOR","PRIVILEGES","PROCEDURE","PUBLIC","READ","READS","REAL","RECURSIVE","REF",
-            "REFERENCES","REFERENCING","RELATIVE","RESTRICT","RESULT","RETURN","RETURNS","REVOKE","RIGHT",
-            "ROLE","ROLLBACK","ROLLUP","ROUTINE","ROW","ROWS","SAVEPOINT","SCHEMA","SCROLL","SCOPE","SEARCH",
-            "SECOND","SECTION","SELECT","SEQUENCE","SESSION","SESSION_USER","SET","SETS","SIZE","SMALLINT",
-            "SOME","SPACE","SPECIFIC","SPECIFICTYPE","SQL","SQLEXCEPTION","SQLSTATE","SQLWARNING",
-            "START","STATE","STATEMENT","STATIC","STRUCTURE","SYSTEM_USER","TABLE","TEMPORARY","TERMINATE",
-            "THAN","THEN","TIME","TIMESTAMP","TIMEZONE_HOUR","TIMEZONE_MINUTE","TO","TRAILING","TRANSACTION",
-            "TRANSLATION","TREAT","TRIGGER","TRUE","UNDER","UNION","UNIQUE","UNKNOWN","UNNEST","UPDATE","USAGE",
-            "USER","USING","VALUE","VALUES","VARCHAR","VARIABLE","VARYING","VIEW","WHEN","WHENEVER","WHERE","WITH",
-            "WITHOUT","WORK","WRITE","YEAR","ZONE","BULK","COLLECT","RECORD","ELSIF","NESTED","PASSING","COLUMNS","LOOP",
-            "PACKAGE","BODY"
-        ]
-        for word in keywords:
+        for word in C_keywords:
             pattern = QRegExp(r"\b" + word + r"\b", Qt.CaseInsensitive)
             self.highlightingRules.append((pattern, keywordFormat))
 
@@ -116,9 +120,8 @@ class SQLHighlighter(QSyntaxHighlighter):
             self.setFormat(startIndex, commentLength, self.multiLineCommentFormat)
             startIndex = self.commentStartExpression.indexIn(text, startIndex + commentLength)
 
-#---------------------------------------------------------
-#
-#---------------------------------------------------------
+############################################################################################
+
 
 class LineNumberArea(QWidget):
     def __init__(self, editor):
@@ -131,11 +134,10 @@ class LineNumberArea(QWidget):
     def paintEvent(self, event):
         self.editor.lineNumberAreaPaintEvent(event)
 
-#---------------------------------------------------------
-#
-#---------------------------------------------------------
+############################################################################################
 
-class CodeEditor(QPlainTextEdit):
+
+class EDITOR_SQL(QPlainTextEdit):
     def __init__(self, text="", customContextMenu=None):
         super().__init__()
         self.lineNumberArea = LineNumberArea(self)
@@ -151,7 +153,7 @@ class CodeEditor(QPlainTextEdit):
         self.updateLineNumberAreaWidth(0)
         self.setPlainText(text)
         #self.highlightCurrentLine()
-        self.codeCompeteArea = None
+        self.keyCompleterEvent = None
         if customContextMenu:
             self.setContextMenuPolicy(Qt.CustomContextMenu )
             self.customContextMenuRequested.connect(customContextMenu)             
@@ -163,11 +165,12 @@ class CodeEditor(QPlainTextEdit):
     def setText(self, text):
         return self.setPlainText(text)
     
-    def text(self):
+    def getText(self):
         return self.toPlainText()
     
-    def selectedText(self):
-        return self.textCursor().selectedText()
+    def getSelectedText(self):
+        x = self.textCursor().selectedText()
+        return x.replace('\u2029', '\n')
     
     def replaceSelectedText(self, new_text):
         cursor = self.textCursor()
@@ -387,64 +390,15 @@ class CodeEditor(QPlainTextEdit):
             cursor.endEditBlock()
 
         elif event.key() == 46:
-            if self.codeCompeteArea:
-                self.codeCompeteArea(event)
+            if self.keyCompleterEvent:
+                self.keyCompleterEvent()
             super().keyPressEvent(event)
         else:
             super().keyPressEvent(event)
 
-
-    def formatSql(self):
-        import re
-
-        indent = 0
-        indent_size = 4
-        text = self.toPlainText()
-
-        sql_keywords = [
-            "SELECT", "FROM", "WHERE", "INNER JOIN", "LEFT JOIN", "RIGHT JOIN", "FULL JOIN",
-            "JOIN", "ON", "GROUP BY", "ORDER BY", "HAVING", "UNION", "INSERT INTO",
-            "VALUES", "UPDATE", "SET", "DELETE FROM", "LIMIT", "OFFSET", "AND", "OR"
-        ]
-
-        # Ordena por tamanho decrescente para evitar conflitos ("OR" dentro de "ORDER")
-        sql_keywords_sorted = sorted(sql_keywords, key=len, reverse=True)
-        keyword_pattern = re.compile(
-            r'(?<!\n)(?<!^)\b(' + '|'.join(re.escape(k) for k in sql_keywords_sorted) + r')\b', re.IGNORECASE
-        )
-
-        # Substitui cada keyword por \n + indent + palavra-chave
-        def replacer(match):
-            kw = match.group(1).upper()
-            return '\n' + ' ' * indent + kw
-
-        # Aplica substituições com cuidado para não quebrar início de linha
-        formatted_text = keyword_pattern.sub(replacer, text)
-
-        # Ajuste final: limpa espaços extras e padroniza indentação adicional
-        lines = formatted_text.splitlines()
-        increase_keywords = ("BEGIN", "LOOP", "THEN", "IF", "CASE", "IS", "AS", "ELSE", "ELSIF", "WHEN")
-        decrease_keywords = ("END", "END IF", "ELSE", "ELSIF", "WHEN")
-
-        result = []
-        for line in lines:
-            stripped = line.strip()
-
-            if not stripped:
-                result.append("")
-                continue
-
-            if any(stripped.upper().startswith(kw) for kw in decrease_keywords):
-                indent = max(indent - indent_size, 0)
-
-            result.append(" " * indent + stripped)
-
-            if any(stripped.upper().startswith(kw) for kw in increase_keywords):
-                indent += indent_size
-
-        self.setPlainText("\n".join(result))
-
-
+    #---------------------------------------------------------
+    #
+    #---------------------------------------------------------
 
     def finder_prepare(self, params=None):
         if params:

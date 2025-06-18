@@ -1,4 +1,4 @@
-from f_editor_sql import CodeEditor
+from f_editor_sql import EDITOR_SQL
 import ui.d_editor_tti as d_editor_tti
 import dm
 import dm_const
@@ -41,9 +41,9 @@ class form(QWidget):
         self.filename    = None
         self.objectname  = None
 
-        self.editorSQL = CodeEditor(text="SELECT * FROM DUAL", customContextMenu=self.mem_editor_popup_show)# dm.EDITOR_SQL(text="SELECT * FROM DUAL", customContextMenu=self.mem_editor_popup_show)
+        self.editorSQL = EDITOR_SQL(text="SELECT * FROM DUAL", customContextMenu=self.mem_editor_popup_show)# dm.EDITOR_SQL(text="SELECT * FROM DUAL", customContextMenu=self.mem_editor_popup_show)
         self.editorSQL.textChanged.connect(self.mem_editor_textchanged)
-        self.editorSQL.codeCompeteArea = self.mem_editor_keyPressEvent
+        self.editorSQL.keyCompleterEvent = self.mem_editor_keyPressEvent
         self.ui.editorLayout.addWidget(self.editorSQL)
 
     ## ==============================================================================================
@@ -90,7 +90,7 @@ class form(QWidget):
     ## menu popup do editor
     ## ==============================================================================================
     def mem_editor_popup_show(self, position):
-        txt = self.editorSQL.selectedText()
+        txt = self.editorSQL.getSelectedText()
         txt = "" if txt == None else txt
         self.mem_editor_popup.showAction("describe",    txt.upper() in dm.all_tables)
         self.mem_editor_popup.showAction("properties",  txt.upper() in dm.all_tables)
@@ -100,7 +100,7 @@ class form(QWidget):
 
 
     def mem_editor_popup_click(self):
-        txt = self.editorSQL.selectedText()
+        txt = self.editorSQL.getSelectedText()
         
         if self.sender().text() == "Find":
             self.editorSQL.finder_prepare()
@@ -112,7 +112,7 @@ class form(QWidget):
             self.editorSQL.replaceSelectedText(txt.lower())
 
         elif self.sender().text() == "Format SQL":
-            txt = self.editorSQL.selectedText()
+            txt = self.editorSQL.getSelectedText()
             if len(txt) > 1:
                 arq = dm.generateFileName("fmt.sql")
                 jar = dm.generateFileName("dm_format_sql.jar")
@@ -196,7 +196,7 @@ class form(QWidget):
             return
         QListWidget.keyPressEvent(self.ui.code_completation, event)
 
-    def mem_editor_keyPressEvent(self, event):
+    def mem_editor_keyPressEvent(self):
         word  = self.editorSQL.wordOnCursor()
         lista = []
 
@@ -209,7 +209,7 @@ class form(QWidget):
             lista = [x[0] for x in dm.db.col_data]
 
         else:
-            x = self.editorSQL.text().upper().replace(';', ' ').replace(',', ' ').replace("\n", ' ').replace('\t', ' ').replace('.', ' ').replace('*', ' ').replace(' SELECT ', ' ')
+            x = self.editorSQL.getText().upper().replace(';', ' ').replace(',', ' ').replace("\n", ' ').replace('\t', ' ').replace('.', ' ').replace('*', ' ').replace(' SELECT ', ' ')
             while x.find('  ') > 0:
                 x = x.replace('  ', ' ')
             info_a = x.split(' ')
@@ -392,17 +392,12 @@ class form(QWidget):
 
 
     def pegaSQL(self):
-        sql = self.editorSQL.text()
+        sql = self.editorSQL.getText()
 
         if not self.ui.chk_all_text.isChecked():
-            sql = self.editorSQL.selectedText()
-            if len(sql.strip()) == 0:
-                x = self.editorSQL.currentPosition()
-                t = ""
-                for sql in (self.editorSQL.text() + "\n").split(";\n"):
-                    if len(t+sql) >= x:
-                        break
-                    t = t + sql
+            sql_selected = self.editorSQL.getSelectedText()
+            if len(sql_selected.strip()) == 0:
+                sql = sql_selected
 
         if self.ui.chk_parameters.isChecked() == False and self.objectname == None and "&" in sql:
             while "&" in sql:
@@ -417,7 +412,7 @@ class form(QWidget):
                         else:
                             return None
                         break
-        return sql
+        return sql.strip()
 
 
 
@@ -458,7 +453,8 @@ class form(QWidget):
         self.ui.grid_select.setRowCount(0)
         self.ui.grid_select.setColumnCount(0)
         self.db._sql        = self.pegaSQL()
-        self.db._sql_type   = dm.tipoSQL(self.db._sql)                     
+        self.db._sql_type   = dm.tipoSQL(self.db._sql)    
+                     
 
         self.ui.bt_fetch.setVisible(self.db._sql_type == 1)
 

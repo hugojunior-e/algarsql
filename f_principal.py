@@ -179,7 +179,7 @@ class form(QMainWindow):
             if nome:
                 tab.filename = nome
                 xx = open(nome, "w")
-                xx.write(tab.editorSQL.text())
+                xx.write(tab.editorSQL.getText())
                 xx.close()
                 tab.tabTextIcon()
                 if novo:
@@ -258,7 +258,7 @@ class form(QMainWindow):
             self.th = dm.WORKER(proc_run=self.popup_config_recompile, proc_fim=x)
         else:
             ff = self.ui.pc_editor.currentWidget()
-            dm.f_editor.showForm( self.sender().text() , "" if ff == None else ff.editorSQL.text() )
+            dm.f_editor.showForm( self.sender().text() , "" if ff == None else ff.editorSQL.getText() )
 
 
     ## ==============================================================================================
