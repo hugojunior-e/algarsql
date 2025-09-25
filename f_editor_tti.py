@@ -396,7 +396,7 @@ class form(QWidget):
 
         if not self.ui.chk_all_text.isChecked():
             sql_selected = self.editorSQL.getSelectedText()
-            if len(sql_selected.strip()) == 0:
+            if len(sql_selected.strip()) > 0:
                 sql = sql_selected
 
         if self.ui.chk_parameters.isChecked() == False and self.objectname == None and "&" in sql:

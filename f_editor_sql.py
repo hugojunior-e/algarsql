@@ -231,7 +231,8 @@ class EDITOR_SQL(QPlainTextEdit):
                 match_cursor.movePosition(QTextCursor.NextCharacter, QTextCursor.KeepAnchor)
 
                 selection = QTextEdit.ExtraSelection()
-                selection.format.setBackground(QColor("#cceeff"))
+                selection.format.setForeground(QColor("orange"))
+                selection.format.setFontUnderline(True)
                 selection.cursor = match_cursor
                 extraSelections.append(selection)
 
