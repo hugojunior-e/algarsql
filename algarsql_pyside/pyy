@@ -1,0 +1,28 @@
+if [ "$1" = "1" ]; then
+    echo "*** gerando AlgarSQL"
+
+    rm AlgarSQL
+    rm __pycache__ -rf
+    rm ui/__pycache__ -rf
+    zip -r AlgarSQL.zip *py *ui* *png* -x "*ui" -x "*qrc"
+    
+    echo '#!/usr/bin/env python3' | cat - AlgarSQL.zip > AlgarSQL
+    chmod 755 AlgarSQL
+    rm AlgarSQL.zip
+
+else
+    echo "*** compilando arquivos"
+    
+    cd ui    
+    
+    echo "menus.qrc"
+    pyside6-rcc menus.qrc -o menus_rc.py
+
+    echo "telas.ui"
+    for cx in `find . | grep ui$ | cut -d"/" -f2 | cut -d "." -f 1`
+    do 
+      echo $cx
+      pyside6-uic $cx.ui -o $cx.py
+      sed -i 's/menus_rc/ui.menus_rc/' "$cx.py"
+    done
+fi

@@ -1,0 +1,388 @@
+ 
+/* ======================================================================== */
+/* =======================  VSCode DARK – PREMIUM  ======================== */
+/* ======================================================================== */
+
+:root {
+    /* CORES BASE */
+    --cor-principal: #1f1f1f;
+    --cor-secundaria: #252526;
+
+    --cor-fonte-padrao: #e5e5e5;
+    --cor-fonte-secundaria: #c7c7c7;
+
+    /* ACENTO VSCode */
+    --cor-acento: #007acc;
+
+    /* SPLITTER */
+    --w-spliter: 5px;
+    --cor-spliter-bg: #3a3a3a;
+
+    /* BORDAS / CONTORNOS */
+    --borda-padrao: 1px solid #474747;
+    --borda-leve: 1px solid #3f3f46;
+
+    /* BOTÕES */
+    --cor-botao: #2e2e31;
+    --cor-botao-hover: #414145;
+    --cor-botao-fonte: var(--cor-fonte-padrao);
+
+    /* GRID */
+    --cor-grid-bg: #232323;
+    --cor-grid-fonte: #e5e5e5;
+    --cor-grid-th-bg: #383838;
+    --cor-grid-nth: #2e2e2e;
+    --cor-grid-hover: #3a3d41;
+
+    /* INPUTS / FORM */
+    --cor-input-bg: #2d2d30;
+    --cor-input-font: #d4d4d4;
+    --cor-input-border: #555;
+
+    /* SIDEBAR */
+    --cor-sidebar-bg1: #1f1f1f;
+    --cor-sidebar-bg2: #1a1a1a;
+    --cor-sidebar-fonte: var(--cor-fonte-padrao);
+}
+
+/* ======================================================================== */
+/* ============================ GLOBAL ==================================== */
+/* ======================================================================== */
+
+body {
+    height: calc(100vh - 40px);
+    background: var(--cor-principal);
+    color: var(--cor-fonte-padrao);
+    font-family: "Segoe UI", sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+a {
+    text-decoration: none;
+    color: var(--cor-acento);
+}
+
+button {
+    background-color: var(--cor-botao);
+    color: var(--cor-botao-fonte);
+    padding: 8px 16px;
+    border: var(--borda-leve);
+    border-radius: 6px;
+    cursor: pointer;
+    height: 35px;
+    transition: background 0.2s, box-shadow .2s;
+    box-shadow: 0 0 4px rgba(0,0,0,0.2);
+    will-change: background, box-shadow;
+}
+
+button:hover:not(:disabled)  {
+    background-color: var(--cor-botao-hover);
+}
+
+button:disabled {
+    background-color: #e6e6e6;
+    color: #999;
+    border-color: #ccc;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+
+/* ======================================================================== */
+/* ============================ TABELAS =================================== */
+/* ======================================================================== */
+
+table {
+    width: max-content;
+    border-collapse: collapse;
+    font-size: 12px;
+    color: var(--cor-grid-fonte);
+    font-family: monospace;
+}
+
+th,
+td {
+    padding: 4px 4px;
+    border: var(--borda-padrao);
+    white-space: nowrap;
+}
+
+th {
+    background: var(--cor-grid-th-bg);
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+tr:nth-child(even) {
+    background: var(--cor-grid-nth);
+}
+
+tr:hover {
+    background: var(--cor-grid-hover);
+}
+
+/* ======================================================================== */
+/* ============================ LAYOUT ==================================== */
+/* ======================================================================== */
+
+.main {
+    display: flex;
+    height: 100%;
+    width: 100%;
+}
+
+.header {
+    height: 30x;
+    background: var(--cor-secundaria);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 10px;
+    border-bottom: var(--borda-padrao);
+}
+
+
+.loading {
+    cursor: wait;
+    pointer-events: none;
+}
+
+/* ======================================================================== */
+/* ============================ SIDEBAR =================================== */
+/* ======================================================================== */
+
+.sidebar {
+    width: 250px;
+    background: linear-gradient(var(--cor-sidebar-bg1), var(--cor-sidebar-bg2));
+    border-right: var(--borda-padrao);
+    overflow: auto;
+    white-space: nowrap;
+    padding: 12px;
+    color: var(--cor-sidebar-fonte);
+/*    user-select: none;*/
+    line-height: 1.6em;
+    font-size: 14px;
+}
+
+.sidebar a {
+    color: var(--cor-sidebar-fonte);
+}
+
+.sidebar a:hover {
+    color: var(--cor-acento);
+    transition: color .2s;
+}
+
+/* ======================================================================== */
+/* ============================ SPLITTER ================================== */
+/* ======================================================================== */
+
+.splitter-horizontal,
+.splitter-vertical {
+    background: var(--cor-spliter-bg);
+}
+
+.splitter-horizontal {
+    height: var(--w-spliter);
+    cursor: ns-resize;
+}
+
+.splitter-vertical {
+    width: var(--w-spliter);
+    cursor: ew-resize;
+}
+
+.splitter-horizontal:hover,
+.splitter-vertical:hover {
+    background: #4a4a4a;
+    transition: background .2s;
+}
+
+/* ======================================================================== */
+/* ============================ PAINEL DIREITO ============================ */
+/* ======================================================================== */
+
+.right {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* ======================================================================== */
+/* ============================ MONACO EDITOR ============================= */
+/* ======================================================================== */
+
+#editor-container {
+    flex: 1;
+    min-height: 120px;
+}
+
+/* ======================================================================== */
+/* ============================ MODAIS ==================================== */
+/* ======================================================================== */
+
+.itools_modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(3px);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+
+.dialog {
+    width: 550px;
+    background: var(--cor-secundaria);
+    border: var(--borda-padrao);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 0 25px rgba(0,0,0,0.5);
+}
+
+.dialog .header {
+    background: #2b2b2b;
+    color: var(--cor-input-font);
+    padding: 12px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: var(--borda-padrao);
+}
+
+.dialog .close-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: var(--cor-input-font);
+    cursor: pointer;
+}
+
+.dialog .close-btn:hover {
+    color: var(--cor-acento);
+}
+
+.dialog .content {
+    display: flex;
+    padding: 12px;
+    gap: 12px;
+}
+
+.dialog .form {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* ======================================================================== */
+/* ============================ INPUTS ==================================== */
+/* ======================================================================== */
+
+.dialog input,
+.dialog textarea,
+.dialog select {
+    width: 220px;
+    padding: 6px;
+    background: var(--cor-input-bg);
+    color: var(--cor-input-font);
+    border: 1px solid var(--cor-input-border);
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+.dialog input:focus,
+.dialog textarea:focus,
+.dialog select:focus {
+    border-color: var(--cor-acento);
+    outline: none;
+}
+
+/* Textarea */
+.dialog textarea {
+    height: 500px;
+    width: 600px ;
+    white-space: nowrap;
+}
+
+/* ======================================================================== */
+/* ============================ GRID EM MODAIS ============================ */
+/* ======================================================================== */
+
+.grid {
+    flex: 1;
+    background: var(--cor-grid-bg);
+    overflow: auto;
+}
+
+#id_recall_sql_form  .content,
+#id_edit_row_grid_form .content,
+#id_find_object_form .content,
+#id_view_sessions_form .content,
+#id_preferences_form .content {
+    height: calc(100% - 80px);
+}
+
+#id_recall_sql_form  .grid,
+#id_edit_row_grid_form .grid,
+#id_find_object_form .grid,
+#id_view_sessions_form .grid,
+#id_preferences_form .grid {
+    flex: 1;
+    overflow: auto;
+    border: var(--borda-padrao);
+}
+
+/* ======================================================================== */
+/* ============================ MONACO DECORAÇÕES ========================= */
+/* ======================================================================== */
+
+.underline-hover {
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+
+
+
+.pref-form {
+    display: flex;
+    width: 100%;
+    flex-direction: column;
+    gap: 16px;
+    padding: 10px;
+    overflow: auto;
+}
+
+.pref-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+}
+
+.pref-row label {
+    width: 150px;
+    text-align: right;
+    padding-top: 6px;
+    color: var(--cor-fonte-padrao);
+    font-size: 12px;
+}
+
+.pref-row input,
+.pref-row textarea {
+    flex: 1;
+}
+
+.pref-row textarea {
+    height: 300px;
+    resize: vertical;
+}
