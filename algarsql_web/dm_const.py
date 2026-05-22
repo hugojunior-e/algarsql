@@ -12,6 +12,7 @@ C_SQL_ALL_TAB_COLUMNS = """
    WHERE TABLE_NAME = upper('%s') 
    ORDER BY OWNER, COLUMN_ID"""
 
+
 C_SQL_ALL_TABLES_COLUMNS           = """
   SELECT TABLE_NAME, OWNER, lpad( row_number() over(order by OWNER, TABLE_NAME) , 10,'0')  
     FROM ALL_TABLES 
@@ -19,10 +20,52 @@ C_SQL_ALL_TABLES_COLUMNS           = """
 """
 
 C_SQL_ALL_TABLES           = "SELECT TABLE_NAME FROM ALL_TABLES WHERE OWNER = upper('%s') ORDER BY 1"
+
+
 C_SQL_TABLE_DESCRIBE_PROP  = "SELECT * FROM ALL_TABLES WHERE TABLE_NAME = upper( '%s' ) ORDER BY OWNER"
-C_SQL_TABLE_DESCRIBE_COLS  = "SELECT column_name, data_type, data_length, nullable, table_name, owner FROM all_tab_columns t where table_name = UPPER( '%s' )  order by owner, t.column_id"
-C_SQL_FIND_OBJECT          = "SELECT owner, object_name, object_type, CREATED,LAST_DDL_TIME, STATUS FROM ALL_OBJECTS WHERE OBJECT_NAME LIKE upper('%s')"
-C_SQL_ALL_ERRORS           = "SELECT ATTRIBUTE, LINE, TEXT  FROM ALL_ERRORS  WHERE OWNER = '%s' AND NAME = '%s'  ORDER BY SEQUENCE"
+
+C_SQL_TABLE_DESCRIBE_COLS  = """
+SELECT t.column_name,
+       t.data_type,
+       t.data_length,
+       t.nullable,
+       t.table_name,
+       t.owner,
+       c.comments AS column_description
+  FROM all_tab_columns t
+  LEFT JOIN all_col_comments c ON ( c.owner = t.owner AND c.table_name = t.table_name AND c.column_name = t.column_name )
+ WHERE t.table_name = UPPER('%s')
+ ORDER BY t.owner, t.column_id
+"""
+
+C_SQL_TABLE_INDEXES        = """
+select (SELECT decode(UNIQUENESS,'UNIQUE','UNIQUE','NORMAL') FROM ALL_INDEXES WHERE OWNER = vw.table_owner and INDEX_NAME = vw.INDEX_NAME) INDEX_TYPE,
+       vw.*
+  from (
+          SELECT index_name,table_owner,
+                 RTRIM(XMLAGG(XMLELEMENT(e, column_name || ',') ORDER BY column_position).EXTRACT('//text()'), ',') campos
+            FROM all_ind_columns t
+            WHERE table_name = UPPER('%s')
+            --AND table_owner = 
+            GROUP BY index_name,table_owner
+       ) vw
+ order by 1      
+"""
+
+C_SQL_FIND_OBJECT          = """
+  SELECT owner, 
+         object_name, 
+         object_type, 
+         CREATED,
+         LAST_DDL_TIME, 
+         STATUS 
+    FROM ALL_OBJECTS 
+   WHERE OBJECT_NAME LIKE upper('%s') 
+     AND OBJECT_TYPE NOT IN ('SYNONYM') 
+   order by owner,object_type,object_name 
+"""
+
+C_SQL_ALL_ERRORS           = "SELECT ATTRIBUTE, LINE, TEXT  FROM ALL_ERRORS  WHERE OWNER = upper( '%s' ) AND NAME = upper( '%s' )  ORDER BY SEQUENCE"
 C_SQL_START                = "begin dbms_output.enable(100000); DBMS_APPLICATION_INFO.SET_CLIENT_INFO('ALGAR SQL'); end;"
 
 C_SQL_DML                  = """
@@ -34,6 +77,55 @@ begin
           end;
 end;
 """
+
+C_SQL_PROCEDURE_REFCURSOR = """
+  PROCEDURE print_refcursor(p_cursor IN OUT SYS_REFCURSOR) IS
+      v_cursor_id   NUMBER;
+      v_col_count   NUMBER;
+      v_desc_tab    DBMS_SQL.DESC_TAB;
+      v_value       VARCHAR2(4000);
+      v_status      NUMBER;
+  BEGIN
+      IF p_cursor%ISOPEN THEN
+          v_cursor_id := DBMS_SQL.TO_CURSOR_NUMBER(p_cursor);
+      ELSE
+          DBMS_OUTPUT.PUT_LINE('Cursor not Opened!');
+          RETURN;
+      END IF;
+      DBMS_SQL.DESCRIBE_COLUMNS(v_cursor_id, v_col_count, v_desc_tab);
+      FOR i IN 1 .. v_col_count LOOP
+          DBMS_SQL.DEFINE_COLUMN(v_cursor_id, i, v_value, 4000);
+      END LOOP;
+      LOOP
+          v_status := DBMS_SQL.FETCH_ROWS(v_cursor_id);
+          EXIT WHEN v_status = 0;
+
+          FOR i IN 1 .. v_col_count LOOP
+              DBMS_SQL.COLUMN_VALUE(v_cursor_id, i, v_value);
+              DBMS_OUTPUT.PUT(v_value || ' | ');
+          END LOOP;
+
+          DBMS_OUTPUT.NEW_LINE;
+      END LOOP;
+      DBMS_SQL.CLOSE_CURSOR(v_cursor_id);
+  END;
+"""
+
+
+C_SQL_PROCEDURE_ARGS = """
+      select argument_name,
+             position,
+             data_type,
+             in_out,
+             owner
+        from all_arguments
+       where owner like '%s'
+         and object_name   = '%s'
+         and nvl(package_name,'-') = '%s'
+         and argument_name is not null
+        order by position
+"""
+
 
 C_SQL_DML_DIRECT      = """
 declare
@@ -56,7 +148,7 @@ begin
                       type
                  from all_source
                 where name = v_name
-                  and type like replace(v_type,'PACKAGE','PACKAGE%')
+                  and type like REPLACE( trim(replace(v_type,'BODY','')) , 'PACKAGE', 'PACKAGE%' )
                   and owner = v_owner
                 order by type, line)
     loop

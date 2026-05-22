@@ -6,6 +6,7 @@ class TreeView {
         this.endNodeClick = null;
         this.endNodeParamClick = null;
         this.endNodeText = null;
+        this.treeIcones = ["🔵", "📁"];
     }
 
 
@@ -97,11 +98,11 @@ class TreeView {
                 if (hcn) {
                     const isLast = ls ? 1 : 0;
                     this.writeTreeString(
-                        `<a href="javascript: oc('${vv_div}_${nodeValues[0]}', ${isLast});">➕📁${nodeValues[2]}</a>`
+                        `<a href="javascript: oc('${vv_div}_${nodeValues[0]}', ${isLast});">➕${this.treeIcones[1]}${nodeValues[2]}</a>`
                     );
                 } else {
                     // Nó folha
-                    this.writeTreeString("🔵");
+                    this.writeTreeString( this.treeIcones[0] );
                     const nodeValue       = nodeValues[2];
                     let endNodeText       = nodeValue;
                     let endNodeParameter  = nodeValue;

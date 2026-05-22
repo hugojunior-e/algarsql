@@ -1,36 +1,171 @@
+import datetime
+
 import oracledb
+oracledb.init_oracle_client(lib_dir="/opt/instantclient_21_12")
+
 import os
 import sys
 import sqlite3
 import re
 import dm_const
+import datetime
+import json
+
 from threading import Thread
+
+
+WORKDIR = "/algarsql"
+
+
+## ==============================================================================================
+## alteração de senha
+## ==============================================================================================
+
+FARMPRD_USR = "deployapp"
+FARMPRD_PWD = "P7RT6L#A5TI4B"
+FARMPRD_DSN = 'exa07-scan-prd.network.ctbc:1521/FARMPRD'
+
+
+def change_password_get_user(alias, username):
+    con_farm = oracledb.connect(dsn=FARMPRD_DSN, user=FARMPRD_USR, password=FARMPRD_PWD)
+    cur      = con_farm.cursor()
+
+    dados = cur.execute( f" select TNS_NAMES from deployadm.T_CFG_BASE tcb WHERE  upper(tcb.NAME) = upper('{alias}') ").fetchone()
+
+    if dados:
+        tns = dados[0]
+    else:
+        return "ERROR: Database entry not found.",None
+  
+    dados = cur.execute( f"""
+          SELECT * FROM
+          (
+                  SELECT --+ parallel
+                      distinct SUBSTR(tb_recurso.name,18) data_base, tb_conta.accountIdentifier
+                  FROM blazonadm.MembershipEntitlement tb_membrododireito
+                  INNER JOIN blazonadm.Account tb_conta                             ON tb_membrododireito.account_id = tb_conta.id
+                  INNER JOIN blazonadm.b_Resource tb_recurso                          ON tb_conta.resource_id = tb_recurso.id
+                  INNER JOIN blazonadm.B_USER tb_user                          ON tb_user.id = tb_conta.user_id
+                  WHERE 1 = 1
+                  AND upper(tb_recurso.name) LIKE '%BANCO DE DADOS%PRD' -- NOME DO RECURSO
+                  and upper( tb_user.USERNAME ) = upper('{username}')  --entre aq com o usuario de rede ( logado no app algarsql )
+
+                  UNION
+
+                  SELECT --+ parallel
+                  'CMPRD' data_base, tb_conta.accountIdentifier
+                  FROM blazonadm.MembershipEntitlement tb_membrododireito
+                  INNER JOIN blazonadm.Account tb_conta                             ON tb_membrododireito.account_id = tb_conta.id
+                  INNER JOIN blazonadm.b_Resource tb_recurso                          ON tb_conta.resource_id = tb_recurso.id
+                  INNER JOIN blazonadm.B_USER tb_user                          ON tb_user.id = tb_conta.user_id
+                  WHERE 1 = 1
+                  AND upper(tb_recurso.name) = 'CONNECT MASTER' -- NOME DO RECURSO
+                  and upper( tb_user.USERNAME ) = upper('{username}') --entre aq com o usuario de rede ( logado no app algarsql )
+                  
+          )
+          WHERE DATA_BASE IN (
+                  select NAME
+                  from deployadm.T_CFG_BASE tcb
+                  START WITH tcb.NAME = '{alias}'  --ENTRE AQ COM A BASE QUE QUER TROCAR A SENHA
+                  CONNECT BY PRIOR ID = BASE_DEP_ID
+          )
+    """).fetchone()
+
+    userNameFound = None
+
+    if dados:
+        userNameFound = dados[1]
+    else:
+        return "ERROR: User not found.",None
+    
+    try:
+        con_db = oracledb.connect(dsn=tns, user=FARMPRD_USR, password=FARMPRD_PWD)
+        cur_db = con_db.cursor()
+
+        cur_db.execute(f"""select count(1) from all_users where username = upper('{userNameFound}')""")
+        user_exists = cur_db.fetchone()[0]
+        if user_exists == 0:
+            return f"ERROR: User {userNameFound} does not exist in database {alias}.",None
+        
+        return userNameFound, tns
+    except oracledb.DatabaseError as e:
+        error, = e.args
+        return f"ERROR: Database error: {error.message}",None
+
+
+def change_password(db_tns, db_user, db_password):
+  try:
+      con_db = oracledb.connect(dsn=db_tns, user=FARMPRD_USR, password=FARMPRD_PWD)
+      cur_db = con_db.cursor()
+      
+      cur_db.execute(f"""
+                DECLARE
+                  P_Nm_Usuario    VARCHAR2(128)  := '{db_user}';
+                  P_Senha_Usuario VARCHAR2(4000) := '{db_password}';
+                  P_Msg_Retorno   VARCHAR2(2048) := 'SUCESSO';
+                  v_user_banco    VARCHAR2(128);
+                  v_qtd           number;
+                BEGIN
+                    PKG_RESET_SENHA_USUARIO.PRO_RESET_SENHA ( upper(P_Nm_Usuario) , P_Senha_Usuario , P_Msg_Retorno );
+
+                    if (P_Msg_Retorno LIKE '%ERRO%') then
+                        raise_application_error(-20003, P_Msg_Retorno );
+                    end if;
+
+                    -- DESBLOQUEANDO USUARIO
+                    PKG_RESET_SENHA_USUARIO.PRO_UNLOCK_USUARIO (upper(v_user_banco), P_Msg_Retorno );
+
+
+                    if (P_Msg_Retorno LIKE '%ERRO%') then
+                        raise_application_error(-20004, P_Msg_Retorno );
+                    end if;
+                END;                     
+      """)
+
+  except oracledb.DatabaseError as e:
+      error, = e.args
+      return f"Database error: {error.message}"
+  
+  return f"Success Change Password for user {db_user}"
+
 
 ## ==============================================================================================
 ## operacoes com arquivos
 ## ==============================================================================================
 
-def generateFileName(filename, inOutputDir=False):
-    v_path = configValue(tag="output_dir") if inOutputDir else os.path.dirname(sys.argv[0])
-    return os.path.join(v_path, filename)
+def generateFileName(filename, temp=False):
+    agora = datetime.datetime.now()
+    w     = os.path.join( WORKDIR ,"workspace" ) 
+    t     = os.path.join( WORKDIR ,"workspace", "temp" )
+    f     = filename.replace("[]",agora.strftime("%Y%m%d_%H%M%S_%f"))
+
+    os.makedirs( w , exist_ok=True)
+    os.makedirs( t , exist_ok=True)
+
+    return os.path.join( w if not temp else t, f ) 
+
 
 ## ==============================================================================================
 ## Configurações SQLite
 ## ==============================================================================================
 
 def configOracleHome():
-    oracledb.init_oracle_client()
+    oh = os.environ.get("ORACLE_HOME", "")
+    oracledb.init_oracle_client(lib_dir=oh)
 
-def configValue(tag=None, params=["%", "%"]):
-    fileConfig = sys.argv[0].replace('__main__.py','AlgarSQL') + ".db"
+def configValue(tag=None, params=["%", "%"], username=""):
+    fileConfig = generateFileName( username + ".db" )
     if not os.path.exists(fileConfig):
         return ""
     conn = sqlite3.connect(fileConfig)
     cursor = conn.cursor()
     ret = None
-    if tag == "*recall":
-        ret = cursor.execute(
-            f"select * from sql_history where info like '{params[0]}' and dbname like '{params[1]}' order by 1 desc").fetchall()
+    if tag == "SQL_HISTORY":
+        ret = cursor.execute( f"select * from sql_history where info like '{params[0]}' and dbname like '{params[1]}' order by 1 desc").fetchall()
+        
+    elif tag == "SQL_TEMPLATES":
+        ret = cursor.execute( f"select * from sql_templates where node like '{params[0]}' order by node").fetchall()
+
     else:
         reg = cursor.execute(f"select info from config where node = '{tag}'").fetchall()
         ret = "" if len(reg) == 0 else reg[0][0]
@@ -38,42 +173,65 @@ def configValue(tag=None, params=["%", "%"]):
     return ret
 
 
-def configSave(tagName, tagValue, p_tipo):
-    fileConfig = sys.argv[0].replace('__main__.py','AlgarSQL') + ".db"
+def configSave(tagName, tagValue, p_tipo, username=""):
+    fileConfig = generateFileName( username + ".db" )
     conn = sqlite3.connect( fileConfig )
     cursor = conn.cursor()
-    cursor.execute("CREATE TABLE if not exists config (node VARCHAR(11), info text)")
-    cursor.execute("CREATE TABLE if not exists sql_history (dt datetime default current_timestamp, dbname varchar(50), info text)")
+    
+    cursor.execute("CREATE TABLE if not exists config (node text, info text)")
+    cursor.execute("CREATE TABLE if not exists sql_history (dt datetime default current_timestamp, dbname text, info text)")
+    cursor.execute("CREATE TABLE if not exists sql_templates (node text unique, info text)")
+
     if p_tipo == "CONFIG":
         cursor.execute(f"delete from config where node = '{tagName}'")
         cursor.execute("insert into config (node,info) values (?,?)", (tagName, tagValue))
+
     if p_tipo == "SQL_HISTORY":
         cursor.execute("insert into sql_history (dbname,info) values (?,?)", (tagName, tagValue))
+
+    if p_tipo == "SQL_TEMPLATES":
+        cursor.execute(f"delete from sql_templates where node = '{tagName}'")
+        cursor.execute("insert into sql_templates (node,info) values (?,?)", (tagValue['node'], tagValue['info']))
+
     conn.commit()
     conn.close()
 
 
-def tipoSQL(SQL, checkCreateObj=False):
+def tipoSQL(SQL):
     x = SQL.upper() + "\n"
     x = re.sub(r"--.*", "", x)
     x = re.sub(r"/\*.*?\*/", "", x, flags=re.S)
-    if checkCreateObj:
-        if x.strip().startswith('CREATE'):
-            x = x.replace("\n", " ").replace(" BODY ", " ").replace("(", " ").replace('"', "")
-            while "  " in x:
-                x = x.replace("  ", " ")
-            b = ""
-            d = x.split(" ")
-            for i, dd in enumerate(d):
-                if dd in ["PROCEDURE", "TABLE", "TRIGGER", "VIEW", "PACKAGE", "FUNCTION"]:
-                    b = d[i + 1].strip()
-                    break
-            return 3, b
-        else:
-            return -3, None
+    if x.strip().startswith('CREATE'):
+        pattern = re.compile(
+            r'''
+            CREATE\s+
+            (?:OR\s+REPLACE\s+)? 
+            (?:EDITIONABLE\s+|NONEDITIONABLE\s+)? 
+            
+            (?P<tipo>PACKAGE\s+BODY|PACKAGE|FUNCTION|PROCEDURE|SEQUENCE|VIEW)
+            \s+
+            
+            (?:
+                "?(?P<schema>[^\s".]+)"?\.
+            )?
+            
+            "?(?P<objeto>[^\s"(]+)"?
+            ''',
+            re.IGNORECASE | re.VERBOSE | re.DOTALL
+        )
+
+        match = pattern.search(SQL)
+        obj   = None
+        if match:
+            obj = {
+                "object_type"  : match.group(1).upper(),
+                "object_owner" : match.group("schema"),
+                "object_name"  : match.group("objeto")
+            }        
+        return 3, obj
     if x.strip().startswith('SELECT') or x.strip().startswith('WITH'):
-        return 1
-    return 2
+        return 1,None
+    return 2,None
 
 
 class ORACLE:
@@ -92,6 +250,7 @@ class ORACLE:
         self.dbms_output    = ""
         self.col_names      = []
         self.col_types      = []
+        self.username       = ""
 
 
     def value(self, v):
@@ -208,9 +367,20 @@ class ORACLE:
         self.col_data     = []        
         self.in_execution = True
         if logger and self.last_sql != p_sql:
-            configSave(self.login_global_name, p_sql,"SQL_HISTORY")
+            configSave(self.login_global_name, p_sql,"SQL_HISTORY", username=self.username)
             self.last_sql = p_sql            
 
+    def get_line_column(self, sql, offset):
+        lines = sql.splitlines(True)  # mantém \n
+        current = 0
+
+        for i, line in enumerate(lines, start=1):
+            if current + len(line) >= offset:
+                column = offset - current
+                return i, column
+            current += len(line)
+
+        return None, None
 
     def EXECUTE(self,p_sql, logger=False, p_bind_values=None, p_many=False, direct=False):
         self.prepareVars(p_sql=p_sql, logger=logger)
@@ -258,6 +428,10 @@ class ORACLE:
     def SELECT(self, p_sql, direct=False, logger=False, fetchSize=None):
         self.prepareVars(p_sql, logger)
         try:
+            if self.cur.connection:
+                self.cur.close()
+                self.cur = self.con.cursor()
+
             if direct or self.is_direct:
                 self.cur.arraysize = 5000
                 self.cur.execute(p_sql)
@@ -275,9 +449,11 @@ class ORACLE:
                 
             self.status_code   = 0
             self.status_msg    = "SUCESSO"
-        except Exception as e:
+        except oracledb.DatabaseError as e:
+            error_obj,       = e.args
+            line, col        = self.get_line_column(p_sql, error_obj.offset)
             self.status_code = -1
-            self.status_msg  = str(e)
+            self.status_msg  = str(e) + "\n" + f"Error at line {line}, column {col}"
         self.in_execution = False
 
 
@@ -295,6 +471,67 @@ class ORACLE:
             self.status_msg  = str(e)
         self.in_execution = False
 
+
+    def PROCEDURE(self, obj):
+        dat            = obj.strip().upper().split(".")
+        v_name         = "%"
+        v_owner        = "%"
+        v_package      = "-"
+        v_obj_owner    = ""
+        
+
+        if len(dat) == 1:
+            v_name  = dat[0]
+        if len(dat) == 2:
+            v_owner = dat[0]
+            v_name  = dat[1]
+        if len(dat) > 2:
+            v_owner   = dat[0]
+            v_package = dat[1]
+            v_name    = dat[2]
+        sql = dm_const.C_SQL_PROCEDURE_ARGS % ( v_owner , v_name , v_package )
+
+        v_obj_name    = v_name if v_package == "-" else f"{v_package}.{v_name}"
+
+        self.SELECT(p_sql=sql, fetchSize=0)
+
+        decls  = []
+        params = []
+        prints = []
+        rcur   = ""
+
+        for arg_name, pos, data_type, in_out, v_obj_owner in self.col_data:
+
+            v = f"v_{ arg_name.lower() }"
+            t = ""
+
+            if data_type in ("VARCHAR2","CHAR"):
+                t = f"{data_type}(1000) := 'TESTE';"
+            elif data_type == "NUMBER":
+                t = f"{data_type} := 0;"
+            elif data_type == "DATE":
+                t = f"{data_type} := SYSDATE;"
+            elif "CURSOR" in data_type:
+                t = "SYS_REFCURSOR;"
+                rcur = "\n\n" + dm_const.C_SQL_PROCEDURE_REFCURSOR + "\n"
+            else:
+                t = f"{data_type};"
+
+            decls.append(f"{ v.ljust(40) } {t}")
+            params.append(f"{arg_name} => {v}")
+            if "OUT" in in_out:
+                if t == "SYS_REFCURSOR;":
+                    prints.append(f"print_refcursor({v});")
+                else:
+                    prints.append(f"DBMS_OUTPUT.PUT_LINE('{arg_name}=' || {v});")
+
+        decl_block = "\n".join( [ f"  {x}" for x in decls])
+        param_block = ",\n".join( [ f"    {x}" for x in params])
+        print_block = "\n".join( [ f"  {x}" for x in prints])
+
+        plsql = f"DECLARE\n{decl_block}{rcur}\nBEGIN\n  {v_obj_owner}.{v_obj_name}\n  (\n{param_block}\n  );\n{print_block}\nEND;"
+        return plsql
+    
 
 
     def EXPLAIN(self, p_sql):
