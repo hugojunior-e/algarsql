@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <title>AlgarSQL</title>
+
+  <script src="/js/funcs.js"></script>
+
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #f7f7f8;
+      color: #1f1f1f;
+      font-family: 'Courier New', Courier, monospace;
+      font-size: 12px;
+    }
+
+    .main {
+      height: 100%;
+    }
+
+    /* área do chat */
+    #id_chat {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 100px;
+
+      padding: 20px;
+
+      overflow-x: auto;
+      overflow-y: auto;
+
+      background: #ffffff;
+    }
+
+    /* form fixo */
+    #id_chat_form {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 100px;
+
+      background: #ffffff;
+      border-top: 1px solid #e5e5e5;
+
+      padding: 15px;
+      box-sizing: border-box;
+
+      display: flex;
+      gap: 10px;
+      align-items: flex-end;
+    }
+
+    /* textarea */
+    #id_chat_dados {
+      flex: 1;
+      height: 80%;
+
+      background: #ffffff;
+      color: #1f1f1f;
+
+      border: 1px solid #d1d5db;
+      border-radius: 10px;
+
+      padding: 12px;
+      resize: none;
+      outline: none;
+    }
+
+    #id_chat_dados:focus {
+      border-color: #10a37f;
+      box-shadow: 0 0 0 1px #10a37f;
+    }
+
+    /* botão */
+    #id_chat_enviar {
+      height: 45px;
+      padding: 0 20px;
+
+      background: #10a37f;
+      color: white;
+
+      border: none;
+      border-radius: 8px;
+
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: bold;
+
+      transition: background 0.2s;
+    }
+
+    #id_chat_enviar:hover {
+      background: #0e8e6d;
+    }
+
+    /* scrollbar */
+    #id_chat::-webkit-scrollbar {
+      height: 8px;
+      width: 8px;
+    }
+
+    #id_chat::-webkit-scrollbar-track {
+      background: #f1f1f1;
+    }
+
+    #id_chat::-webkit-scrollbar-thumb {
+      background: #c1c1c1;
+      border-radius: 4px;
+    }
+
+    pre {
+      background-color: #e6f2ff;
+      /* azul bem claro */
+      border-radius: 8px;
+      /* cantos arredondados */
+      padding: 10px;
+      /* espaço interno */
+      overflow-x: auto;
+      /* scroll horizontal se precisar */
+    }
+  </style>
+</head>
+
+<body>
+  <div class="main">
+
+    <div id="id_chat"></div>
+
+    <div id="id_chat_form">
+      <textarea id="id_chat_dados" placeholder="Digite sua mensagem...@sql adiciona o sql do seu editor"></textarea>
+      <button id="id_chat_enviar" onclick="js_ia_chat()">Send</button>
+    </div>
+
+  </div>
+</body>
+
+</html>

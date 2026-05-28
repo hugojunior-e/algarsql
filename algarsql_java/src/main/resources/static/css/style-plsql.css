@@ -1,0 +1,397 @@
+/* ======================================================================== */
+/* =======================  PLSQL DEVELOPER STYLE ========================= */
+/* ======================================================================== */
+
+:root {
+    --cor-principal: #f0f0f0;
+    --cor-secundaria: #e6e6e6;
+
+    --cor-fonte-padrao: #000000;
+    --cor-fonte-secundaria: #333333;
+
+    --cor-acento: #0000ff;
+
+    --w-spliter: 5px;
+    --cor-spliter-bg: #c0c0c000;
+
+    --borda-padrao: 1px solid #c0c0c0;
+    --borda-leve: 1px solid #d6d6d6;
+
+    --cor-botao: #e6e6e6;
+    --cor-botao-hover: #dcdcdc;
+    --cor-botao-fonte: #000;
+
+    --cor-grid-bg: #ffffff;
+    --cor-grid-fonte: #000;
+    --cor-grid-th-bg: #FFFFFF;
+    --cor-grid-nth: #4caf504a;
+    --cor-grid-hover: #e6f0ff;
+
+    --cor-input-bg: #ffffff;
+    --cor-input-font: #000;
+    --cor-input-border: #bdbdbd;
+
+    --cor-sidebar-bg1: #efefef;
+    --cor-sidebar-bg2: #e0e0e0;
+    --cor-sidebar-fonte: #000;
+}
+
+/* LAYOUT */
+
+.main {
+    display: flex;
+    height: 100%;
+    width: 100%;
+}
+
+.menu {
+    background: var(--cor-secundaria);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0 10px;
+    border-bottom: var(--borda-padrao);
+}
+
+.menu img {
+    width: 20px;
+}
+
+.menu button:disabled img {
+    opacity: 0.4;
+    filter: grayscale(100%);
+    cursor: not-allowed;
+}
+
+.separator {
+    width: 1px;
+    height: 18px;
+    background: #ccc;
+    margin: 0 6px;
+}
+
+/* GLOBAL */
+
+body {
+    height: calc(100vh - 40px);
+    background: var(--cor-principal);
+    color: var(--cor-fonte-padrao);
+    font-family: Tahoma, Arial, sans-serif;
+    font-size: 13px;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+a {
+    text-decoration: none;
+    color: var(--cor-acento);
+}
+
+button {
+    background-color: var(--cor-botao);
+    color: var(--cor-botao-fonte);
+    padding: 6px 12px;
+    border: var(--borda-padrao);
+    border-radius: 3px;
+    cursor: pointer;
+    height: 35px;
+}
+
+button:hover:not(:disabled) {
+    background-color: var(--cor-botao-hover);
+}
+
+button:disabled {
+    background-color: #f0f0f0;
+    color: #999;
+    border-color: #ccc;
+    cursor: not-allowed;
+}
+
+/* SIDEBAR */
+
+.sidebar {
+    width: 250px;
+    border-right: var(--borda-padrao);
+    overflow: auto;
+    white-space: nowrap;
+    padding: 10px;
+    color: var(--cor-sidebar-fonte);
+    line-height: 1.6em;
+    font-size: 13px;
+    user-select: none;
+    font-family: courier new;
+}
+
+.sidebar a {
+    color: var(--cor-sidebar-fonte);
+}
+
+.sidebar a:hover {
+    color: var(--cor-acento);
+}
+
+/* SPLITTER */
+
+.splitter-horizontal,
+.splitter-vertical {
+    background: var(--cor-spliter-bg);
+}
+
+.splitter-horizontal {
+    height: var(--w-spliter);
+    cursor: ns-resize;
+}
+
+.splitter-vertical {
+    width: var(--w-spliter);
+    cursor: ew-resize;
+}
+
+/* RIGHT PANEL */
+
+.right {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* MONACO */
+
+#editor-container {
+    flex: 1;
+    min-height: 120px;
+}
+
+/* MODAL */
+
+.itools_modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(3px);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+.dialog {
+    width: 550px;
+    background: #f8f8f8;
+    border: var(--borda-padrao);
+    border-radius: 3px;
+    overflow: hidden;
+    font-family: Tahoma, Arial, sans-serif;
+    box-shadow: 0 0 25px rgba(0,0,0,0.5);
+}
+
+.dialog .header {
+    background: #dcdcdc;
+    color: #000;
+    padding: 10px;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    border-bottom: var(--borda-padrao);
+    align-items: center;
+}
+
+.dialog .close-btn {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: #000;
+    cursor: pointer;
+}
+
+.dialog .close-btn:hover {
+    color: var(--cor-acento);
+}
+
+.dialog .content {
+    height: calc(100% - 80px);
+    overflow: auto;
+    padding: 10px;
+}
+
+.flex {
+    flex-direction: column;
+}
+
+.dialog input,
+.dialog textarea,
+.dialog select {
+    width: 220px;
+    padding: 5px;
+    background: var(--cor-input-bg);
+    color: var(--cor-input-font);
+    border: 1px solid var(--cor-input-border);
+    border-radius: 4px;
+}
+
+.w550 {
+    width: 550px;
+}
+
+.dialog input:focus,
+.dialog textarea:focus,
+.dialog select:focus {
+    border-color: var(--cor-acento);
+    outline: none;
+}
+
+.dialog textarea {
+    height: 400px;
+    width: 800px;
+    white-space: nowrap;
+}
+
+/* GRID */
+
+.grid {
+    flex: 1;
+    background: var(--cor-grid-bg);
+    overflow: auto;
+    height: calc(100% - 80px);
+}
+
+.grid table {
+    width: max-content;
+    border-collapse: collapse;
+    color: var(--cor-grid-fonte);
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.grid table tr:hover {
+    background: var(--cor-grid-hover);
+}
+
+.grid table th,
+.grid table td {
+    padding: 3px 6px;
+    border: var(--borda-padrao);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.grid table th {
+    background: var(--cor-grid-th-bg);
+    font-weight: bold;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.grid table tr:nth-child(even) {
+    background: var(--cor-grid-nth);
+}
+
+.th_selected {
+    background: #cce0ff;
+}
+
+.tooltip {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    color: #333;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 140px;
+    background-color: red;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 8px;
+    position: absolute;
+    z-index: 1;
+    top: 125%;        /* ⬅️ agora fica abaixo */
+    left: 50%;
+    margin-left: -70px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-weight: bold;
+}
+
+.tooltip .tooltiptext::after {
+    content: "";
+    position: absolute;
+    bottom: 100%;     /* ⬅️ bico fica em cima */
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: transparent transparent #333 transparent; /* ⬅️ invertido */
+}
+
+/* Mostra o tooltip ao passar o mouse */
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+
+#id_menu_db {
+    font-weight: bold;
+    color: #000;
+}
+
+
+
+.div_modal_editor {
+    position: fixed;
+    top: 50px;
+    right: 100px;
+    width: 200px;
+    z-index: 999999;
+    background: red;
+    border: 1px solid #1c0202;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+    padding: 10px;
+    display: none;
+    justify-content: center; /* horizontal */
+    align-items: center;     /* vertical */
+    font-weight: bold;
+    gap: 10px;
+}
+
+
+#id_tooltip {
+    position: absolute;
+    display: none;
+    background: #222;
+    color: white;
+    padding: 10px;
+    border-radius: 5px;
+    z-index: 9999;
+    max-width: 600px;
+}
+
+#id_tooltip pre {
+    margin: 0;
+    white-space: pre-wrap;
+    font-family: monospace;
+}
+
+.resizer {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 5px;
+    height: 100%;
+    cursor: col-resize;
+    user-select: none;
+}
+
+.resizer:hover {
+    background: #2196f3;
+}
