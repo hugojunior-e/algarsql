@@ -14,6 +14,22 @@ function copyToClip(texto) {
     alert("Copy Success!");    
 }
 
+function showMemoArea(content) {
+    if ( content == '@grid' ) {
+        id_dbms_output.style.display      = 'none';
+        id_grid_dados.style.display       = 'block';
+        id_grid_dados_pager.style.display = 'block';
+    } else {
+        id_dbms_output.style.display      = 'block';
+        id_grid_dados.style.display       = 'none';
+        id_grid_dados_pager.style.display = 'none';
+        id_dbms_output_data.innerHTML     = content;
+    }
+}
+
+
+
+
 /*
     ==========================================================================================------------------------------------
     comment: Implementacao de um banco de dados local usando IndexedDB para armazenar dados temporarios, como a estrutura da arvore de objetos do banco de dados.
@@ -470,15 +486,15 @@ class TGrid {
 */
 function ajax(url, dataBody, jsAction = null, jsError = null, usingHeader = true) {
     var options = {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/x-www-form-urlencoded",
-                "X-Tab-ID": global_var.session_id
-            },
-            body: new URLSearchParams(dataBody)
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "X-Tab-ID": global_var.session_id
+        },
+        body: new URLSearchParams(dataBody)
     };
 
-    if ( usingHeader == false ) {
+    if (usingHeader == false) {
         options = {
             method: "POST",
             headers: {
@@ -490,12 +506,22 @@ function ajax(url, dataBody, jsAction = null, jsError = null, usingHeader = true
 
     fetch(url, options)
         .then(response => {
+            // sessão expirou
+            if (response.status === 401) {
+                window.location.href = "/login";
+                return;
+            }
+
             if (!response.ok) {
                 throw new Error(response.statusText);
             }
             return response.json();
         })
         .then(a => {
+            if (a == null) {
+                return;
+            }
+
             if (jsAction !== null) {
                 jsAction(a);
             }
@@ -609,7 +635,9 @@ function generate_session_id() {
 
 
 function change_icon(running = null) {
-    let caption = id_login_username.value + "@" + id_login_database.options[id_login_database.selectedIndex].innerText;
+    let idx     = id_login_database.selectedIndex;
+    let text    = idx >= 0 ? id_login_database.options[idx].innerText : "";
+    let caption = idx >= 0 ? id_login_username.value + "@" + text : "";
 
     if (running == null ) {
         document.title        = "🔵 - AlgarSQL";
@@ -651,7 +679,7 @@ async function js_monta_tree() {
 }
 
 function js_dbtree_show() {
-    id_tree_obj.innerHTML = id_tree_obj.value;
+    id_tree_obj.innerHTML = id_tree_obj.value ?? 'No Connection Found';
     id_tree_obj.index     = 0;
 }
 
@@ -664,7 +692,7 @@ function js_tree_login_saved(x) {
 
 
 function js_show_last_sql() {
-  js_window_popup('last_sql',id_menu_qtd_char.sql,true);
+    showMemoArea(id_menu_qtd_char.last_output);
 }
 
 function getStatementAtCursor(text_full, offset) {
@@ -928,7 +956,7 @@ function js_editor_mode_open(object_name) {
             return;
         }
 
-        var code = a.status_msg.split("<end_package_spec>");
+        var code = a.ddl.split("<end_package_spec>");
         global_var.editorSQL.setValue( code[0].trim() );
         if ( code.length > 1 ) {
             id_div_compiler_spec.style.display = 'flex';
@@ -1035,11 +1063,11 @@ function js_template_close() {
 }
 
 function js_templates_open_item(x) {
-    if ( confirm('Open this template in current editor?') ) {
+    if ( confirm('Open this template in new editor?') ) {
         ajax("/template", { "action": "open", "name": x}, function (a) {
             id_template_name.value          = x;
-            id_menu_template_name.innerText = x;
-            global_var.editorSQL.setValue(a.code);
+            id_template_name.code           = a.code;
+            window.open('/?template')
         });
     }
 }
@@ -1433,7 +1461,7 @@ function js_db_ddl(object_name) {
 function js_db_execute() {
     id_grid_dados.innerHTML    = '';
     id_menu_qtd_char.innerHTML = '';
-    sql   = get_sql_editor();
+    sql                        = get_sql_editor();
 
     if ( sql.length < 3 ) {
         alert('No SQL Avalilable!');
@@ -1442,30 +1470,33 @@ function js_db_execute() {
     
     change_icon(true);
     global_var.tm_elapsed.start();
-    id_menu_qtd_char.innerHTML = "<a href=# onclick=js_show_last_sql()>" + sql.length + " chars </a>";
-    
+
     ajax("/db_execute", { "action": "execute", "sql": sql }, function (a) {
         global_var.tm_elapsed.stop();
+        id_menu_qtd_char.innerText    = sql.length + " chars";
+        id_menu_qtd_char.last_output  = [
+            `"timestamp"   : ${Date()}`,
+            `"status_code" : ${a.status_code}`,
+            `"status_msg"  : ${a.status_msg}`,
+            `"dbms_output" : ${a.dbms}`,
+            `"sql"         : ${sql}`
+        ].join('\n\n');
+
         if ( a.status_code != 0 ) {
-            alert(a.status_msg);
+            showMemoArea( id_menu_qtd_char.last_output );
             change_icon(false);
             return;
         }
-
-        global_var.dbms_output            = a.dbms;
-        id_dbms_output.style.display      = (a.sql_type == 1) ? 'none'  : 'block';
-        id_grid_dados.style.display       = (a.sql_type == 1) ? 'block' : 'none';
-        id_grid_dados_pager.style.display = (a.sql_type == 1) ? 'block' : 'none';
-
+        
         if (a.sql_type == 1) {
+            showMemoArea('@grid');
             global_var.grid_query.setContent(a.data, a.columns, a.columns_types, 50, [], sql);
             global_var.grid_query.desenharTabela();
         } else {
-            id_dbms_output.innerHTML = "<pre>" + a.status_msg + "<br>" + a.dbms + "</pre>"; 
+            showMemoArea( id_menu_qtd_char.last_output );
             js_db_status(in_transaction = true);
         }
         change_icon(false);
-        id_menu_qtd_char.sql  = `<h2>dbms output:</h2><br>${ global_var.dbms_output } <br><h2>sql:</h2><br>${ sql }`;
     }, function (error) {
         global_var.tm_elapsed.stop();
         alert(error);
@@ -1600,7 +1631,6 @@ function js_window_start() {
         tree_login: new TreeView(),
         tree_objects: new TreeView(),
         tree_templates: new TreeView(),
-        dbms_output: "",
         config_loaded: false,
         cache: new LocalDB()
     };
@@ -1632,6 +1662,11 @@ function js_window_start() {
         id_login_direct.value = window.opener.id_login_direct.value;
         js_login_connect();
     }
+
+    if (window.location.href.indexOf("?template") >= 0) {
+        id_menu_template_name.innerText = window.opener.id_template_name.value;
+        id_menu_template_name.code      = window.opener.id_template_name.code;
+    }     
 }
 
 
@@ -1819,7 +1854,7 @@ function js_window_editor_monaco(p_theme="vs-dark") {
         editor = monaco.editor.create(
             document.getElementById("editor-container"),
             {
-                value: "SELECT * FROM cmf",
+                value: id_menu_template_name.code ?? "SELECT * FROM cmf",
                 language: "sql",
                 theme: p_theme,
                 automaticLayout: true,
@@ -1878,7 +1913,7 @@ function js_window_editor_monaco(p_theme="vs-dark") {
             id: "Format PlSql",
             label: "Format PlSql",
             keybindings: [ ],
-            contextMenuGroupId: "navigation",
+            contextMenuGroupId: "coders",
             contextMenuOrder: 1.5,
             run: () => js_format_plsql()
         });          
@@ -1887,7 +1922,7 @@ function js_window_editor_monaco(p_theme="vs-dark") {
             id: "IA Assistant",
             label: "IA Assistant",
             keybindings: [],
-            contextMenuGroupId: "navigation",
+            contextMenuGroupId: "coders",
             contextMenuOrder: 1.5,
             run: () => js_ia_form()
         });    

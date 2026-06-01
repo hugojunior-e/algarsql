@@ -22,23 +22,21 @@ public class TemplatesController {
 
     @RequestMapping(value = "/template", method = {RequestMethod.GET, RequestMethod.POST})
     public Map<String, Object> templateActions(HttpServletResponse response, HttpServletRequest request, HttpSession session) throws Exception {
-
-        if ( request.getSession(false) == null ) {
-            response.sendRedirect(Constants.PAGE_LOGIN);
-            return null;
-        }
-        String username = (String) session.getAttribute("username");
-
         Map<String, Object> ret = new HashMap<>();
+
+        Object o = session.getAttribute("username");
+        if ( o == null ) {
+            response.setStatus(401);
+            ret.put("redirect", Constants.PAGE_LOGIN);
+            return ret;
+        }
+        String username = o.toString();
 
         String action = request.getParameter("action");
 
 
         try {
-            if (username == null) {
-                response.sendRedirect(Constants.PAGE_LOGIN);
-                return null;
-            }        
+    
 
             // ---------------------------------------------------------
             // SAVE TEMPLATE

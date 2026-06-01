@@ -139,16 +139,21 @@ public class DBController {
         String action = request.getParameter("action");
         String xTabId = request.getHeader("X-Tab-ID");
         String describe = "";
-        String username = (String) session.getAttribute("username");
+        String username = "";
         String explain = "";
+        String ddl = "";
         SQLCodeType sql_tipo = new SQLCodeType();
 
         try {
-            if ( request.getSession(false) == null ) {
-                response.sendRedirect(Constants.PAGE_LOGIN);
-                return null;
-            }
-                        
+            Object o = session.getAttribute("username");
+
+            if ( o == null ) {
+                response.setStatus(401);
+                ret.put("redirect", Constants.PAGE_LOGIN);
+                return ret;
+            }  
+            username = o.toString();
+
             if (action.equals("connect")) {
                 db = new ORACLE();
                 db.CONNECT(request.getParameter("usr").toString(),
@@ -180,6 +185,7 @@ public class DBController {
                 return ret;
             }
 
+          
             db = (ORACLE) session.getAttribute(xTabId);
 
             ret.put("status_code", 0);
@@ -193,6 +199,7 @@ public class DBController {
 
             if (action.equals("logoff")) {
                 db.disconnect();
+                session.removeAttribute(xTabId);
             }
 
             if (action.equals("stop")) {
@@ -276,7 +283,7 @@ public class DBController {
             if (action.equals("ddl")) {
                 String[] x = request.getParameter("object_name").toString().toUpperCase()
                         .split("\\.\\.\\.");
-                db.DDL(x[0], x[1], x[2]);
+                ddl = db.DDL(x[0], x[1], x[2]);
             }
 
             if (action.equals("explain")) {
@@ -323,7 +330,7 @@ public class DBController {
         // ---------------------------------------------------------
         // RETURN
         // ---------------------------------------------------------
-
+        ret.put("ddl", ddl);
         ret.put("status_msg", db.status_msg);
         ret.put("status_code", db.status_code);
         ret.put("data", db.col_data);

@@ -26,27 +26,34 @@ public class ORACLE {
     // =========================================================================
     public int status_code = 0;
     public int status_code_parallel = 0;
+    public int stop_status_count = 0;
     public String status_msg = "OK";
 
     public Connection con = null;
     public PreparedStatement cur = null;
     private CallableStatement cs = null;
     public ResultSet rs = null;
-    public boolean is_direct = false;
-    public int login_sid = 0;
+
     public String last_sql = "-";
-    public String p_usuario = null;
-    public String p_senha = null;
-    public String p_tns = null;
-    public String dbms_output = "";
+
+    public String login_global_name = "";
+    public int login_sid = 0;
+    public String login_banner = "";
+
+    private String db_usuario = null;
+    private String db_senha = null;
+    private String db_tns = null;
+    private boolean db_is_direct = false;
+
     public List<String> col_names = new ArrayList<>();
     public List<String> col_types = new ArrayList<>();
     public List<Map<String, Object>> col_data = new ArrayList<>();
+
+    public String dbms_output = "";
     public String username = "";
-    public String login_global_name = "";
-    public String login_banner = "";
     public String sql_session = "";
     DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+
 
     public String tree_str = "";
     public ArrayList<String> tree_tables = new ArrayList<>();
@@ -69,14 +76,37 @@ public class ORACLE {
     }
 
     // =========================================================================
-    // prepare
+    // pingConnection
     // =========================================================================
 
-    public void prepare() {
+    private void pingConnection() {
         try {
+            OracleConnection oc = con.unwrap(OracleConnection.class);
             con.isValid(3);
+            if ( oc.pingDatabase() != OracleConnection.DATABASE_OK ) {
+                throw new Exception("Connection lost.");
+            }
         } catch (Exception e) {
-            CONNECT(p_usuario, p_senha, p_tns, is_direct);
+            CONNECT(db_usuario, db_senha, db_tns, db_is_direct);
+            System.out.print("Reconnecting user " + db_usuario);
+        }
+    }
+    
+
+    // =========================================================================
+    // prepareVars
+    // =========================================================================
+
+    private void prepareVars(String p_sql, boolean logger) {
+        pingConnection();
+        dbms_output = "";
+        col_names.clear();
+        col_types.clear();
+        col_data.clear();
+        stop_status_count = 0;
+        if (logger && !last_sql.equals(p_sql)) {
+            Utils.configSave(login_global_name, p_sql, "SQL_HISTORY", username);
+            last_sql = p_sql;
         }
     }
 
@@ -85,7 +115,7 @@ public class ORACLE {
     // =========================================================================
 
     public void CONNECT(String p_usuario, String p_senha, String p_tns, boolean p_is_direct) {
-        is_direct = p_is_direct;
+        db_is_direct = p_is_direct;
         login_sid = 0;
         status_code = 0;
         status_msg = "OK";
@@ -94,18 +124,19 @@ public class ORACLE {
             if (p_usuario == null || p_senha == null || p_tns == null) {
                 throw new Exception("Parameter User/Pass Invalid!");
             }
-            this.p_usuario = p_usuario;
-            this.p_senha = p_senha;
-            this.p_tns = p_tns;
+            this.db_usuario = p_usuario;
+            this.db_senha = p_senha;
+            this.db_tns = p_tns;
+
             Properties props = new Properties();
             props.put("user", p_usuario);
             props.put("password", p_senha);            
             props.put("oracle.net.keepAlive", "true");
             props.put("oracle.jdbc.ReadTimeout", "3600000");
+            props.put("oracle.net.CONNECT_TIMEOUT", "3600000");
 
             con = DriverManager.getConnection("jdbc:oracle:thin:@" + p_tns, props);
             con.setAutoCommit(false);
-
             con.createStatement().execute(Constants.C_SQL_START);
 
             PreparedStatement ps = con.prepareStatement(
@@ -179,10 +210,14 @@ public class ORACLE {
     // stopSQL
     // =========================================================================
 
-    public void stopSQL() {
+    public void stopSQL()  {
         try {
             OracleConnection oc = con.unwrap(OracleConnection.class);
             oc.cancel();
+            stop_status_count++;
+            if (stop_status_count > 3) {
+                oc.abort();
+            }
         } catch (Exception ignored) {
             ignored.printStackTrace();
         }
@@ -193,12 +228,11 @@ public class ORACLE {
     // =========================================================================
 
     public Object create_lob(Object data, boolean is_blob) throws Exception {
-
         OracleConnection oc = con.unwrap(OracleConnection.class);
 
         if (is_blob) {
             Blob blob = oc.createBlob();
-            blob.setBytes(1, (byte[]) data);
+            blob.setBytes(1, data.toString().getBytes() );
             return blob;
         }
         Clob clob = oc.createClob();
@@ -206,21 +240,7 @@ public class ORACLE {
         return clob;
     }
 
-    // =========================================================================
-    // prepareVars
-    // =========================================================================
 
-    public void prepareVars(String p_sql, boolean logger) {
-        prepare();
-        dbms_output = "";
-        col_names.clear();
-        col_types.clear();
-        col_data.clear();
-        if (logger && !last_sql.equals(p_sql)) {
-            Utils.configSave(login_global_name, p_sql, "SQL_HISTORY", username);
-            last_sql = p_sql;
-        }
-    }
 
     // =========================================================================
     // get_line_column
@@ -249,7 +269,7 @@ public class ORACLE {
         prepareVars(p_sql, logger);
 
         try {
-            if (direct || this.is_direct) {
+            if (direct || this.db_is_direct) {
                 PreparedStatement cur1 = con.prepareStatement(p_sql);
                 if (p_bind_values != null && p_bind_values.length > 0) {
                     for (int i = 0; i < p_bind_values.length; i++) {
@@ -351,8 +371,9 @@ public class ORACLE {
             }
 
             cur = con.prepareStatement(p_sql);
+            cur.setFetchSize(1000);
 
-            if (direct || this.is_direct) {
+            if (direct || this.db_is_direct) {
                 this.rs = this.cur.executeQuery(p_sql);
             } else {
                 this.cs = this.con.prepareCall(Constants.C_SQL_SELECT);
@@ -432,13 +453,13 @@ public class ORACLE {
     // DDL
     // =========================================================================
 
-    public void DDL(String owner, String type, String name) {
+    public String DDL(String owner, String type, String name) {
         prepareVars("", false);
-
+        String ret = "";
         try {
 
             String sql = Constants.C_SQL_DML;
-            if (is_direct) {
+            if (db_is_direct) {
                 sql = Constants.C_SQL_DML_DIRECT;
             }
 
@@ -447,12 +468,14 @@ public class ORACLE {
             ps1.registerOutParameter(1, java.sql.Types.CLOB);
             ps1.execute();
             status_code = 0;
-            status_msg = ps1.getString(1);
+            status_msg  = "Sucess";
+            ret = ps1.getString(1);
             ps1.close();
         } catch (Exception e) {
             status_code = -1;
             status_msg = e.getMessage();
         }
+        return ret;
     }
 
     // =========================================================================

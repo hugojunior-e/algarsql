@@ -102,7 +102,7 @@
         [<span id="id_menu_template_name" style="width:150px;text-align: center;color:Red;font-weight: bold"></span>]
 
         <span class="separator"></span>
-        <span id="id_menu_qtd_char"></span>
+        <a href=# onclick="js_show_last_sql()" id="id_menu_qtd_char"></a>
 
         <div id="id_title_page" style="margin-left:auto; font-size:14px;">
                 <a href="/logout">[ Logout: ${login} ]</a>
@@ -138,7 +138,16 @@
             <!-- GRID RESULTADO -->
             <div class="grid">
                 <table id="id_grid_dados"></table>
-                <div   id="id_dbms_output" style="display: none;"></div>
+                
+                <div id="id_dbms_output" class="dbms-output">
+                    <div class="dbms-header">
+                        <span class="dbms-title">ℹ️ Execution Info</span>
+                        <a href="#" onclick="showMemoArea('@grid')" class="dbms-close">
+                            ✖ Close
+                        </a>
+                    </div>
+                    <pre id="id_dbms_output_data" class="dbms-content"></pre>
+                </div>
             </div>
             <div id="id_grid_dados_pager"></div>
 

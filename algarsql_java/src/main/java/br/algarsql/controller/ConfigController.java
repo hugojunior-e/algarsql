@@ -27,14 +27,18 @@ public class ConfigController {
 
     @RequestMapping(value = "/format_plsql", method = {RequestMethod.GET, RequestMethod.POST})
     public Map<String, Object> formatPlsql(HttpServletResponse response,HttpServletRequest request, HttpSession session) throws Exception {
-        if ( request.getSession(false) == null ) {
-            response.sendRedirect(Constants.PAGE_LOGIN);
-            return null;
+        Map<String, Object> ret = new HashMap<>();
+
+        Object o = session.getAttribute("username");
+        if ( o == null ) {
+            response.setStatus(401);
+            ret.put("redirect", Constants.PAGE_LOGIN);
+            return ret;
         }
         String c = request.getParameter("code");
         String newCode = Utils.formatCode(c);
 
-        Map<String, Object> ret = new HashMap<>();
+        
         ret.put("newcode", newCode);
         return ret;
     }
@@ -112,12 +116,14 @@ public class ConfigController {
 
     @RequestMapping(value = "/config_get", method = {RequestMethod.GET, RequestMethod.POST})
     public Map<String, Object> configGet(HttpServletResponse response,HttpServletRequest request, HttpSession session) throws Exception {
-        if ( request.getSession(false) == null ) {
-            response.sendRedirect(Constants.PAGE_LOGIN);
-            return null;
-        }
-        String u = session.getAttribute("username").toString();
         Map<String, Object> ret = new HashMap<>();
+        Object o = session.getAttribute("username");
+        if ( o == null ) {
+            response.setStatus(401);
+            ret.put("redirect", Constants.PAGE_LOGIN);
+            return ret;
+        }
+        String u = o.toString();
         ret.put("tnsSaved", Utils.configValue("tnsSaved", null, u).toString());
         ret.put("tns", Utils.configValue("tns", null, u).toString());
         ret.put("oracle_home", System.getenv().getOrDefault("ORACLE_HOME", "").toString());
@@ -132,16 +138,18 @@ public class ConfigController {
     @RequestMapping(value = "/config_save", method = {RequestMethod.GET, RequestMethod.POST})
     public Map<String, Object> configSave(HttpServletResponse response,HttpServletRequest request,HttpSession session, @RequestParam String tnsSaved,
             @RequestParam String tns) throws Exception {
-        if (request.getSession(false) == null) {
-            response.sendRedirect(Constants.PAGE_LOGIN);
-            return null;
+        Map<String, Object> ret = new HashMap<>();
+        Object o = session.getAttribute("username");
+        if ( o == null ) {
+            response.setStatus(401);
+            ret.put("redirect", Constants.PAGE_LOGIN);
+            return ret;
         }
-        String u = session.getAttribute("username").toString();
+        String u = o.toString();
 
 
         Utils.configSave("tnsSaved", tnsSaved, "CONFIG", u);
         Utils.configSave("tns", tns, "CONFIG", u);
-        Map<String, Object> ret = new HashMap<>();
         ret.put("status_msg", "Configuration saved successfully.");
         return ret;
     }
@@ -155,11 +163,14 @@ public class ConfigController {
             @RequestParam(defaultValue = "%") String text,
             @RequestParam(defaultValue = "%") String database) throws Exception {
 
-        if (request.getSession(false) == null) {
-            response.sendRedirect(Constants.PAGE_LOGIN);
-            return null;
+        Map<String, Object> ret = new HashMap<>();
+        Object o = session.getAttribute("username");
+        if ( o == null ) {
+            response.setStatus(401);
+            ret.put("redirect", Constants.PAGE_LOGIN);
+            return ret;
         }
-        String u = session.getAttribute("username").toString();
+        String u = o.toString();
 
 
         Object dadosBrutosObj = Utils.configValue("SQL_HISTORY", new String[] {text, database}, u);
@@ -179,7 +190,6 @@ public class ConfigController {
                 }
             }
         }
-        Map<String, Object> ret = new HashMap<>();
         ret.put("data", dados);
         ret.put("columns", List.of("Data", "Dbname", "SQL"));
         ret.put("columns_types", List.of("DATETIME", "STRING", "STRING"));

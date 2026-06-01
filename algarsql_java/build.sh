@@ -1,0 +1,1 @@
+/algar/ferramentas/apache-maven-3.9.8/bin/mvn clean install

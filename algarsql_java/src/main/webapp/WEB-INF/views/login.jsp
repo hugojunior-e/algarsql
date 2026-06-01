@@ -76,7 +76,7 @@
 
   <div class="login-container">
     <h2>Algar SQL</h2>
-    <form method="POST" action="/login">
+    <form method="POST" action="/validadeLogin">
       <input type="text" name="username" id="username" placeholder="Username" value="" required>
       <input type="password" name="password" id="password" placeholder="Password" value="" required>
       <select name="theme" id="theme" placeholder="theme">

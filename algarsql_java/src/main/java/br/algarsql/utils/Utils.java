@@ -374,6 +374,18 @@ public class Utils {
 
         return sql;
     }
+
+    // ==========================================================================================
+    //
+    // ==========================================================================================
+    
+    public static String nvl(Object value, String defaultValue) {
+        return value != null ? value.toString() : defaultValue;    
+    }
+
+    public static String nvl(Object value) {
+        return nvl(value, "");    
+    }
 }
 
 

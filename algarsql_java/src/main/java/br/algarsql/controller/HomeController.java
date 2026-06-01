@@ -20,10 +20,11 @@ public class HomeController {
 
     @GetMapping("/")
     public String home(HttpServletRequest request, HttpSession session, Model model) {
-        if ( request.getSession(false) == null || session.getAttribute("theme") == null ) {
+        Object o = session.getAttribute("username");
+        if ( o == null ) {
             return "redirect:/login";
         }
-        String username = (String) session.getAttribute("username");
+        String username = o.toString();
         
         model.addAttribute("login", username);
 
@@ -45,8 +46,8 @@ public class HomeController {
     }
 
 
-    @PostMapping("/login")
-    public String login(@RequestParam String username, @RequestParam String password,
+    @PostMapping("/validadeLogin")
+    public String validadeLogin(@RequestParam String username, @RequestParam String password,
             @RequestParam(required = false) String theme, HttpSession session) {
 
         boolean ok = Ldap.ldapLogin(username, password);
