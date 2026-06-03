@@ -664,7 +664,7 @@ function js_tree_login_saved(x) {
 
 
 function js_show_last_sql() {
-  js_window_popup('last_sql',id_menu_qtd_char.sql)
+  js_window_popup('last_sql',id_menu_qtd_char.sql,true);
 }
 
 function getStatementAtCursor(text_full, offset) {
@@ -1003,11 +1003,13 @@ function js_template_close() {
 }
 
 function js_templates_open_item(x) {
-    ajax("/template", { "action": "open", "name": x}, function (a) {
-        id_template_name.value          = x;
-        id_menu_template_name.innerText = x;
-        global_var.editorSQL.setValue(a.code);
-    });
+    if ( confirm('Open this template in current editor?') ) {
+        ajax("/template", { "action": "open", "name": x}, function (a) {
+            id_template_name.value          = x;
+            id_menu_template_name.innerText = x;
+            global_var.editorSQL.setValue(a.code);
+        });
+    }
 }
 
 function js_template_load() {
@@ -1127,7 +1129,7 @@ function js_recall_sql_form() {
 
 async function js_ia_chat_api(msg) {
     const modelo = "gemini-flash-latest";
-    const API_KEY = "AIzaSyDBdX-dkMGVkVcCYuDA7FTyYbKgidHWkrQ";
+    const API_KEY = "AIzaSyAUbgnZiV2fW-e50ql_P9CCBvmyXz03-Kc";
 
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${API_KEY}`;
 
@@ -1177,22 +1179,6 @@ function js_ia_chat() {
         id_chat_enviar.innerHTML = "Send";
     });
 }
-
-
-
-/*
-    ------------------------------------------------------------------------------------------------------------------------------
-    comment: Funções relacionadas ao formulário de DBMS Output, que exibe a saída gerada por procedimentos armazenados 
-    e outras operações no banco de dados.
-    ------------------------------------------------------------------------------------------------------------------------------
-*/
-
-
-
-function js_dbms_output_form() {
-    js_window_popup('DBMS Output', global_var.dbms_output);
-}
-
 
 /*
     ------------------------------------------------------------------------------------------------------------------------------
@@ -1425,7 +1411,6 @@ function js_db_execute() {
     
     change_icon(true);
     global_var.tm_elapsed.start();
-    id_menu_qtd_char.sql       = sql
     id_menu_qtd_char.innerHTML = "<a href=# onclick=js_show_last_sql()>" + sql.length + " chars </a>";
     
     ajax("/db_execute", { "session_id": global_var.session_id, "action": "execute", "sql": sql }, function (a) {
@@ -1436,16 +1421,20 @@ function js_db_execute() {
             return;
         }
 
-        global_var.dbms_output = a.dbms;
+        global_var.dbms_output            = a.dbms;
+        id_dbms_output.style.display      = (a.sql_type == 1) ? 'none'  : 'block';
+        id_grid_dados.style.display       = (a.sql_type == 1) ? 'block' : 'none';
+        id_grid_dados_pager.style.display = (a.sql_type == 1) ? 'block' : 'none';
 
         if (a.sql_type == 1) {
             global_var.grid_query.setContent(a.data, a.columns, a.columns_types, 50, [], sql);
             global_var.grid_query.desenharTabela();
         } else {
-            alert(a.status_msg);
+            id_dbms_output.innerHTML = "<pre>" + a.status_msg + "<br>" + a.dbms + "</pre>"; 
             js_db_status(in_transaction = true);
         }
         change_icon(false);
+        id_menu_qtd_char.sql  = `<h2>dbms output:</h2><br>${ global_var.dbms_output } <br><h2>sql:</h2><br>${ sql }`;
     }, function (error) {
         global_var.tm_elapsed.stop();
         alert(error);
