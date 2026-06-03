@@ -197,13 +197,18 @@ public class DBController {
                 return ret;
             }
 
+            if (action.equals("is_running")) {
+                ret.put("is_running", db.is_running);
+                return ret;
+            }            
+
             if (action.equals("logoff")) {
                 db.disconnect();
                 session.removeAttribute(xTabId);
             }
 
             if (action.equals("stop")) {
-                db.stopSQL();
+                db.STOP();
             }
 
             if (action.equals("commit")) {
@@ -223,7 +228,11 @@ public class DBController {
                     sql = Utils.compactSQL(sql);
                     db.SELECT(sql, false, true, 50);
                 }
-                if (sql_tipo.sql_type == SQLCodeType.EXECUTE) {
+                if (sql_tipo.sql_type == SQLCodeType.DML) {
+                    sql = Utils.compactSQL(sql);
+                    db.EXECUTE(sql, true, null, false);
+                }
+                if (sql_tipo.sql_type == SQLCodeType.PLSQL_BLOCK) {
                     db.EXECUTE(sql, true, null, false);
                 }
                 if (sql_tipo.sql_type == SQLCodeType.COMPILE) {

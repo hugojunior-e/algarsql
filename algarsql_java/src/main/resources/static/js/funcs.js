@@ -14,6 +14,16 @@ function copyToClip(texto) {
     alert("Copy Success!");    
 }
 
+function toSingleTable(dat) {
+    let html = '<table>';
+    for (const [key, value] of Object.entries(dat)) {
+        html += `<tr><td>${key}</td><td><pre>${value}</pre></td></tr>`;            
+    }
+    html += '</table>';
+    return html;
+}
+
+
 function showMemoArea(content) {
     if ( content == '@grid' ) {
         id_dbms_output.style.display      = 'none';
@@ -141,9 +151,13 @@ class TTimer {
         this.dt_inicio = new Date();
         this.dt_fim    = null;
         this.run();
+        id_menu_stop.disabled = false;
+        id_menu_execute.disabled = true;        
     }
     
     run() {
+
+
         const d1 = this.dt_inicio;
         const d2 = this.dt_fim == null ? new Date() : this.dt_fim;
         let diffMs = Math.abs(d2 - d1);
@@ -170,6 +184,8 @@ class TTimer {
 
     stop() {
         this.dt_fim = new Date();
+        id_menu_stop.disabled = true;
+        id_menu_execute.disabled = false;        
     }
 }
 
@@ -690,10 +706,6 @@ function js_tree_login_saved(x) {
     id_login_password.value = d[1];
 }
 
-
-function js_show_last_sql() {
-    showMemoArea(id_menu_qtd_char.last_output);
-}
 
 function getStatementAtCursor(text_full, offset) {
     function tokenize(text) {
@@ -1249,13 +1261,12 @@ function js_ia_chat() {
 
 function js_preferences_load_tns() {
     ajax("/config_tnsnames", {}, function (a) { 
-        js_window_popup("TNS Names", a.tnsnames);
+        js_window_popup("TNS Names", a.tns_names);
     });
 }
 
 function js_preferences_form() {
     ajax("/config_get", {}, function (a) {
-        id_preferences_oh.value = a.oracle_home;
         id_preferences_tns.value = a.tns;
         id_preferences_tns_saved.value = a.tnsSaved;
         id_preferences_form.style.display = "flex";
@@ -1460,7 +1471,6 @@ function js_db_ddl(object_name) {
 
 function js_db_execute() {
     id_grid_dados.innerHTML    = '';
-    id_menu_qtd_char.innerHTML = '';
     sql                        = get_sql_editor();
 
     if ( sql.length < 3 ) {
@@ -1470,20 +1480,21 @@ function js_db_execute() {
     
     change_icon(true);
     global_var.tm_elapsed.start();
-
+    showMemoArea( "Running..." );
+    
     ajax("/db_execute", { "action": "execute", "sql": sql }, function (a) {
         global_var.tm_elapsed.stop();
-        id_menu_qtd_char.innerText    = sql.length + " chars";
-        id_menu_qtd_char.last_output  = [
-            `"timestamp"   : ${Date()}`,
-            `"status_code" : ${a.status_code}`,
-            `"status_msg"  : ${a.status_msg}`,
-            `"dbms_output" : ${a.dbms}`,
-            `"sql"         : ${sql}`
-        ].join('\n\n');
+
+        let last_output = toSingleTable({
+            "status_code" : a.status_code,
+            "status_msg"  : a.status_msg,
+            "dbms_output" : a.dbms,
+            "timestamp"   : Date(),
+            "sql"         : sql
+        });
 
         if ( a.status_code != 0 ) {
-            showMemoArea( id_menu_qtd_char.last_output );
+            showMemoArea( last_output );
             change_icon(false);
             return;
         }
@@ -1493,7 +1504,7 @@ function js_db_execute() {
             global_var.grid_query.setContent(a.data, a.columns, a.columns_types, 50, [], sql);
             global_var.grid_query.desenharTabela();
         } else {
-            showMemoArea( id_menu_qtd_char.last_output );
+            showMemoArea( last_output );
             js_db_status(in_transaction = true);
         }
         change_icon(false);
@@ -1516,11 +1527,17 @@ function js_db_stop() {
 
 function js_db_explain() {
     ajax("/db_execute", { "action": "explain", "sql": get_sql_editor() }, function (a) {
+        let last_output = toSingleTable({
+            "status_code" : a.status_code,
+            "status_msg"  : a.status_msg,
+            "timestamp"   : Date()
+        });       
+
         if ( a.status_code != 0 ) {
-            alert(a.status_msg);
+            alert(last_output);
             return;
         }
-        js_window_popup("EXPLAIN", a.explain);
+        showMemoArea(a.explain);
     });
 }
 

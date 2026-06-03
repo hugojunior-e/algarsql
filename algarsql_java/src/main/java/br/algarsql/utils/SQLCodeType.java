@@ -3,8 +3,9 @@ package br.algarsql.utils;
 public class SQLCodeType {
     public static final int NONE = 0;
     public static final int SELECT = 1;
-    public static final int EXECUTE = 2;
+    public static final int DML = 2;
     public static final int COMPILE = 3;
+    public static final int PLSQL_BLOCK = 4;
 
     public SQLCodeType() {
         this.sql_type = SELECT;

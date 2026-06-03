@@ -54,6 +54,7 @@ public class ORACLE {
     public String sql_session = "";
     DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
 
+    public boolean is_running = false;
 
     public String tree_str = "";
     public ArrayList<String> tree_tables = new ArrayList<>();
@@ -207,10 +208,10 @@ public class ORACLE {
     }
 
     // =========================================================================
-    // stopSQL
+    // STOP
     // =========================================================================
 
-    public void stopSQL()  {
+    public void STOP()  {
         try {
             OracleConnection oc = con.unwrap(OracleConnection.class);
             oc.cancel();
@@ -269,6 +270,8 @@ public class ORACLE {
         prepareVars(p_sql, logger);
 
         try {
+            this.is_running = true;
+
             if (direct || this.db_is_direct) {
                 PreparedStatement cur1 = con.prepareStatement(p_sql);
                 if (p_bind_values != null && p_bind_values.length > 0) {
@@ -351,9 +354,17 @@ public class ORACLE {
                     cs1.close();
                 }
             }
+            CallableStatement cs3 = con.prepareCall(Constants.C_SQL_DBMS);
+            cs3.registerOutParameter(1, OracleTypes.VARCHAR);
+            cs3.execute();
+            this.dbms_output = cs3.getString(1);
+            cs3.close();
+
         } catch (Exception e) {
             status_code = -1;
             status_msg = e.getMessage();
+        } finally {
+            this.is_running = false;
         }
     }
 
@@ -365,6 +376,7 @@ public class ORACLE {
         prepareVars(p_sql, logger);
 
         try {
+            this.is_running = true;
             if (rs != null && !rs.isClosed()) {
                 rs.close();
                 cur.close();
@@ -404,6 +416,8 @@ public class ORACLE {
         } catch (Exception e) {
             status_code = -1;
             status_msg = e.getMessage();
+        } finally {
+            this.is_running = false;
         }
     }
 

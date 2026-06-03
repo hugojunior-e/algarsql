@@ -27,7 +27,7 @@ public class ParallelProcessController {
         public Map<String, Object> stopProcess(HttpServletRequest request,HttpSession session) {
             String xTabId = request.getHeader("X-Tab-ID");
             ORACLE db = (ORACLE) session.getAttribute(xTabId);
-            db.stopSQL();
+            db.STOP();
             Map<String, Object> ret = new HashMap<>();
             ret.put("status_code", db.status_code_parallel);
             ret.put("status_msg", db.status_msg);

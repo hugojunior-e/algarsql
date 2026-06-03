@@ -311,14 +311,17 @@ public class Utils {
                 ret.object_owner = match.group("schema");
             }
 
-            ret.sql_type = 3;
+            ret.sql_type = SQLCodeType.COMPILE;
         }
 
         else if (x.trim().startsWith("SELECT") || x.trim().startsWith("WITH")) {
-
-            ret.sql_type = 1;
-        } else {
-            ret.sql_type = 2;
+            ret.sql_type = SQLCodeType.SELECT;
+            
+        } else if (x.trim().startsWith("BEGIN") || x.trim().startsWith("DECLARE")) {
+            ret.sql_type = SQLCodeType.PLSQL_BLOCK;
+        }
+        else {
+            ret.sql_type = SQLCodeType.DML;
         }
 
         return ret;

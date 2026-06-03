@@ -1,469 +1,458 @@
-<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 
-<!DOCTYPE html>
-<html lang="pt-br">
+    <!DOCTYPE html>
+    <html lang="pt-br">
 
-<head>
-    <meta charset="UTF-8">
-    <title>AlgarSQL</title>
+    <head>
+        <meta charset="UTF-8">
+        <title>AlgarSQL</title>
 
-    <script src="https://unpkg.com/monaco-editor@0.52.2/min/vs/loader.js"></script>
+        <script src="https://unpkg.com/monaco-editor@0.52.2/min/vs/loader.js"></script>
 
-    <!--INLINE_START-->
-    <link rel="stylesheet" href="/css/${css}.css">
-    <script src="/js/funcs.js"></script>
-    <script src="/js/tree.js"></script>
-    <!--INLINE_END-->
+        <!--INLINE_START-->
+        <link rel="stylesheet" href="/css/${css}.css">
+        <script src="/js/funcs.js"></script>
+        <script src="/js/tree.js"></script>
+        <!--INLINE_END-->
 
 
-    <!--INLINE-->
+        <!--INLINE-->
 
-<body>
-    <div class="menu">
-        <button onclick="js_window_fileopen()" class="tooltip">
-            <span class="tooltiptext">Open File!</span>
-            <img src="/imgs/file_open.png">
-        </button>
+    <body>
+        <div class="menu">
+            <button onclick="js_window_fileopen()" class="tooltip">
+                <span class="tooltiptext">Open File!</span>
+                <img src="/imgs/file_open.png">
+            </button>
 
-        <button onclick="js_template_form()" class="tooltip">
-            <span class="tooltiptext">Save Template!</span>
-            <img src="/imgs/file_save.png">
-        </button>
+            <button onclick="js_template_form()" class="tooltip">
+                <span class="tooltiptext">Save Template!</span>
+                <img src="/imgs/file_save.png">
+            </button>
 
-        <button onclick="js_template_close()" class="tooltip">
-            <span class="tooltiptext">Close Template!</span>
-            <img src="/imgs/file_close.png">
-        </button>
+            <button onclick="js_template_close()" class="tooltip">
+                <span class="tooltiptext">Close Template!</span>
+                <img src="/imgs/file_close.png">
+            </button>
 
-        <span class="separator"></span>
+            <span class="separator"></span>
 
-        <button onclick="js_login_form()" class="tooltip">
-             <span class="tooltiptext">Logon DB!</span>
-            <img src="/imgs/db_logon.png">
-        </button>
+            <button onclick="js_login_form()" class="tooltip">
+                <span class="tooltiptext">Logon DB!</span>
+                <img src="/imgs/db_logon.png">
+            </button>
 
-        <button onclick="js_logoff_form()" class="tooltip">
-             <span class="tooltiptext">Logoff DB!</span>
-            <img src="/imgs/db_logoff.png">
-        </button>
+            <button onclick="js_logoff_form()" class="tooltip">
+                <span class="tooltiptext">Logoff DB!</span>
+                <img src="/imgs/db_logoff.png">
+            </button>
 
-        <button onclick="window.open('/?tab')" class="tooltip">
-             <span class="tooltiptext">Open New Window DB!</span>
-            <img src="/imgs/file_new.png">
-        </button>
+            <button onclick="window.open('/?tab')" class="tooltip">
+                <span class="tooltiptext">Open New Window DB!</span>
+                <img src="/imgs/file_new.png">
+            </button>
 
-        <span class="separator"></span>
+            <span class="separator"></span>
 
-        <button id="id_menu_execute" onclick="js_db_execute()" class="tooltip">
-             <span class="tooltiptext">F8 - Execute SQL</span>
-            <img src="/imgs/sql_run.png">
-        </button>
+            <button id="id_menu_execute" onclick="js_db_execute()" class="tooltip">
+                <span class="tooltiptext">F8 - Execute SQL</span>
+                <img src="/imgs/sql_run.png">
+            </button>
 
-        <button id="id_menu_stop" onclick="js_db_stop()" class="tooltip">
-            <span class="tooltiptext">Stop SQL</span>
-            <img src="/imgs/sql_stop.png">
-        </button>
+            <button id="id_menu_stop" onclick="js_db_stop()" class="tooltip" disabled>
+                <span class="tooltiptext">Stop SQL</span>
+                <img src="/imgs/sql_stop.png">
+            </button>
 
-        <span class="separator"></span>
+            <span class="separator"></span>
 
-        <button id="id_menu_commit" onclick="js_db_transaction('commit')" disabled class="tooltip">
-            <span class="tooltiptext">Commit</span>
-            <img src="/imgs/sql_commit.png">
-        </button>
+            <button id="id_menu_commit" onclick="js_db_transaction('commit')" disabled class="tooltip">
+                <span class="tooltiptext">Commit</span>
+                <img src="/imgs/sql_commit.png">
+            </button>
 
-        <button id="id_menu_rollback" onclick="js_db_transaction('rollback')" disabled class="tooltip">
-            <span class="tooltiptext">Rollback</span>
-            <img src="/imgs/sql_rollback.png">
-        </button>
+            <button id="id_menu_rollback" onclick="js_db_transaction('rollback')" disabled class="tooltip">
+                <span class="tooltiptext">Rollback</span>
+                <img src="/imgs/sql_rollback.png">
+            </button>
 
-        <span class="separator"></span>
+            <span class="separator"></span>
 
-        <button onclick="js_csv_completer_form()" class="tooltip">
-            <span class="tooltiptext">Csv Completer</span>
-            <img src="/imgs/csv.png">
-        </button>
+            <button onclick="js_csv_completer_form()" class="tooltip">
+                <span class="tooltiptext">Csv Completer</span>
+                <img src="/imgs/csv.png">
+            </button>
 
-        <button onclick="js_preferences_form()" class="tooltip">
-            <span class="tooltiptext">Preferences</span>
-            <img src="/imgs/preferences.png">
-        </button>
+            <button onclick="js_preferences_form()" class="tooltip">
+                <span class="tooltiptext">Preferences</span>
+                <img src="/imgs/preferences.png">
+            </button>
 
-        <span class="separator"></span>
+            <span class="separator"></span>
 
-        <span style="cursor:pointer" onclick="js_view_sessions_form()" class="tooltip">
-           <span class="tooltiptext">View Sessions</span> 
-           <span id="id_menu_db"></span>
-          </span>
+            <span style="cursor:pointer" onclick="js_view_sessions_form()" class="tooltip">
+                <span class="tooltiptext">View Sessions</span>
+                <span id="id_menu_db"></span>
+            </span>
 
-        <span class="separator"></span>
-        <span id="id_menu_timer" style="width:80px;text-align: center;">00:00:00</span>
-        
-        <span class="separator"></span>
-        [<span id="id_menu_template_name" style="width:150px;text-align: center;color:Red;font-weight: bold"></span>]
+            <span class="separator"></span>
+            <span id="id_menu_timer" style="width:80px;text-align: center;">00:00:00</span>
 
-        <span class="separator"></span>
-        <a href=# onclick="js_show_last_sql()" id="id_menu_qtd_char"></a>
+            <span class="separator"></span>
+            [<span id="id_menu_template_name"
+                style="width:150px;text-align: center;color:Red;font-weight: bold"></span>]
 
-        <div id="id_title_page" style="margin-left:auto; font-size:14px;">
-                <a href="/logout">[ Logout: ${login} ]</a>
-        </div>
 
-    </div>
-
-    <div class="main">
-        <div class="sidebar">
-            <div style="overflow:hidden;display:flex;justify-content:center;gap:10px;font-weight: bold;border: 1px solid #1e0101;">
-                <a href=# onclick="js_dbtree_show()">DB</a>
-                <span>|</span>
-                <a href=# onclick="js_template_load()">TEMPLATES</a>
-                <span>|</span>
-                <a href=# onclick="js_find_object_form()">FIND</a>
+            <div id="id_title_page" style="margin-left:auto; font-size:14px;">
+                <a href="/login">[ Logout: ${login} ]</a>
             </div>
-            <div style="height:10px;"></div>
-            <div id="id_tree_obj"></div> 
+
         </div>
 
-        <!-- SPLITTER VERTICAL -->
-        <div class="splitter-vertical" id="vsplit"></div>
-
-        <!-- PAINEL DIREITO -->
-        <div class="right">
-
-            <!-- CONTAINER DO MONACO -->
-            <div id="editor-container"></div>
-
-            <!-- SPLITTER HORIZONTAL -->
-            <div class="splitter-horizontal" id="hsplit"></div>
-
-            <!-- GRID RESULTADO -->
-            <div class="grid">
-                <table id="id_grid_dados"></table>
-                
-                <div id="id_dbms_output" class="dbms-output">
-                    <div class="dbms-header">
-                        <span class="dbms-title">ℹ️ Execution Info</span>
-                        <a href="#" onclick="showMemoArea('@grid')" class="dbms-close">
-                            ✖ Close
-                        </a>
-                    </div>
-                    <pre id="id_dbms_output_data" class="dbms-content"></pre>
+        <div class="main">
+            <div class="sidebar">
+                <div
+                    style="overflow:hidden;display:flex;justify-content:center;gap:10px;font-weight: bold;border: 1px solid #1e0101;">
+                    <a href=# onclick="js_dbtree_show()">DB</a>
+                    <span>|</span>
+                    <a href=# onclick="js_template_load()">TEMPLATES</a>
+                    <span>|</span>
+                    <a href=# onclick="js_find_object_form()">FIND</a>
                 </div>
+                <div style="height:10px;"></div>
+                <div id="id_tree_obj"></div>
             </div>
-            <div id="id_grid_dados_pager"></div>
 
+            <!-- SPLITTER VERTICAL -->
+            <div class="splitter-vertical" id="vsplit"></div>
+
+            <!-- PAINEL DIREITO -->
+            <div class="right">
+
+                <!-- CONTAINER DO MONACO -->
+                <div id="editor-container"></div>
+
+                <!-- SPLITTER HORIZONTAL -->
+                <div class="splitter-horizontal" id="hsplit"></div>
+
+                <!-- GRID RESULTADO -->
+                <div class="grid">
+                    <table id="id_grid_dados"></table>
+                    <div id="id_dbms_output" style="display: none;">
+                        <pre id="id_dbms_output_data"></pre>
+                    </div>
+                </div>
+                <div id="id_grid_dados_pager"></div>
+
+            </div>
         </div>
-    </div>
 
 
-    <input type="file" id="fileInput" hidden>
+        <input type="file" id="fileInput" hidden>
 
-    <!--
+        <!--
         FORM TEMPLATES
     -->
 
-    <div id="id_template_form" class="itools_modal">
-        <div class="dialog" style="width:200;height:20%">
-            <div class="header">
-                <span>Template</span>
-                <button class="close-btn"
-                    onclick="this.parentElement.parentElement.parentElement.style.display='none'">&times;</button>
-            </div>
-            <div class="content flex">
-                <table>
-                    <tr>
-                        <td>Name:</td>
-                        <td><input type="text" id="id_template_name" value="-"></td>
-                        <td><button onclick="js_template_save()">Save</button></td>
-                    </tr>
-                </table>            
+        <div id="id_template_form" class="itools_modal">
+            <div class="dialog" style="width:200;height:20%">
+                <div class="header">
+                    <span>Template</span>
+                    <button class="close-btn"
+                        onclick="this.parentElement.parentElement.parentElement.style.display='none'">&times;</button>
+                </div>
+                <div class="content flex">
+                    <table>
+                        <tr>
+                            <td>Name:</td>
+                            <td><input type="text" id="id_template_name" value="-"></td>
+                            <td><button onclick="js_template_save()">Save</button></td>
+                        </tr>
+                    </table>
+                </div>
             </div>
         </div>
-    </div>
 
 
-    <!--
+        <!--
         FORM MESSAGE BOX
     -->
 
-    <div id="id_message_box_form" class="itools_modal">
-        <div class="dialog" style="width:400px;height:20%">
-            <div class="header">
-                <span>MessageBox</span>
-                <button class="close-btn"
-                    onclick="this.parentElement.parentElement.parentElement.style.display='none'">&times;</button>
-            </div>
-            <div class="content">
-                &nbsp;&nbsp;<div id="id_message_box_text"></div>
+        <div id="id_message_box_form" class="itools_modal">
+            <div class="dialog" style="width:400px;height:20%">
+                <div class="header">
+                    <span>MessageBox</span>
+                    <button class="close-btn"
+                        onclick="this.parentElement.parentElement.parentElement.style.display='none'">&times;</button>
+                </div>
+                <div class="content">
+                    &nbsp;&nbsp;<div id="id_message_box_text"></div>
+                </div>
             </div>
         </div>
-    </div>
 
 
-    <!--
+        <!--
         FORM RECALL SQL
     -->
-    <div id="id_recall_sql_form" class="itools_modal">
-        <div class="dialog" style="width:80%;height:80%">
-            <div class="header">
-                <span>Recall SQL</span>
-                <button class="close-btn"
-                    onclick="this.parentElement.parentElement.parentElement.style.display='none'">&times;</button>
-            </div>
-
-            <div class="content flex">
-                <table>
-                    <tr>
-                        <td>Database:</td>
-                        <td><input type="text" id="id_recall_sql_database" value="%"></td>
-                        <td>text:</td>
-                        <td><input type="text" id="id_recall_sql_text" value="%"></td>
-                        <td><button onclick="js_recall_sql_execute()">Find</button></td>
-                    </tr>
-                </table>
-                <div class="grid">
-                    <table id="id_recall_sql_grid">
-                    </table>
+        <div id="id_recall_sql_form" class="itools_modal">
+            <div class="dialog" style="width:80%;height:80%">
+                <div class="header">
+                    <span>Recall SQL</span>
+                    <button class="close-btn"
+                        onclick="this.parentElement.parentElement.parentElement.style.display='none'">&times;</button>
                 </div>
-                <div id="id_recall_sql_grid_pager" class="pager"></div>
+
+                <div class="content flex">
+                    <table>
+                        <tr>
+                            <td>Database:</td>
+                            <td><input type="text" id="id_recall_sql_database" value="%"></td>
+                            <td>text:</td>
+                            <td><input type="text" id="id_recall_sql_text" value="%"></td>
+                            <td><button onclick="js_recall_sql_execute()">Find</button></td>
+                        </tr>
+                    </table>
+                    <div class="grid">
+                        <table id="id_recall_sql_grid">
+                        </table>
+                    </div>
+                    <div id="id_recall_sql_grid_pager" class="pager"></div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <!--
+        <!--
         FORM FIND OBJECT
     -->
-    <div id="id_find_object_form" class="itools_modal">
-        <div class="dialog" style="width:80%;height:80%">
-            <div class="header">
-                <span>Find Object</span>
-                <button class="close-btn"
-                    onclick="this.parentElement.parentElement.parentElement.style.display='none'">&times;</button>
-            </div>
-
-            <div class="content flex">
-                <table>
-                    <tr>
-                        <td>Type Object Name:</td>
-                        <td><input type="text" id="id_find_object_name" value="%"></td>
-                        <td><button onclick="js_find_object_execute()">Find Obj</button></td>
-                    </tr>
-                </table>
-                <div class="grid">
-                    <table id="id_find_object_grid">
-                    </table>
+        <div id="id_find_object_form" class="itools_modal">
+            <div class="dialog" style="width:80%;height:80%">
+                <div class="header">
+                    <span>Find Object</span>
+                    <button class="close-btn"
+                        onclick="this.parentElement.parentElement.parentElement.style.display='none'">&times;</button>
                 </div>
-                <div id="id_find_object_grid_pager" class="pager"></div>
+
+                <div class="content flex">
+                    <table>
+                        <tr>
+                            <td>Type Object Name:</td>
+                            <td><input type="text" id="id_find_object_name" value="%"></td>
+                            <td><button onclick="js_find_object_execute()">Find Obj</button></td>
+                        </tr>
+                    </table>
+                    <div class="grid">
+                        <table id="id_find_object_grid">
+                        </table>
+                    </div>
+                    <div id="id_find_object_grid_pager" class="pager"></div>
+                </div>
+
             </div>
-
         </div>
-    </div>
 
 
 
-    <!--
+        <!--
         FORM CSV COMPLETER
     -->
-    <div id="id_csv_completer_form" class="itools_modal">
-        <div class="dialog" style="width:1000px">
-            <div class="header">
-                <span>CSV Completer</span>
-                <button class="close-btn"
-                    onclick="this.parentElement.parentElement.parentElement.style.display='none'">&times;</button>
-            </div>
-            <div class="content">
-                <table>
-                    <tr>
-                        <td>Options?</td>
-                        <td><select id="id_csv_completer_options">
-                                <option value="true" selected>Use first line as titles</option>
-                                <option value="false">Don't use first line as titles</option>
-                            </select></td>
-                    </tr>
-                    <tr>
-                        <td>File Name:</td>
-                        <td><input type="file" id="id_csv_completer_filename"></td>
-                    </tr>
-                    <tr>
-                        <td>Query data Completer:</td>
-                        <td><textarea id="id_csv_completer_query" spellcheck="false" style="height:200px"></textarea>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td></td>
-                        <td><button onclick="js_csv_completer_execute()">Execute</button>
-                            <pre id="id_csv_completer_status">-</pre>
-                        </td>
-                    </tr>
-                </table>
-            </div>
-        </div>
-    </div>
-
-    <!--
-        FORM VIEW SESSIONS
-    -->
-    <div id="id_view_sessions_form" class="itools_modal">
-        <div class="dialog" style="width:80%;height:80%">
-            <div class="header">
-                <span>View Sessions</span>
-                <button class="close-btn"
-                    onclick="this.parentElement.parentElement.parentElement.style.display='none'">&times;</button>
-            </div>
-
-            <div class="content flex">
-                <table>
-                    <tr>
-                        <td>Status:</td>
-                        <td> <select id="id_view_sessions_status">
-                                <option value="ACTIVE">ACTIVE</option>
-                                <option value="INACTIVE">INACTIVE</option>
-                                <option value="%" selected>ALL</option>
-                            </select></td>
-                        <td><button onclick="js_view_sessions_execute()">View Sessions</button></td>
-                    </tr>
-                </table>
-                <div class="grid">
-                    <table id="id_view_sessions_grid">
+        <div id="id_csv_completer_form" class="itools_modal">
+            <div class="dialog" style="width:1000px">
+                <div class="header">
+                    <span>CSV Completer</span>
+                    <button class="close-btn"
+                        onclick="this.parentElement.parentElement.parentElement.style.display='none'">&times;</button>
+                </div>
+                <div class="content">
+                    <table>
+                        <tr>
+                            <td>Options?</td>
+                            <td><select id="id_csv_completer_options">
+                                    <option value="true" selected>Use first line as titles</option>
+                                    <option value="false">Don't use first line as titles</option>
+                                </select></td>
+                        </tr>
+                        <tr>
+                            <td>File Name:</td>
+                            <td><input type="file" id="id_csv_completer_filename"></td>
+                        </tr>
+                        <tr>
+                            <td>Query data Completer:</td>
+                            <td><textarea id="id_csv_completer_query" spellcheck="false"
+                                    style="height:200px"></textarea>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td><button onclick="js_csv_completer_execute()">Execute</button>
+                                <pre id="id_csv_completer_status">-</pre>
+                            </td>
+                        </tr>
                     </table>
                 </div>
-                <div id="id_view_sessions_grid_pager" class="pager"></div>
             </div>
-
         </div>
-    </div>
+
+        <!--
+        FORM VIEW SESSIONS
+    -->
+        <div id="id_view_sessions_form" class="itools_modal">
+            <div class="dialog" style="width:80%;height:80%">
+                <div class="header">
+                    <span>View Sessions</span>
+                    <button class="close-btn"
+                        onclick="this.parentElement.parentElement.parentElement.style.display='none'">&times;</button>
+                </div>
+
+                <div class="content flex">
+                    <table>
+                        <tr>
+                            <td>Status:</td>
+                            <td> <select id="id_view_sessions_status">
+                                    <option value="ACTIVE">ACTIVE</option>
+                                    <option value="INACTIVE">INACTIVE</option>
+                                    <option value="%" selected>ALL</option>
+                                </select></td>
+                            <td><button onclick="js_view_sessions_execute()">View Sessions</button></td>
+                        </tr>
+                    </table>
+                    <div class="grid">
+                        <table id="id_view_sessions_grid">
+                        </table>
+                    </div>
+                    <div id="id_view_sessions_grid_pager" class="pager"></div>
+                </div>
+
+            </div>
+        </div>
 
 
-    <!--
+        <!--
         FORM PREFERENCES
     -->
 
-    <div id="id_preferences_form" class="itools_modal">
-        <div class="dialog" style="width:80%;height:80%">
-            <div class="header">
-                <span>Preferences</span>
-                <button class="close-btn"
-                    onclick="this.parentElement.parentElement.parentElement.style.display='none'">&times;</button>
-            </div>
+        <div id="id_preferences_form" class="itools_modal">
+            <div class="dialog" style="width:80%;height:80%">
+                <div class="header">
+                    <span>Preferences</span>
+                    <button class="close-btn"
+                        onclick="this.parentElement.parentElement.parentElement.style.display='none'">&times;</button>
+                </div>
 
-            <div class="content">
-                <table>
-                    <tr>
-                        <td>Oracle Home:</td>
-                        <td><input type="text" id="id_preferences_oh" disabled></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td>Tns Names:</td>
-                        <td><textarea id="id_preferences_tns" spellcheck="false"></textarea></td>
-                        <td><a href="#" onclick="js_preferences_load_tns()">Load tnsnames.ora</a></td>
-                    </tr>
-                    <tr>
-                        <td>Saved Users:</td>
-                        <td><textarea id="id_preferences_tns_saved" spellcheck="false"></textarea></td>
-                        <td></td>
-                    </tr>
-                    <tr>
-                        <td></td>
-                        <td><button onclick="js_preferences_save()">Save</button></td>
-                        <td></td>
-                    </tr>
-                </table>
+                <div class="content">
+                    <table>
+                        <tr>
+                            <td>Tns Names:</td>
+                            <td><textarea id="id_preferences_tns" spellcheck="false"></textarea></td>
+                            <td><a href="#" onclick="js_preferences_load_tns()">Load tnsnames.ora</a></td>
+                        </tr>
+                        <tr>
+                            <td>Saved Users:</td>
+                            <td><textarea id="id_preferences_tns_saved" spellcheck="false"></textarea></td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td><button onclick="js_preferences_save()">Save</button></td>
+                            <td></td>
+                        </tr>
+                    </table>
+                </div>
             </div>
         </div>
-    </div>
 
 
 
-    <!--
+        <!--
         FORM EDIT ROW FOR GRID
     -->
 
-    <div id="id_edit_row_grid_form" class="itools_modal">
-        <div class="dialog" style="width:80%;height:80%">
-            <div class="header">
-                <span>Edit Row</span>
-                <button class="close-btn"
-                    onclick="this.parentElement.parentElement.parentElement.style.display='none'">&times;</button>
-            </div>
+        <div id="id_edit_row_grid_form" class="itools_modal">
+            <div class="dialog" style="width:80%;height:80%">
+                <div class="header">
+                    <span>Edit Row</span>
+                    <button class="close-btn"
+                        onclick="this.parentElement.parentElement.parentElement.style.display='none'">&times;</button>
+                </div>
 
-            <div class="content">
-                <table id="id_edit_row_grid_content">
-                </table>
-                <button onclick="js_db_grid_editrow_save()" id="id_edit_row_bt_save">Save</button>
+                <div class="content">
+                    <table id="id_edit_row_grid_content">
+                    </table>
+                    <button onclick="js_db_grid_editrow_save()" id="id_edit_row_bt_save">Save</button>
+                </div>
             </div>
         </div>
-    </div>
 
 
-    <!--
+        <!--
         FORM LOGIN
     -->
 
 
-    <div id="id_login_form" class="itools_modal">
-        <div class="dialog">
-            <div class="header">
-                <span>Login Database</span>
-                <button class="close-btn"
-                    onclick="this.parentElement.parentElement.parentElement.style.display='none'">&times;</button>
-            </div>
-            <div class="content"  style="display: flex">
-                <div class="sidebar" id=id_login_list_tns_saved style="height: 300px; width:500px">
+        <div id="id_login_form" class="itools_modal">
+            <div class="dialog">
+                <div class="header">
+                    <span>Login Database</span>
+                    <button class="close-btn"
+                        onclick="this.parentElement.parentElement.parentElement.style.display='none'">&times;</button>
                 </div>
-                <table>
-                    <tr>
-                        <td>Username:</td>
-                        <td><input type="text" id="id_login_username" value=""></td>
-                    </tr>
-                    <tr>
-                        <td>Password:</td>
-                        <td><input type="password" id="id_login_password" value=""></td>
-                    </tr>
-                    <tr>
-                        <td>Database:</td>
-                        <td><select id="id_login_database"></select></td>
-                    </tr>
-                    <tr>
-                        <td>Con.Type:</td>
-                        <td><select id="id_login_direct">
-                                <option value="1">direct</option>
-                                <option value="0" selected>userExec</option>
-                            </select></td>
-                    </tr>
-                    <tr>
-                        <td></td>
-                        <td><button onclick="js_login_connect()">OK</button></td>
-                    </tr>                    
-                    <tr>
-                        <td></td>
-                        <td><a href=# onclick="js_login_change_password()">Change user Password</a></td>
-                    </tr>
-                    <tr>
-                        <td></td>
-                        <td><a href=# onclick="js_clear_cache()">Clear Cache Tree</a></td>
-                    </tr>
-                </table>
+                <div class="content" style="display: flex">
+                    <div class="sidebar" id=id_login_list_tns_saved style="height: 300px; width:500px">
+                    </div>
+                    <table>
+                        <tr>
+                            <td>Username:</td>
+                            <td><input type="text" id="id_login_username" value=""></td>
+                        </tr>
+                        <tr>
+                            <td>Password:</td>
+                            <td><input type="password" id="id_login_password" value=""></td>
+                        </tr>
+                        <tr>
+                            <td>Database:</td>
+                            <td><select id="id_login_database"></select></td>
+                        </tr>
+                        <tr>
+                            <td>Con.Type:</td>
+                            <td><select id="id_login_direct">
+                                    <option value="1">direct</option>
+                                    <option value="0" selected>userExec</option>
+                                </select></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td><button onclick="js_login_connect()">OK</button></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td><a href=# onclick="js_login_change_password()">Change user Password</a></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td><a href=# onclick="js_clear_cache()">Clear Cache Tree</a></td>
+                        </tr>
+                    </table>
+                </div>
             </div>
         </div>
-    </div>
 
 
 
-    <div id="id_div_compiler" class="div_modal_editor">
-        <button onclick="js_editor_mode_close()"> [Close]</button>
-        <button onclick="js_editor_mode_goto()" id="id_div_compiler_spec" style="display: none;">goto body</button>
-    </div>
+        <div id="id_div_compiler" class="div_modal_editor">
+            <button onclick="js_editor_mode_close()"> [Close]</button>
+            <button onclick="js_editor_mode_goto()" id="id_div_compiler_spec" style="display: none;">goto body</button>
+        </div>
 
 
-    <script>
-        js_window_start();
-        js_window_splitters();
-        js_window_editor_monaco("${edt}");
-        js_window_closed();
-        history.pushState(null, '','/');
-    </script>
+        <script>
+            js_window_start();
+            js_window_splitters();
+            js_window_editor_monaco("${edt}");
+            js_window_closed();
+            history.pushState(null, '', '/');
+        </script>
 
 
-</body>
+    </body>
 
-</html>
+    </html>

@@ -48,7 +48,7 @@ public class HomeController {
 
     @PostMapping("/validadeLogin")
     public String validadeLogin(@RequestParam String username, @RequestParam String password,
-            @RequestParam(required = false) String theme, HttpSession session) {
+            @RequestParam(required = false) String theme, HttpServletRequest request, HttpSession session) {
 
         boolean ok = Ldap.ldapLogin(username, password);
 

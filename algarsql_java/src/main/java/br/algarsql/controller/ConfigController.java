@@ -49,8 +49,8 @@ public class ConfigController {
     // ==========================================================================================
 
     @RequestMapping(value = "/config_tnsnames", method = {RequestMethod.GET, RequestMethod.POST})
-    public String configTnsnames() {
-        String fp = System.getenv().getOrDefault("TNS_ADMIN", "-");
+    public Map<String, Object> configTnsnames() {
+        String fp = System.getenv().getOrDefault("TNS_ADMIN", "/algar");
         String caminho = Paths.get(fp, "tnsnames.ora").toString();
         List<String> results = new ArrayList<>();
 
@@ -86,7 +86,7 @@ public class ConfigController {
 
                 Matcher matcher = pattern.matcher(content);
 
-                results = new ArrayList<>();
+                results.clear();
 
                 while (matcher.find()) {
 
@@ -102,11 +102,13 @@ public class ConfigController {
                 }
 
             } catch (Exception e) {
-                results = new ArrayList<>();
+                results.clear();
                 results.add(e.getMessage());
             }
         }
-        return String.join("\n", results);
+        Map<String, Object> ret = new HashMap<>();
+        ret.put("tns_names", String.join("\n", results));
+        return ret;
     }
 
 
@@ -126,7 +128,6 @@ public class ConfigController {
         String u = o.toString();
         ret.put("tnsSaved", Utils.configValue("tnsSaved", null, u).toString());
         ret.put("tns", Utils.configValue("tns", null, u).toString());
-        ret.put("oracle_home", System.getenv().getOrDefault("ORACLE_HOME", "").toString());
         return ret;
     }
 
