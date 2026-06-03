@@ -13,6 +13,9 @@
         <link rel="stylesheet" href="/css/${css}.css">
         <script src="/js/funcs.js"></script>
         <script src="/js/tree.js"></script>
+        <script src="/js/grid.js"></script>
+        <script src="/js/localdb.js"></script>
+        <script src="/js/timer.js"></script>
         <!--INLINE_END-->
 
 
