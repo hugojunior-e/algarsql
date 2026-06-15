@@ -9,37 +9,16 @@
 
         <script src="https://unpkg.com/monaco-editor@0.52.2/min/vs/loader.js"></script>
 
-        <!--INLINE_START-->
-        <link rel="stylesheet" href="/css/${css}.css">
+        <link id="id_theme_css" rel="stylesheet" href="/css/${monacoTheme}">
         <script src="/js/funcs.js"></script>
         <script src="/js/tree.js"></script>
         <script src="/js/grid.js"></script>
         <script src="/js/localdb.js"></script>
         <script src="/js/timer.js"></script>
-        <!--INLINE_END-->
+    </head>
 
-
-        <!--INLINE-->
-
-    <body>
+    <body style="display: none;">
         <div class="menu">
-            <button onclick="js_window_fileopen()" class="tooltip">
-                <span class="tooltiptext">Open File!</span>
-                <img src="/imgs/file_open.png">
-            </button>
-
-            <button onclick="js_template_form()" class="tooltip">
-                <span class="tooltiptext">Save Template!</span>
-                <img src="/imgs/file_save.png">
-            </button>
-
-            <button onclick="js_template_close()" class="tooltip">
-                <span class="tooltiptext">Close Template!</span>
-                <img src="/imgs/file_close.png">
-            </button>
-
-            <span class="separator"></span>
-
             <button onclick="js_login_form()" class="tooltip">
                 <span class="tooltiptext">Logon DB!</span>
                 <img src="/imgs/db_logon.png">
@@ -99,11 +78,10 @@
             </span>
 
             <span class="separator"></span>
-            <span id="id_menu_timer" style="width:80px;text-align: center;">00:00:00</span>
+            <span id="id_menu_timer" style="width:100px;text-align: center;">00:00:00</span>
 
             <span class="separator"></span>
-            [<span id="id_menu_template_name"
-                style="width:150px;text-align: center;color:Red;font-weight: bold"></span>]
+            [<span id="id_menu_template_name" style="color:Red;font-weight: bold"></span>]
 
 
             <div id="id_title_page" style="margin-left:auto; font-size:14px;">
@@ -131,22 +109,20 @@
 
             <!-- PAINEL DIREITO -->
             <div class="right">
+                    <!-- CONTAINER DO MONACO -->
+                    <div id="editor-container"></div>
 
-                <!-- CONTAINER DO MONACO -->
-                <div id="editor-container"></div>
+                    <!-- SPLITTER HORIZONTAL -->
+                    <div class="splitter-horizontal" id="hsplit"></div>
 
-                <!-- SPLITTER HORIZONTAL -->
-                <div class="splitter-horizontal" id="hsplit"></div>
-
-                <!-- GRID RESULTADO -->
-                <div class="grid">
-                    <table id="id_grid_dados"></table>
-                    <div id="id_dbms_output" style="display: none;">
-                        <pre id="id_dbms_output_data"></pre>
+                    <!-- GRID RESULTADO -->
+                    <div class="grid">
+                        <table id="id_grid_dados"></table>
+                        <div id="id_dbms_output" style="display: none;">
+                            <pre id="id_dbms_output_data" style="padding: 0 10px;"></pre>
+                        </div>
                     </div>
-                </div>
-                <div id="id_grid_dados_pager"></div>
-
+                    <div id="id_grid_dados_pager"></div>
             </div>
         </div>
 
@@ -154,32 +130,8 @@
         <input type="file" id="fileInput" hidden>
 
         <!--
-        FORM TEMPLATES
-    -->
-
-        <div id="id_template_form" class="itools_modal">
-            <div class="dialog" style="width:200;height:20%">
-                <div class="header">
-                    <span>Template</span>
-                    <button class="close-btn"
-                        onclick="this.parentElement.parentElement.parentElement.style.display='none'">&times;</button>
-                </div>
-                <div class="content flex">
-                    <table>
-                        <tr>
-                            <td>Name:</td>
-                            <td><input type="text" id="id_template_name" value="-"></td>
-                            <td><button onclick="js_template_save()">Save</button></td>
-                        </tr>
-                    </table>
-                </div>
-            </div>
-        </div>
-
-
-        <!--
         FORM MESSAGE BOX
-    -->
+        -->
 
         <div id="id_message_box_form" class="itools_modal">
             <div class="dialog" style="width:400px;height:20%">
@@ -197,7 +149,7 @@
 
         <!--
         FORM RECALL SQL
-    -->
+        -->
         <div id="id_recall_sql_form" class="itools_modal">
             <div class="dialog" style="width:80%;height:80%">
                 <div class="header">
@@ -227,7 +179,7 @@
 
         <!--
         FORM FIND OBJECT
-    -->
+        -->
         <div id="id_find_object_form" class="itools_modal">
             <div class="dialog" style="width:80%;height:80%">
                 <div class="header">
@@ -258,7 +210,7 @@
 
         <!--
         FORM CSV COMPLETER
-    -->
+        -->
         <div id="id_csv_completer_form" class="itools_modal">
             <div class="dialog" style="width:1000px">
                 <div class="header">
@@ -298,7 +250,7 @@
 
         <!--
         FORM VIEW SESSIONS
-    -->
+        -->
         <div id="id_view_sessions_form" class="itools_modal">
             <div class="dialog" style="width:80%;height:80%">
                 <div class="header">
@@ -332,7 +284,7 @@
 
         <!--
         FORM PREFERENCES
-    -->
+        -->
 
         <div id="id_preferences_form" class="itools_modal">
             <div class="dialog" style="width:80%;height:80%">
@@ -343,23 +295,49 @@
                 </div>
 
                 <div class="content">
-                    <table>
-                        <tr>
-                            <td>Tns Names:</td>
-                            <td><textarea id="id_preferences_tns" spellcheck="false"></textarea></td>
-                            <td><a href="#" onclick="js_preferences_load_tns()">Load tnsnames.ora</a></td>
-                        </tr>
-                        <tr>
-                            <td>Saved Users:</td>
-                            <td><textarea id="id_preferences_tns_saved" spellcheck="false"></textarea></td>
-                            <td></td>
-                        </tr>
-                        <tr>
-                            <td></td>
-                            <td><button onclick="js_preferences_save()">Save</button></td>
-                            <td></td>
-                        </tr>
-                    </table>
+                    <div class="tabs">
+                        <div class="tab-btn active" tag="1" onclick="showTab(this)">
+                            Tns Names
+                        </div>
+
+                        <div class="tab-btn" tag="2" onclick="showTab(this)">
+                            Saved Users
+                        </div>
+
+                        <div class="tab-btn" tag="3" onclick="showTab(this)">
+                            Others
+                        </div>
+                    </div>
+
+                    <div tag="tab1" class="tab-content active">
+                        <textarea id="id_preferences_tns" spellcheck="false"></textarea>
+                    </div>
+
+                    <div tag="tab2" class="tab-content">
+                        <textarea id="id_preferences_tns_saved" spellcheck="false"></textarea>
+                    </div>
+                    <div tag="tab3" class="tab-content">
+                        <table>
+                            <tr>
+                                <td>Monaco Theme:</td>
+                                <td><select id="id_preferences_monaco_theme">
+                                        <option value="style-dark.css">Dark</option>
+                                        <option value="style-plsql.css">Light</option>
+                                    </select></td>
+                            </tr>
+
+                            <tr>
+                                <td>Bip on DML Executions:</td>
+                                <td><select id="id_preferences_bip">
+                                        <option value="1">Yes</option>
+                                        <option value="0">No</option>
+                                    </select></td>
+                            </tr>                            
+                        </table>
+                    </div>
+
+                    <button onclick="js_preferences_save()">Save</button>
+                    <a href="#" onclick="js_preferences_load_tns()">Load tnsnames.ora</a>
                 </div>
             </div>
         </div>
@@ -368,7 +346,7 @@
 
         <!--
         FORM EDIT ROW FOR GRID
-    -->
+        -->
 
         <div id="id_edit_row_grid_form" class="itools_modal">
             <div class="dialog" style="width:80%;height:80%">
@@ -389,7 +367,7 @@
 
         <!--
         FORM LOGIN
-    -->
+        -->
 
 
         <div id="id_login_form" class="itools_modal">
@@ -447,12 +425,18 @@
         </div>
 
 
+        <div class="popup-menu" id="id_popup_template">
+            <div class="popup-item" tag=newfile tagCondition="FOLDER">New File</div>
+            <div class="popup-item" tag=delete>Delete</div>
+            <div class="popup-item" tag=rename>Rename</div>
+            <div class="popup-item" tag=moveto>Move to</div>
+        </div>     
+        
+        <div id="id_tooltip"></div>
+
+
         <script>
-            js_window_start();
-            js_window_splitters();
-            js_window_editor_monaco("${edt}");
-            js_window_closed();
-            history.pushState(null, '', '/');
+            configuraAutoStart('${bip}');
         </script>
 
 

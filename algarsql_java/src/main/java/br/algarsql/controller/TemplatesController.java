@@ -36,30 +36,15 @@ public class TemplatesController {
 
 
         try {
-    
-
             // ---------------------------------------------------------
             // SAVE TEMPLATE
             // ---------------------------------------------------------
             if ("save".equals(action)) {
-
-                String newName = request.getParameter("name");
-                String newValue = request.getParameter("value");
-                String oldName = request.getParameter("old_name");
-
-                if (!newName.contains("|")) {
-                    newName = "root|" + newName;
-                }
-
-                Map<String, Object> tagValue = new HashMap<>();
-                tagValue.put("node", newName);
-                tagValue.put("info", newValue);
-
-                Utils.configSave(oldName, tagValue, "SQL_TEMPLATES", username);
-
-                ret.put("status_msg", "Success");
+                String name  = request.getParameter("name");
+                String value = request.getParameter("value");
+                Utils.configSave(name, value, "SQL_TEMPLATES.SAVE", username);
+                ret.put("status_msg", "saved successfully");
                 ret.put("status_code", 0);
-
                 return ret;
             }
 
@@ -67,21 +52,16 @@ public class TemplatesController {
             // LOAD TEMPLATES
             // ---------------------------------------------------------
             else if ("load".equals(action)) {
-
                 @SuppressWarnings("unchecked")
                 List<Map<String, String>> list = (List<Map<String, String>>) Utils
                         .configValue("SQL_TEMPLATES", new String[] {"%"}, username);
 
                 StringBuilder sb = new StringBuilder();
-
                 for (Map<String, String> item : list) {
-
                     String value = item.get("node");
-
                     if (!value.contains("|")) {
                         value = "root|" + value;
                     }
-
                     sb.append(value).append("\n");
                 }
                 ret.put("templates", sb.toString().trim());
@@ -93,9 +73,7 @@ public class TemplatesController {
             // OPEN TEMPLATE
             // ---------------------------------------------------------
             else if ("open".equals(action)) {
-
                 String name = request.getParameter("name");
-
                 @SuppressWarnings("unchecked")
                 List<Map<String, String>> list = (List<Map<String, String>>) Utils
                         .configValue("SQL_TEMPLATES", new String[] {name}, username);
@@ -105,20 +83,41 @@ public class TemplatesController {
                 } else {
                     ret.put("code", "Template not found.");
                 }
-
                 ret.put("status_code", 0);
-
                 return ret;
             }
+            else if ("delete".equals(action)) {
+                String type = request.getParameter("type");
+                String name = request.getParameter("name") + (type.equals("FILE") ? "" : "|%");
+                Utils.configSave(name, null, "SQL_TEMPLATES.DEL", username);
+                ret.put("status_msg", "successfully deleted");
+                ret.put("status_code", 0);
+                return ret;
+            }
+            else if ("rename".equals(action) || "moveto".equals(action)) {
+                String type = request.getParameter("type");
+                String name = request.getParameter("name") + (type.equals("FILE") ? "" : "|%");
+                String newName = request.getParameter("new_name");
+                Utils.configSave(name, newName, "SQL_TEMPLATES.RENAME", username);
+                ret.put("status_msg", "rename".equals(action) ? "successfully renamed" : "successfully moved");
+                ret.put("status_code", 0);
+                return ret;
+            }
+            else if ("newfile".equals(action)) {
+                String newName = request.getParameter("new_name");
+                Utils.configSave(newName, null, "SQL_TEMPLATES.NEW", username);
+                ret.put("status_msg", "New file created successfully.");
+                ret.put("status_code", 0);
+                return ret;
+            }            
+           
 
             // ---------------------------------------------------------
             // INVALID ACTION
             // ---------------------------------------------------------
             ret.put("status_msg", "Invalid action");
             ret.put("status_code", 1);
-
             return ret;
-
         } catch (Exception e) {
             ret.put("status_msg", e.getMessage());
             ret.put("status_code", 1);

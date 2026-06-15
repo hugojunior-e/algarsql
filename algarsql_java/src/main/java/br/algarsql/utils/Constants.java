@@ -6,8 +6,8 @@ public class Constants {
 
     public static final String PAGE_LOGIN = "/login";
 
-    public static final String FARMPRD_USR = "deployapp";
-    public static final String FARMPRD_PWD = "P7RT6L#A5TI4B";
+    public static final String FARMPRD_USR = "ALGARSQLAPP";
+    public static final String FARMPRD_PWD = "P7RT6L#26sql";
     public static final String FARMPRD_DSN = "exa07-scan-prd.network.ctbc:1521/FARMPRD";
 
     public static String TEMP_DIR = "/algar/temp/";

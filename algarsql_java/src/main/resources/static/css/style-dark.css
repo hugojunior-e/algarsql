@@ -92,9 +92,9 @@ a {
 button {
     background-color: var(--cor-botao);
     color: var(--cor-botao-fonte);
-    padding: 8px 16px;
+    padding: 6px 12px;
     border: var(--borda-leve);
-    border-radius: 6px;
+    border-radius: 3px;
     cursor: pointer;
     height: 35px;
 }
@@ -261,11 +261,11 @@ button:disabled {
 }
 
 .grid table {
-    width: max-content;
     border-collapse: collapse;
     color: var(--cor-grid-fonte);
     font-family: monospace;
     font-size: 12px;
+    cursor: default;
 }
 
 .grid table tr:hover {
@@ -279,6 +279,10 @@ button:disabled {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+.grid table td {
+    user-select: none;
 }
 
 .grid table th {
@@ -395,3 +399,77 @@ button:disabled {
 .resizer:hover {
     background: #2196f3;
 }
+
+
+/* ======================================================================== */
+/* TABS */
+/* ======================================================================== */
+
+.tabs {
+    display: flex;
+    border-bottom: 1px solid #3c3c3c;
+    user-select: none;
+}
+
+.tab-btn {
+    border: none;
+    border-right: 1px solid #3c3c3c;
+    padding: 10px 18px;
+    cursor: pointer;
+    font-size: 13px;
+}
+
+.tab-btn.active {
+    background: #8f1e1e;
+    color: white;
+    border-top: 2px solid #007acc;
+    font-weight: bold;
+}
+
+.tab-content {
+    display: none;
+    padding: 15px;
+    min-height: 200px;
+    font-family: Consolas, monospace;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* ======================================================================== */
+/* POPUP  */
+/* ======================================================================== */
+
+.popup-menu{
+    position:absolute;
+    background:white;
+    border:1px solid #ccc;
+    border-radius:8px;
+    min-width:180px;
+    box-shadow:0 4px 12px rgba(0,0,0,0.15);
+    display:none;
+    z-index:9999;
+}
+
+.popup-item{
+    padding:12px;
+    cursor:pointer;
+    color: #333;
+}
+
+.popup-item:hover{
+    background:#f0f0f0;
+}
+
+dialog {
+    border: none;
+    border-radius: 10px;
+    padding: 0;
+    width: 400px;
+    background: #252526;
+    color: #d4d4d4;
+    box-shadow: 0 8px 30px rgba(0,0,0,.6);
+    overflow: hidden;
+}
+

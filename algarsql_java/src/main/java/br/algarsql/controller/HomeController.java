@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import br.algarsql.utils.Ldap;
+import br.algarsql.utils.Utils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 
@@ -24,15 +25,22 @@ public class HomeController {
         if ( o == null ) {
             return "redirect:/login";
         }
+
         String username = o.toString();
+
+        String monacoThemeDefault = Utils.configValue("monacoTheme", null, username).toString();
+        if (monacoThemeDefault.length() == 0) {
+            monacoThemeDefault = "style-dark.css";
+        };     
         
+        String bip = Utils.configValue("bip", null, username).toString();
+        if (bip.length() == 0) {
+            bip = "1";
+        };          
+
         model.addAttribute("login", username);
-
-        String cs = (String) session.getAttribute("theme");
-        String edt = cs.contains("plsql") ? "vs" : "vs-dark";
-        model.addAttribute("edt", edt);
-        model.addAttribute("css", cs);
-
+        model.addAttribute("monacoTheme", monacoThemeDefault);
+        model.addAttribute("bip", bip);
         return "index";
     }
 
@@ -54,7 +62,6 @@ public class HomeController {
 
         if (ok) {
             session.setAttribute("username", username);
-            session.setAttribute("theme", theme);
             return "redirect:/";
         }
 

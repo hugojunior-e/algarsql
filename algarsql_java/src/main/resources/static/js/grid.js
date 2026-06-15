@@ -24,6 +24,7 @@ class TGrid {
         this.totalPaginas = Math.ceil(this.dados.length / this.limit_per_page);
         this.tabela = document.getElementById(this.idTable);
         this.pager = document.getElementById(this.idTable + "_pager");
+        this.prepareControl();
     }
 
     getCellValueByHeader(row, headerName) {
@@ -93,7 +94,6 @@ class TGrid {
     }
 
     configuraResize(th, resizer) {
-
         let startX;
         let startWidth;
         let startTableWidth;
@@ -136,9 +136,20 @@ class TGrid {
         }
     }
 
+    selectCell(td, ctrlKey) {
+        if (!ctrlKey) {
+            this.tabela
+                .querySelectorAll(".th_selected")
+                .forEach(c => c.classList.remove("th_selected"));
+        }
+
+        td.classList.toggle("th_selected");
+    }
+
     desenharTabela() {
         this.tabela.innerHTML = "";
         this.tabela.style.tableLayout = 'fixed';
+        this.tabela.style.display = '';
 
         // Cabecalho
         const thead     = this.tabela.createTHead();
@@ -193,7 +204,7 @@ class TGrid {
 
                 td.textContent = linha[col] ?? "";
                 td.value = linha[col] ?? "";
-                td.onclick = () => this.selectColumn(-1);
+                td.onclick = (e) => this.selectCell(td, e.ctrlKey); //this.selectColumn(-1);
 
                 if ( this.columns_types[idx_td].includes("PRE") && td.value !== "") {
                     td.addEventListener("mousemove", (e) => {
@@ -239,7 +250,6 @@ class TGrid {
             }
 
         });
-
         this.desenharPaginacao();
     }
 
@@ -297,5 +307,26 @@ class TGrid {
             btnFetch.onclick = () => { js_db_fetch(); };
             this.pager.appendChild(btnFetch);
         }
+    }
+
+
+    prepareControl() {
+        let selecting = false;
+        this.tabela.addEventListener("mousedown", (e) => {
+            const td = e.target.closest("td");
+            if (!td || !e.ctrlKey) return;
+            selecting = true;
+            td.classList.toggle("th_selected");
+        });
+        this.tabela.addEventListener("mouseover", (e) => {
+            if (!selecting) return;
+            const td = e.target.closest("td");
+            if (td) {
+                td.classList.add("th_selected");
+            }
+        });
+        document.addEventListener("mouseup", () => {
+            selecting = false;
+        });        
     }
 }

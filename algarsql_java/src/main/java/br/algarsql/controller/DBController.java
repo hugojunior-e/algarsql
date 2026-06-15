@@ -263,6 +263,7 @@ public class DBController {
                 String itens = request.getParameter("itens").toString();
                 String rowid = request.getParameter("rowid").toString();
                 String sql = request.getParameter("sql").toString();
+                sql = Utils.compactSQL(sql);
                 executeUpdateFromForm(db, rowid, sql, itens);
             }
 

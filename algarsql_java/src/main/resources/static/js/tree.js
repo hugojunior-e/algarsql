@@ -4,10 +4,11 @@ class TreeView {
         this.openNodes = [];
         this.treeBuffer = [];
         this.endNodeClick = null;
-        this.endNodeParamClick = null;
         this.endNodeText = null;
         this.treeIcones = ["🔵", "📁"];
-        this.mais = "➕";//➕
+        this.mais = "➕";
+        this.isPopupMenuPrepared = false;
+        this.clickedLink = null;
     }
 
 
@@ -15,6 +16,36 @@ class TreeView {
         this.treeBuffer.push(txt);
     }
 
+    goToNode(no) {
+        var lista = [];
+
+        if ( no == null ) { return };
+        var x = document.querySelector('a[nodeInfo="' + no + '"]');
+        if ( x == null ) { return };
+
+        if ( x.getAttribute("nodeType") == "FILE" ) {
+            x = x.parentElement.parentElement.parentElement.querySelector("a[nodeType='FOLDER']");
+        }
+
+        var iid = x.id ?? "-";
+        lista.push(x);
+        while ( true ) {
+            x   = x.parentElement;
+            iid = x.id || "-";
+            if ( iid == "id_tree_obj" ) {
+                break;
+            }
+            var l = x.querySelector('a[nodeType="FOLDER"]');
+            if ( l != null ) { 
+                lista.push(l);
+            }
+        }
+        Array.from(new Set(lista)).forEach(item => {
+            if ( item.getAttribute("nodeType") == "FOLDER" ) {
+                item.click();
+            }
+        });
+    }
 
     montaArvoreDados(arrNodes, startNode = 0, openNode = null) {
         this.treeBuffer = [];
@@ -26,19 +57,45 @@ class TreeView {
                 this.setOpenNodes(openNode);
             }
 
-            if (startNode !== 0) {
-                const nodeValues = this.nodes[this.getArrayId(startNode)].split("|");
-                this.writeTreeString(
-                    `<a href="${nodeValues[3]}" onmouseover="window.status='${nodeValues[2]}';return true;" onmouseout="window.status=' ';return true;">${nodeValues[2]}</a><br />`
-                );
-            }
-
             const recursedNodes = [];
             this.addNode(startNode, recursedNodes);
         }
 
         return this.treeBuffer.join("\n");
     }
+
+    preparePopupMenu(id_tree, id_popup, jsAction) {
+        if (this.isPopupMenuPrepared == false) {
+            id_popup.addEventListener("click", (e) => {
+                const item = e.target.closest(".popup-item");
+                if (!item) return;
+                const acao = item.getAttribute("tag");
+                jsAction(acao, this.clickedLink);
+            });     
+
+            window.addEventListener("click", (e) => {
+                id_popup.style.display = "none";
+            });   
+            this.isPopupMenuPrepared = true;
+        }
+
+        id_tree.querySelectorAll("a").forEach(item => {
+            item.addEventListener("contextmenu",(e)=>{
+                e.preventDefault();
+                this.clickedLink = item; 
+
+                id_popup.querySelectorAll("[tagCondition]").forEach(item => {
+                    const condition = item.getAttribute("tagCondition");
+                    item.style.display = (condition == this.clickedLink.getAttribute("nodeType")) ? "block" : "none";
+                });
+                
+                id_popup.style.display = "block";
+                id_popup.style.left = e.pageX + "px";
+                id_popup.style.top  = e.pageY + "px";
+            });
+        });
+    }
+
 
     getArrayId(node) {
         for (let i = 0; i < this.nodes.length; i++) {
@@ -79,8 +136,10 @@ class TreeView {
 
     addNode(parentNode, recursedNodes) {
         for (let i = 0; i < this.nodes.length; i++) {
+            
             const nodeValues = this.nodes[i].split("|");
             if (nodeValues[1] == parentNode) {
+                this.writeTreeString("<span>");
 
                 const ls = this.lastSibling(nodeValues[0], nodeValues[1]);
                 const hcn = this.hasChildNode(nodeValues[0]);
@@ -94,38 +153,43 @@ class TreeView {
 
                 recursedNodes.push(ls ? 0 : 1);
 
-                const vv_div = this.generate_session_id();
-
+                const vv_div = Date.now().toString();
+                
                 // Nó com filhos
                 if (hcn) {
                     const isLast = ls ? 1 : 0;
-                    this.writeTreeString(
-                        `<a href="javascript: oc('${vv_div}_${nodeValues[0]}', ${isLast});">${this.mais}${this.treeIcones[1]}${nodeValues[2]}</a>`
-                    );
+                    
+                    const link = document.createElement('a');
+                    link.textContent = this.mais + this.treeIcones[1] + nodeValues[2];
+                    link.href        = `javascript: oc('${vv_div}_${nodeValues[0]}', ${isLast});`;
+                    link.setAttribute("nodeFolderID", "div" + vv_div + "_" + nodeValues[0]);
+                    link.setAttribute("nodeType", "FOLDER");
+                    link.setAttribute("nodeInfo", nodeValues[3].replaceAll('...','|'));
+                    this.writeTreeString(link.outerHTML);
+
                 } else {
                     // Nó folha
                     this.writeTreeString( this.treeIcones[0] );
                     const nodeValue       = nodeValues[2];
                     let endNodeText       = nodeValue;
-                    let endNodeParameter  = nodeValue;
 
                     if ( this.endNodeText != null ) {
                         endNodeText = eval(this.endNodeText);
                     }
 
-                    if ( this.endNodeParamClick != null ) {
-                        endNodeParameter = eval(this.endNodeParamClick);
-                    }
-
                     if ( this.endNodeClick != null ) {
-                        this.writeTreeString(
-                            `<a href=# onclick="${this.endNodeClick}('${endNodeParameter}')">${endNodeText}</a>`
-                        );
+                        const link = document.createElement('a');
+                        link.textContent = endNodeText;
+                        link.href        = "#";
+                        link.setAttribute("nodeType", "FILE");
+                        link.setAttribute("nodeInfo", nodeValues[3].replaceAll('...','|'));
+                        link.setAttribute("onclick", `${this.endNodeClick}(this)`);
+
+                        this.writeTreeString(link.outerHTML);
                     } else {
                         this.writeTreeString(endNodeText);
                     } 
                 }
-
                 this.writeTreeString("<br/>");
 
                 // Se tiver filhos → abre div e recursa
@@ -140,13 +204,10 @@ class TreeView {
                 }
 
                 recursedNodes.pop();
+                this.writeTreeString("</span>");
             }
+            
         }
-    }
-
-    // ID fake como no original
-    generate_session_id() {
-        return Math.random().toString(36).substring(2, 10);
     }
 
     // parser CSV → array de strings "id|parent|name|link"

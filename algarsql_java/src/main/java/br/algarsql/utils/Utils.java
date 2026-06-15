@@ -170,43 +170,43 @@ public class Utils {
         try {
             conn = DriverManager.getConnection("jdbc:sqlite:" + fileConfig);
             Statement st = conn.createStatement();
+
             if ("SQL_HISTORY".equals(tag)) {
-                ResultSet rs = st.executeQuery("select * from sql_history " + "where info like '"
-                        + params[0] + "' and dbname like '" + params[1] + "' " + "order by 1 desc");
-
+                ResultSet rs = st.executeQuery("select * from sql_history where info like '"  + params[0] + "' and dbname like '" + params[1] + "' order by 1 desc");
                 List<Map<String, String>> rows = new ArrayList<>();
-
                 while (rs.next()) {
-
                     Map<String, String> row = new LinkedHashMap<>();
-
-                    row.put("dt", rs.getString(1));
-                    row.put("dbname", rs.getString(2));
-                    row.put("info", rs.getString(3));
-
+                    row.put("dt", rs.getString("dt"));
+                    row.put("dbname", rs.getString("dbname"));
+                    row.put("info", rs.getString("info"));
                     rows.add(row);
                 }
-
                 return rows;
             }
 
             if ("SQL_TEMPLATES".equals(tag)) {
-
-                ResultSet rs = st.executeQuery("select * from sql_templates where node like '"
-                        + params[0] + "' order by node");
+                ResultSet rs = st.executeQuery("select * from sql_templates where node like '" + params[0] + "' order by node");
                 List<Map<String, Object>> rows = new ArrayList<>();
                 while (rs.next()) {
                     Map<String, Object> row = new LinkedHashMap<>();
-                    row.put("node", rs.getString(1));
-                    row.put("info", rs.getString(2));
+                    row.put("node", rs.getString("node"));
+                    row.put("info", rs.getString("info"));
+                    rows.add(row);
+                }
+                if ( rows.size() == 0 ) {
+                    st.execute("insert into sql_templates(node, info) values ('root|empty_file.sql','-')");
+                    Map<String, Object> row = new LinkedHashMap<>();
+                    row.put("node", "root|empty_file.sql");
+                    row.put("info", "-");
                     rows.add(row);
                 }
                 return rows;
             }
+
             String ret = "";
             ResultSet rs = st.executeQuery("select info from config where node = '" + tag + "'");
             if (rs.next()) {
-                ret = rs.getString(1);
+                ret = rs.getString("info");
             }
             conn.close();
 
@@ -230,8 +230,7 @@ public class Utils {
             Statement st = conn.createStatement();
 
             st.execute("CREATE TABLE if not exists config (node text, info text)");
-            st.execute(
-                    "CREATE TABLE if not exists sql_history (dt datetime default current_timestamp, dbname text, info text)");
+            st.execute("CREATE TABLE if not exists sql_history (dt datetime default current_timestamp, dbname text, info text)");
             st.execute("CREATE TABLE if not exists sql_templates(node text unique, info text)");
 
             // -------------------------------------------------------------
@@ -240,8 +239,7 @@ public class Utils {
 
             if ("CONFIG".equals(tipo)) {
                 st.execute("delete from config where node = '" + tagName + "'");
-                PreparedStatement ps =
-                        conn.prepareStatement("insert into config (node,info) values (?,?)");
+                PreparedStatement ps = conn.prepareStatement("insert into config (node,info) values (?,?)");
                 ps.setString(1, tagName);
                 ps.setString(2, String.valueOf(tagValue));
                 ps.execute();
@@ -252,8 +250,7 @@ public class Utils {
             // -------------------------------------------------------------
 
             if ("SQL_HISTORY".equals(tipo)) {
-                PreparedStatement ps =
-                        conn.prepareStatement("insert into sql_history (dbname,info) values (?,?)");
+                PreparedStatement ps = conn.prepareStatement("insert into sql_history (dbname,info) values (?,?)");
                 ps.setString(1, tagName);
                 ps.setString(2, String.valueOf(tagValue));
                 ps.execute();
@@ -263,15 +260,31 @@ public class Utils {
             // SQL_TEMPLATES
             // -------------------------------------------------------------
 
-            if ("SQL_TEMPLATES".equals(tipo)) {
-                Map<?, ?> obj = (Map<?, ?>) tagValue;
-                st.execute("delete from sql_templates  where node = '" + tagName + "'");
-                PreparedStatement ps =
-                        conn.prepareStatement("insert into sql_templates (node,info) values (?,?)");
-                ps.setString(1, String.valueOf(obj.get("node")));
-                ps.setString(2, String.valueOf(obj.get("info")));
+            if ("SQL_TEMPLATES.SAVE".equals(tipo)) {
+                PreparedStatement ps = conn.prepareStatement("update sql_templates set info = ? where node = ?");
+                ps.setString(1, tagValue.toString());
+                ps.setString(2, tagName );
                 ps.execute();
             }
+
+            if ("SQL_TEMPLATES.DEL".equals(tipo)) {
+                 PreparedStatement ps = conn.prepareStatement("delete from sql_templates  where node like ?");
+                 ps.setString(1, tagName);
+                 ps.execute();
+            }            
+            if ("SQL_TEMPLATES.RENAME".equals(tipo)) {
+                String newTagName = tagValue.toString();
+                PreparedStatement ps = conn.prepareStatement("update sql_templates set node = replace(node, ?, ?) where node like ?");
+                ps.setString(1, tagName.replace("|%", "") );
+                ps.setString(2, newTagName );
+                ps.setString(3, tagName);
+                ps.execute();
+            }       
+            if ("SQL_TEMPLATES.NEW".equals(tipo)) {
+                PreparedStatement ps = conn.prepareStatement("insert into sql_templates(node,info) values (?,'-')");
+                ps.setString(1, tagName );
+                ps.execute();
+            }                     
             conn.close();
         } catch (Exception e) {
             e.printStackTrace();

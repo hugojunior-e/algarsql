@@ -125,9 +125,21 @@ public class ConfigController {
             ret.put("redirect", Constants.PAGE_LOGIN);
             return ret;
         }
+
         String u = o.toString();
+        String monacoThemeDefault = Utils.configValue("monacoTheme", null, u).toString();
+        if (monacoThemeDefault.length() == 0) {
+            monacoThemeDefault = "style-dark.css";
+        };
+
+        String bip = Utils.configValue("bip", null, u).toString();
+        if (bip.length() == 0) {
+            bip = "1";
+        };
         ret.put("tnsSaved", Utils.configValue("tnsSaved", null, u).toString());
         ret.put("tns", Utils.configValue("tns", null, u).toString());
+        ret.put("bip", bip);
+        ret.put("monacoTheme", monacoThemeDefault);
         return ret;
     }
 
@@ -138,7 +150,7 @@ public class ConfigController {
 
     @RequestMapping(value = "/config_save", method = {RequestMethod.GET, RequestMethod.POST})
     public Map<String, Object> configSave(HttpServletResponse response,HttpServletRequest request,HttpSession session, @RequestParam String tnsSaved,
-            @RequestParam String tns) throws Exception {
+            @RequestParam String tns, @RequestParam String monacoTheme,  @RequestParam String bip ) throws Exception {
         Map<String, Object> ret = new HashMap<>();
         Object o = session.getAttribute("username");
         if ( o == null ) {
@@ -151,7 +163,10 @@ public class ConfigController {
 
         Utils.configSave("tnsSaved", tnsSaved, "CONFIG", u);
         Utils.configSave("tns", tns, "CONFIG", u);
+        Utils.configSave("monacoTheme", monacoTheme, "CONFIG", u);
+        Utils.configSave("bip", bip, "CONFIG", u);
         ret.put("status_msg", "Configuration saved successfully.");
+    
         return ret;
     }
 

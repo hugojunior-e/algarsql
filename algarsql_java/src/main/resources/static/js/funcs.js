@@ -1,5 +1,46 @@
-﻿let global_var = {};
+﻿var global_var = {};
 
+
+function playBip() {
+    if ( global_var.bip == '1' ) {
+        const ctx = new AudioContext();
+
+        [600, 900].forEach((freq, i) => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+
+            osc.frequency.value = freq;
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+
+            osc.start(ctx.currentTime + i * 0.15);
+            osc.stop(ctx.currentTime + i * 0.15 + 0.1);
+        });
+    }
+}
+
+function clearTable(table) {
+    const clone = table.cloneNode(true);
+
+    clone.querySelectorAll("*").forEach(el => {
+        el.removeAttribute("style");
+        el.removeAttribute("class");
+        el.removeAttribute("onclick");
+    });
+
+    clone.removeAttribute("style");
+    clone.removeAttribute("class");
+    clone.removeAttribute("onclick");
+
+    return clone.outerHTML;
+}
+
+
+function configureTheme(theme) {
+    id_theme_css.href = '/css/' + theme;
+    let edt = theme == "style-dark.css" ?'vs-dark' :'vs';
+    global_var.editorSQL.updateOptions({   theme: edt  });
+}
 
 function copyToClip(texto) {
     const textarea = document.createElement("textarea");
@@ -35,6 +76,15 @@ function showMemoArea(content) {
         id_grid_dados_pager.style.display = 'none';
         id_dbms_output_data.innerHTML     = content;
     }
+}
+
+
+function showTab(btn) {
+    let bloco = btn.parentNode.parentNode;
+    bloco.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    bloco.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+    bloco.querySelectorAll('div[tag="tab' + btn.getAttribute('tag') + '"]').forEach(t => t.classList.add('active'));
+    btn.classList.add('active');
 }
 
 /*
@@ -184,14 +234,6 @@ function gerar_alias(nomeTabela) {
 }
 
 
-
-function generate_session_id() {
-    return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c =>
-        (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)
-    );
-}
-
-
 function change_icon(running = null) {
     let idx     = id_login_database.selectedIndex;
     let text    = idx >= 0 ? id_login_database.options[idx].innerText : "";
@@ -242,9 +284,9 @@ function js_dbtree_show() {
 }
 
 function js_tree_login_saved(x) {
-    d = x.split("/");
+    d = x.getAttribute("nodeInfo").split("/");
     id_login_database.selectedIndex = Array.from(id_login_database.options).findIndex(opt => opt.text === d[2]);
-    id_login_username.value = d[0];
+    id_login_username.value = d[0].split("|")[1];
     id_login_password.value = d[1];
 }
 
@@ -595,38 +637,35 @@ function js_csv_completer_form() {
     ==========================================================================================-------------------------------------
 */
 
-function js_template_save() {
-    ajax("/template", { "action": "save", "old_name": id_menu_template_name.innerText, "name": id_template_name.value, "value": global_var.editorSQL.getValue() }, function (a) {
-        if ( id_menu_template_name.innerText !==  id_template_name.value) {
-            js_template_load();
-        }
-        id_menu_template_name.innerText = id_template_name.value;
-        id_template_form.style.display  = "none";
-        alert('Saved Sucess');
-    });
+function js_template_save_opened() {
+    if ( id_menu_template_name.innerText != "" ) {
+        ajax(   "/template", { 
+                    "action"  : "save", 
+                    "name"    : id_menu_template_name.innerText, 
+                    "value"   : global_var.editorSQL.getValue() 
+                }, 
+                function (a) {}
+        );
+    }
 }
 
+
 function js_template_close() {
-    if ( id_menu_template_name.innerText != "" ) {
-        id_template_form.style.display = "none";
-        id_menu_template_name.innerText = "";
-        global_var.editorSQL.setValue("select * from dual");
-    } else {
-        alert("No template loaded!");
-    }
+    id_menu_template_name.innerText = "";
+    global_var.editorSQL.setValue("select * from dual");
 }
 
 function js_templates_open_item(x) {
     if ( confirm('Open this template in new editor?') ) {
-        ajax("/template", { "action": "open", "name": x}, function (a) {
-            id_template_name.value          = x;
-            id_template_name.code           = a.code;
-            window.open('/?template')
+        ajax("/template", { "action": "open", "name": x.getAttribute("nodeInfo") }, function (a) {
+            global_var.tmp_template_name = x.getAttribute("nodeInfo");
+            global_var.tmp_template_code = a.code;
+            window.open("/?template");
         });
     }
 }
 
-function js_template_load() {
+function js_template_load( node_filter = null ) {
     if ( id_tree_obj.index == 0 ) {
         id_tree_obj.value        = id_tree_obj.innerHTML;
     }
@@ -634,16 +673,52 @@ function js_template_load() {
     ajax("/template", { "action": "load" }, function (a) {
         id_tree_obj.innerHTML    = global_var.tree_templates.montaArvoreDados(a.templates);        
         id_tree_obj.index        = 1;
+
+        global_var.tree_templates.goToNode(node_filter);
+        
+        global_var.tree_templates.preparePopupMenu(id_tree_obj, id_popup_template, function(acao, tobj) {
+            var info       = tobj.getAttribute("nodeInfo");
+            var type       = tobj.getAttribute("nodeType");
+            var newName    = "-";
+            var dat        = info.split("|");
+            var no_to_find = info;
+
+            if ( type == "FILE" ) {
+                no_to_find = tobj.parentElement.parentElement.parentElement.querySelector("a[nodeType='FOLDER']").getAttribute("nodeInfo");
+            }
+
+            if ( acao == "rename"  ) {
+                newName = prompt( "New Name", dat.at(-1) );
+                if ( !newName ) {
+                    return;
+                }
+                dat[dat.length-1] = newName;
+            }
+            if ( acao == "newfile" ) {
+                newName = prompt( "New File", "newfile.sql" );
+                if ( !newName ) {
+                    return;
+                }
+                dat.push(newName);
+            }
+            newName = dat.join("|");
+
+            if ( acao == "moveto"  ) {
+                newName = prompt( "Move to:", info );
+                if ( !newName ) {
+                    return;
+                }
+                no_to_find = newName;
+                acao       = "rename";
+            }
+
+            ajax("/template", { "action": acao, "name": info, "type": type, "new_name": newName, "value":"-" }, function (a) {
+                alert(a.status_msg);
+                js_template_load(no_to_find);
+            });
+        });
     });
 }
-
-
-function js_template_form() {
-    id_template_form.style.display = "flex";
-    id_template_name.value         = id_menu_template_name.innerText;
-}
-
-
 
 /*
     ==========================================================================================------------------------------------
@@ -656,7 +731,10 @@ function js_template_form() {
 function js_find_object_execute() {
     id_find_object_grid.innerHTML = '';
     ajax("/db_execute", { "action": "findobj", "object_name": id_find_object_name.value }, function (a) {
-
+        if ( a.status_code != 0 ) {
+            alert(a.startus_msg);
+            return;
+        }
         global_var.grid_find_objects.setContent(
             a.data,
             a.columns,
@@ -736,66 +814,6 @@ function js_recall_sql_form() {
 
 /*
     ==========================================================================================------------------------------------
-    comment: Funções relacionadas à integração com IA, permitindo ao usuário gerar consultas SQL a partir de descrições 
-    em linguagem natural ou obter explicações sobre o funcionamento de consultas.
-    ==========================================================================================------------------------------------
-*/
-
-async function js_ia_chat_api(msg) {
-    const modelo = "gemini-flash-latest";
-    const API_KEY = "AIzaSyAUbgnZiV2fW-e50ql_P9CCBvmyXz03-Kc";
-
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent?key=${API_KEY}`;
-
-    const payload = {
-        contents: [
-            {
-                parts: [{ text: msg }]
-            }
-        ]
-    };
-
-    try {
-        const resp = await fetch(url, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify(payload)
-        });
-
-        const data = await resp.json();
-
-        const texto = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-
-        return texto || "Sem resposta";
-
-    } catch (err) {
-        console.error("Erro:", err);
-        return "Erro ao chamar API";
-    }
-}
-
-
-function js_ia_form() {
-    window.open("/ia", name, "width=800,height=400,scrollbars=yes,resizable=yes");
-}
-
-function js_ia_chat() {
-    id_chat_enviar.style.backgroundColor = 'gray';
-    id_chat_enviar.disabled = true;
-    id_chat_enviar.innerHTML = "Sending...";
-
-    js_ia_chat_api( id_chat_dados.value.replace("@sql", "[" + window.opener.get_sql_editor() + "]" ) ).then((message) => {
-        id_chat.innerHTML = id_chat.innerHTML + "<pre>" + message + "</pre><hr>";
-        id_chat_enviar.style.backgroundColor = '';
-        id_chat_enviar.disabled = false;
-        id_chat_enviar.innerHTML = "Send";
-    });
-}
-
-/*
-    ==========================================================================================------------------------------------
     comment: Funções relacionadas à configuração de preferências do usuário, 
     como diretórios de templates e arquivos de configuração,
     ==========================================================================================------------------------------------
@@ -807,24 +825,32 @@ function js_preferences_load_tns() {
     });
 }
 
-function js_preferences_form() {
+function js_preferences_form(x  = "flex") {
     ajax("/config_get", {}, function (a) {
         id_preferences_tns.value = a.tns;
         id_preferences_tns_saved.value = a.tnsSaved;
-        id_preferences_form.style.display = "flex";
+        id_preferences_monaco_theme.value = a.monacoTheme;
+        id_preferences_bip.value = a.bip;
+        id_preferences_form.style.display = x;
+        configureTheme(a.monacoTheme);
     });
 }
 
+// Salva as preferências do usuário, enviando os dados para o servidor e atualizando a interface conforme necessário.
 function js_preferences_save() {
     r = {
         "tns": id_preferences_tns.value,
-        "tnsSaved": id_preferences_tns_saved.value
+        "tnsSaved": id_preferences_tns_saved.value,
+        "monacoTheme": id_preferences_monaco_theme.value,
+        "bip": id_preferences_bip.value
     };
 
     ajax("/config_save", r, function (a) {
         alert( a.status_msg );
         id_preferences_form.style.display = "none";
+        configureTheme(id_preferences_monaco_theme.value);
         global_var.config_loaded          = false;
+        global_var.bip                    = id_preferences_bip.value;
     });
 }
 
@@ -905,24 +931,12 @@ function js_login_form() {
 }
 
 
+
 /*
     ==========================================================================================------------------------------------
-    comment: Funções de banco de dados
+    comment: Editor da Grid
     ==========================================================================================------------------------------------
 */
-
-function js_db_execute_proc( obj ) {
-    ajax("/db_execute", { "action": "test_procedure", "object_name": obj }, function (a) {
-        js_window_popup("test proc", a.status_msg);
-    });
-}
-
-function js_db_status(in_transaction = null, in_running = null, is_connected = null) {
-    if (in_transaction != null) {
-        id_menu_commit.disabled = !in_transaction;
-        id_menu_rollback.disabled = !in_transaction;
-    }
-}
 
 
 function js_db_grid_editrow(row, columns, columns_types) {
@@ -994,14 +1008,40 @@ function js_db_grid_editrow_save() {
 
 }
 
-function js_db_ddl(object_name) {
+/*
+    ==========================================================================================------------------------------------
+    comment: Funções de banco de dados
+    ==========================================================================================------------------------------------
+*/
+
+function js_db_execute_proc( obj ) {
+    ajax("/db_execute", { "action": "test_procedure", "object_name": obj }, function (a) {
+        js_window_popup("test proc", a.status_msg);
+    });
+}
+
+function js_db_status(in_transaction = null, in_running = null, is_connected = null) {
+    if (in_transaction != null) {
+        id_menu_commit.disabled = !in_transaction;
+        id_menu_rollback.disabled = !in_transaction;
+    }
+}
+
+
+
+
+function js_db_ddl(obj) {
+    object_name = obj;
+    if ( obj instanceof Element ) {
+        object_name = obj.getAttribute("nodeInfo").replaceAll("|", "...");
+    }
     change_icon(true);
     ajax("/db_execute", { "action": "ddl", "object_name": object_name }, function (a) {
         if ( a.status_code != 0 ) {
             alert(a.status_msg);
             return;
         }
-        js_window_popup("DDL: " + object_name, a.status_msg);
+        js_window_popup("DDL: " + object_name, a.ddl);
         change_icon(false);
     });
 }
@@ -1012,6 +1052,8 @@ function js_db_ddl(object_name) {
 
 
 function js_db_execute() {
+    js_template_save_opened();
+
     id_grid_dados.innerHTML    = '';
     sql                        = get_sql_editor();
 
@@ -1048,6 +1090,7 @@ function js_db_execute() {
         } else {
             showMemoArea( last_output );
             js_db_status(in_transaction = true);
+            playBip();
         }
         change_icon(false);
     }, function (error) {
@@ -1125,6 +1168,7 @@ function js_db_describe() {
 }
 
 function js_db_fetch50(grid) {
+    change_icon(true);
     ajax("/db_execute", { "action": "fetch", }, function (a) {
         if (a.data.length > 0) {
             grid.dados = grid.dados.concat(a.data);
@@ -1133,6 +1177,7 @@ function js_db_fetch50(grid) {
         } else {
             grid.btnNext.disabled = true;
         }
+        change_icon(false);
     });
 }
 
@@ -1176,13 +1221,244 @@ function js_db_fetch(append = false) {
 */
 
 
+function createEditorSQL(sql_autostart) {
+    return new Promise((resolve) => {
+                require.config({
+                    paths: { vs: "https://unpkg.com/monaco-editor@0.55.1/min/vs" }
+                });
 
-function js_window_start() {
+                require(["vs/editor/editor.main"], function () {
+
+                    monaco.languages.registerCompletionItemProvider('sql', {
+                        triggerCharacters: ['.'],
+                        async provideCompletionItems(model, position) {
+                            const textUntilPosition = model.getValueInRange({
+                                startLineNumber: position.lineNumber,
+                                startColumn: 1,
+                                endLineNumber: position.lineNumber,
+                                endColumn: position.column
+                            });
+
+                            const match = textUntilPosition.match(/(\w+)\.$/);
+                            const word_select = match ? match[1] : null;
+
+
+                            if (!word_select) return { suggestions: [] };
+
+                            let word_to_filter = "";
+                            let in_list_table = global_var.object_tables.includes(word_select.toUpperCase());
+                            let in_list_users = global_var.object_users.includes(word_select.toUpperCase());
+
+                            if (  in_list_table  || in_list_users ) {
+                                word_to_filter = word_select;
+                            } else {
+                                const fullText = model.getValue();
+                                x = fullText.toUpperCase().replace(/[;,\n\t.*]| SELECT /g, ' ');
+                                while (x.indexOf('  ') > 0) {
+                                    x = x.replaceAll('  ', ' ')
+                                }
+                                info_a = x.split(' ');
+
+                                for (let i = 0; i < info_a.length; i++) {
+                                    const info = info_a[i];
+
+                                    if (word_select.toUpperCase() === info && global_var.object_tables.includes(info_a[i - 1])) {
+                                        in_list_table = true;
+                                        word_to_filter = info_a[i - 1];
+                                        break;
+                                    }
+                                }
+                            }
+                            if (word_to_filter === "") return { suggestions: [] };
+
+                            const columns = await js_db_completation(word_to_filter, in_list_table ? "TABLE" : "USER");
+
+                            const suggestions = (columns || []).map(col => {
+
+                                const n = String(col.N ?? "");
+                                const o = String(col.O ?? "");
+                                const i = String(col.I ?? "");
+
+                                return {
+                                    label: {
+                                        label: n.padEnd(40, " "),
+                                        description: o,
+                                    },
+
+                                    sortText: i,
+
+                                    detail: in_list_table
+                                        ? "Column"
+                                        : "Object",
+
+                                    documentation: o,
+
+                                    kind: monaco.languages.CompletionItemKind.Variable,
+
+                                    insertText:
+                                        n + (
+                                            in_list_table
+                                                ? ""
+                                                : " " + gerar_alias(n)
+                                        )
+                                };
+                            });
+
+                            return { suggestions };
+                        }
+                    });
+
+
+                    editor = monaco.editor.create(
+                        document.getElementById("editor-container"),
+                        {
+                            value: sql_autostart ?? "SELECT * FROM cmf",
+                            language: "sql",
+                            theme: id_theme_css.href.includes("dark") ? "vs-dark" : "vs",
+                            automaticLayout: true,
+                            fontSize: 12,
+                            minimap: { enabled: true }
+                        }
+                    );
+
+                    editor.addAction({
+                        id: "Recall Query",
+                        label: "Recall Query",
+                        keybindings: [ monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyE ],
+                        contextMenuGroupId: "navigation",
+                        contextMenuOrder: 1.5,
+                        run: () => js_recall_sql_form()
+                    }); 
+
+                    editor.addAction({
+                        id: "Execute Query",
+                        label: "Execute Query",
+                        keybindings: [ monaco.KeyCode.F8, monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter ],
+                        contextMenuGroupId: "navigation",
+                        contextMenuOrder: 1.5,
+                        run: () => js_db_execute()
+                    });     
+
+                    editor.addAction({
+                        id: "Describe Table",
+                        label: "Describe Table",
+                        keybindings: [],
+                        contextMenuGroupId: "navigation",
+                        contextMenuOrder: 1.5,
+                        run: () => js_db_describe()
+                    });
+
+                    editor.addAction({
+                        id: "Execute/Test Procedure",
+                        label: "Execute/Test Procedure",
+                        keybindings: [],
+                        contextMenuGroupId: "navigation",
+                        contextMenuOrder: 1.5,
+                        run: () => js_db_execute_proc( get_sql_editor() )
+                    });        
+
+
+                    editor.addAction({
+                        id: "Explain Query",
+                        label: "Explain Query",
+                        keybindings: [ monaco.KeyCode.F5 ],
+                        contextMenuGroupId: "navigation",
+                        contextMenuOrder: 1.5,
+                        run: () => js_db_explain()
+                    });    
+
+                    editor.addAction({
+                        id: "Open Local File",
+                        label: "Open Local File",
+                        keybindings: [],
+                        contextMenuGroupId: "1-files",
+                        contextMenuOrder: 1.5,
+                        run: () => js_window_fileopen()
+                    });    
+
+                    editor.addAction({
+                        id: "Close Template",
+                        label: "Close Template",
+                        keybindings: [],
+                        contextMenuGroupId: "1-files",
+                        contextMenuOrder: 1.5,
+                        run: () => js_template_close()
+                    });            
+
+                    editor.addAction({
+                        id: "Format PlSql",
+                        label: "Format PlSql",
+                        keybindings: [ monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyF ],
+                        contextMenuGroupId: "coders",
+                        contextMenuOrder: 1.5,
+                        run: () => js_format_plsql()
+                    });          
+                    resolve(editor);
+                });
+    });
+}
+
+
+
+function prepareSpliter() {
+    const vsplit = document.getElementById("vsplit");
+    const sidebar = document.querySelector(".sidebar");
+
+    vsplit.addEventListener("mousedown", () => {
+        document.onmousemove = evt => {
+            sidebar.style.width = evt.clientX + "px";
+        };
+        document.onmouseup = () => (document.onmousemove = null);
+    });
+
+    const hsplit = document.getElementById("hsplit");
+    const editorContainer = document.getElementById("editor-container");
+
+    hsplit.addEventListener("mousedown", e => {
+        const startY = e.clientY;
+        const startHeight = editorContainer.offsetHeight;
+
+        document.onmousemove = evt => {
+            editorContainer.style.flex = "0 0 auto";
+            editorContainer.style.height = (startHeight + (evt.clientY - startY)) + "px";
+            if (global_var.editorSQL) global_var.editorSQL.layout(); // Atualiza Monaco
+        };
+        document.onmouseup = () => (document.onmousemove = null);
+    });
+}
+
+
+
+async function configuraAutoStart(configBip) {
+    var sql_autostart = null;
+
+    if (window.location.href.indexOf("?template") >= 0) {
+        sql_autostart                   = window.opener.global_var.tmp_template_code;
+        id_menu_template_name.innerText = window.opener.global_var.tmp_template_name;
+        id_tree_obj.innerHTML           = window.opener.id_tree_obj.innerHTML;
+        id_tree_obj.index               = 1;
+    }
+
+    if (window.location.href.indexOf("?openfile") >= 0) {
+        sql_autostart                   = window.opener.global_var.tmp_datafile;
+    }
+
     global_var = {
         object_tables: [],
         object_users: [],
-        session_id: generate_session_id(),
-        tm_elapsed: new TTimer(),
+        session_id: Date.now().toString(),
+        tm_elapsed: new TTimer(     function() {
+                                        id_menu_stop.disabled = false;
+                                        id_menu_execute.disabled = true;      
+                                    }, 
+                                    function() {
+                                        id_menu_stop.disabled = true;
+                                        id_menu_execute.disabled = false;   
+                                    },
+                                    function(e) {
+                                        id_menu_timer.innerHTML = e;
+                                    }
+                    ),
         grid_query: new TGrid("id_grid_dados", { "fetch": true, "export": true, "edit": true }),
         grid_find_objects: new TGrid("id_find_object_grid"),
         grid_view_sessions: new TGrid("id_view_sessions_grid"),
@@ -1191,26 +1467,28 @@ function js_window_start() {
         tree_objects: new TreeView(),
         tree_templates: new TreeView(),
         config_loaded: false,
-        cache: new LocalDB()
+        cache: new LocalDB(),
+        editorSQL: await createEditorSQL(sql_autostart),
+        bip: configBip
     };
 
     global_var.grid_query.fetch_on_next_button = true;
-
-    global_var.tree_objects.endNodeClick = "js_db_ddl";
-    global_var.tree_objects.endNodeParamClick = "nodeValues[3]";
-
-    global_var.tree_login.endNodeClick = "js_tree_login_saved";
-    global_var.tree_login.endNodeText = "nodeValue.split('/')[0] + '@' + nodeValue.split('/')[2]";
-
+    global_var.tree_objects.endNodeClick        = "js_db_ddl";
+    global_var.tree_login.endNodeClick          = "js_tree_login_saved";
+    global_var.tree_login.endNodeText           = "nodeValue.split('/')[0] + '@' + nodeValue.split('/')[2]";
     global_var.tree_templates.endNodeClick      = "js_templates_open_item";
-    global_var.tree_templates.endNodeParamClick = "nodeValues[3].replaceAll('...','|')";
     global_var.tree_templates.endNodeText       = "nodeValue.split('|').at(-1)";
 
 
+    prepareSpliter();
 
-    const div_tooltip = document.createElement("div");
-    div_tooltip.id    = "id_tooltip";
-    document.body.appendChild(div_tooltip);
+
+    window.addEventListener("beforeunload", function (e) {
+        e.preventDefault();
+        e.returnValue = "";
+    });
+
+    document.body.style.display = "block";
 
     if (window.location.href.indexOf("?tab") >= 0) {
         id_login_database.innerHTML = window.opener.id_login_database.innerHTML;
@@ -1222,18 +1500,10 @@ function js_window_start() {
         js_login_connect();
     }
 
-    if (window.location.href.indexOf("?template") >= 0) {
-        id_menu_template_name.innerText = window.opener.id_template_name.value;
-        id_menu_template_name.code      = window.opener.id_template_name.code;
-    }     
-}
 
 
-function js_window_closed() {
-    window.addEventListener("beforeunload", function (e) {
-        e.preventDefault();
-        e.returnValue = "";
-    });
+
+    history.pushState(null, '', '/');
 }
 
 
@@ -1295,202 +1565,7 @@ function js_window_popup(name, content, html = false) {
 
 
 
-function js_window_splitters() {
-    const vsplit = document.getElementById("vsplit");
-    const sidebar = document.querySelector(".sidebar");
 
-    vsplit.addEventListener("mousedown", () => {
-        document.onmousemove = evt => {
-            sidebar.style.width = evt.clientX + "px";
-        };
-        document.onmouseup = () => (document.onmousemove = null);
-    });
-
-    const hsplit = document.getElementById("hsplit");
-    const editorContainer = document.getElementById("editor-container");
-
-    hsplit.addEventListener("mousedown", e => {
-        const startY = e.clientY;
-        const startHeight = editorContainer.offsetHeight;
-
-        document.onmousemove = evt => {
-            editorContainer.style.flex = "0 0 auto";
-            editorContainer.style.height = (startHeight + (evt.clientY - startY)) + "px";
-            if (global_var.editorSQL) global_var.editorSQL.layout(); // Atualiza Monaco
-        };
-        document.onmouseup = () => (document.onmousemove = null);
-    });
-}
-
-
-function js_window_editor_monaco(p_theme="vs-dark") {
-    require.config({
-        paths: { vs: "https://unpkg.com/monaco-editor@0.55.1/min/vs" }
-    });
-
-    require(["vs/editor/editor.main"], function () {
-
-        monaco.languages.registerCompletionItemProvider('sql', {
-            triggerCharacters: ['.'],
-            async provideCompletionItems(model, position) {
-                const textUntilPosition = model.getValueInRange({
-                    startLineNumber: position.lineNumber,
-                    startColumn: 1,
-                    endLineNumber: position.lineNumber,
-                    endColumn: position.column
-                });
-
-                const match = textUntilPosition.match(/(\w+)\.$/);
-                const word_select = match ? match[1] : null;
-
-
-                if (!word_select) return { suggestions: [] };
-
-                let word_to_filter = "";
-                let in_list_table = global_var.object_tables.includes(word_select.toUpperCase());
-                let in_list_users = global_var.object_users.includes(word_select.toUpperCase());
-
-                if (  in_list_table  || in_list_users ) {
-                    word_to_filter = word_select;
-                } else {
-                    const fullText = model.getValue();
-                    x = fullText.toUpperCase().replace(/[;,\n\t.*]| SELECT /g, ' ');
-                    while (x.indexOf('  ') > 0) {
-                        x = x.replaceAll('  ', ' ')
-                    }
-                    info_a = x.split(' ');
-
-                    for (let i = 0; i < info_a.length; i++) {
-                        const info = info_a[i];
-
-                        if (word_select.toUpperCase() === info && global_var.object_tables.includes(info_a[i - 1])) {
-                            in_list_table = true;
-                            word_to_filter = info_a[i - 1];
-                            break;
-                        }
-                    }
-                }
-                if (word_to_filter === "") return { suggestions: [] };
-
-                const columns = await js_db_completation(word_to_filter, in_list_table ? "TABLE" : "USER");
-
-                const suggestions = (columns || []).map(col => {
-
-                    const n = String(col.N ?? "");
-                    const o = String(col.O ?? "");
-                    const i = String(col.I ?? "");
-
-                    return {
-                        label: {
-                            label: n.padEnd(40, " "),
-                            description: o,
-                        },
-
-                        sortText: i,
-
-                        detail: in_list_table
-                            ? "Column"
-                            : "Object",
-
-                        documentation: o,
-
-                        kind: monaco.languages.CompletionItemKind.Variable,
-
-                        insertText:
-                            n + (
-                                in_list_table
-                                    ? ""
-                                    : " " + gerar_alias(n)
-                            )
-                    };
-                });
-
-                return { suggestions };
-            }
-        });
-
-
-        editor = monaco.editor.create(
-            document.getElementById("editor-container"),
-            {
-                value: id_menu_template_name.code ?? "SELECT * FROM cmf",
-                language: "sql",
-                theme: p_theme,
-                automaticLayout: true,
-                fontSize: 12,
-                minimap: { enabled: true }
-            }
-        );
-
-        editor.addAction({
-            id: "Recall Query",
-            label: "Recall Query",
-            keybindings: [ monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyE ],
-            contextMenuGroupId: "navigation",
-            contextMenuOrder: 1.5,
-            run: () => js_recall_sql_form()
-        }); 
-
-        editor.addAction({
-            id: "Execute Query",
-            label: "Execute Query",
-            keybindings: [ monaco.KeyCode.F8, monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter ],
-            contextMenuGroupId: "navigation",
-            contextMenuOrder: 1.5,
-            run: () => js_db_execute()
-        });     
-
-        editor.addAction({
-            id: "Describe Table",
-            label: "Describe Table",
-            keybindings: [],
-            contextMenuGroupId: "navigation",
-            contextMenuOrder: 1.5,
-            run: () => js_db_describe()
-        });
-
-        editor.addAction({
-            id: "Execute/Test Procedure",
-            label: "Execute/Test Procedure",
-            keybindings: [],
-            contextMenuGroupId: "navigation",
-            contextMenuOrder: 1.5,
-            run: () => js_db_execute_proc( get_sql_editor() )
-        });        
-
-
-        editor.addAction({
-            id: "Explain Query",
-            label: "Explain Query",
-            keybindings: [ monaco.KeyCode.F5 ],
-            contextMenuGroupId: "navigation",
-            contextMenuOrder: 1.5,
-            run: () => js_db_explain()
-        });    
-
-        editor.addAction({
-            id: "Format PlSql",
-            label: "Format PlSql",
-            keybindings: [ ],
-            contextMenuGroupId: "coders",
-            contextMenuOrder: 1.5,
-            run: () => js_format_plsql()
-        });          
-        
-        editor.addAction({
-            id: "IA Assistant",
-            label: "IA Assistant",
-            keybindings: [],
-            contextMenuGroupId: "coders",
-            contextMenuOrder: 1.5,
-            run: () => js_ia_form()
-        });    
-        
-        
-
-        global_var.editorSQL = editor;
-    });
-}
 
 
 function js_window_fileopen() {
@@ -1507,7 +1582,8 @@ function js_window_fileopen() {
         const reader = new FileReader();
         reader.onload = (e) => {
             const content = e.target.result;
-            global_var.editorSQL.setValue(content);
+            global_var.tmp_datafile = content;
+            window.open("/?openfile")
         };
         reader.readAsText(file);
     };

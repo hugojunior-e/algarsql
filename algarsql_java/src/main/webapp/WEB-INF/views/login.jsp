@@ -79,10 +79,6 @@
     <form method="POST" action="/validadeLogin">
       <input type="text" name="username" id="username" placeholder="Username" value="" required>
       <input type="password" name="password" id="password" placeholder="Password" value="" required>
-      <select name="theme" id="theme" placeholder="theme">
-        <option value="style-dark">style-dark</option>
-        <option value="style-plsql">style-plsql</option>
-      </select>
       <button type="submit">Login</button>
     </form>
 
