@@ -105,7 +105,8 @@ public class TemplatesController {
             }
             else if ("newfile".equals(action)) {
                 String newName = request.getParameter("new_name");
-                Utils.configSave(newName, null, "SQL_TEMPLATES.NEW", username);
+                String value   = request.getParameter("value");
+                Utils.configSave(newName, value, "SQL_TEMPLATES.NEW", username);
                 ret.put("status_msg", "New file created successfully.");
                 ret.put("status_code", 0);
                 return ret;

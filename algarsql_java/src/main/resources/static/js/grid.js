@@ -9,6 +9,9 @@ class TGrid {
         this.idTable = idTable;
         this.options = options;
         this.fetch_on_next_button = false;
+        this.tabela = document.getElementById(this.idTable);
+        this.pager = document.getElementById(this.idTable + "_pager");
+        this.prepareControl();
     }
 
 
@@ -22,59 +25,40 @@ class TGrid {
         this.sql = sql;
         this.paginaAtual = 1;
         this.totalPaginas = Math.ceil(this.dados.length / this.limit_per_page);
-        this.tabela = document.getElementById(this.idTable);
-        this.pager = document.getElementById(this.idTable + "_pager");
-        this.prepareControl();
-    }
-
-    getCellValueByHeader(row, headerName) {
-        let index = -1;
-
-        this.headerRow.forEach((th, i) => {
-            if (th.textContent.trim() === headerName) {
-                index = i;
-            }
-        });
-
-        if (index === -1) return null;
-
-        return row.cells[index]?.innerText || null;
     }
 
     copiarSelecionados() {
-        const linhas = this.tabela.querySelectorAll("tr");
-
-        let texto = "";
-        let temSelecao = false;
+        const linhas     = this.tabela.querySelectorAll("tr");
+        let   texto      = "";
+        let   temSelecao = false;
 
         linhas.forEach((tr) => {
             const selecionados = tr.querySelectorAll(".th_selected");
 
             if (selecionados.length > 0) {
                 temSelecao = true;
-
                 let linhaTexto = Array.from(selecionados)
                     .map(td => td.innerText.trim())
                     .join("\t");
-
                 texto += linhaTexto + "\n";
             }
         });
 
         if (!temSelecao) {
-            alert('No data Selected!');
+            this.report.innerHTML = 'No data Selected!';
             return;
         }
 
         try {
             copyToClip(texto);
+            this.report.innerHTML =  'Copied to Clipboard!';
         } catch (err) {
             alert(err);
         }
     }
 
 
-    selectColumn(colIndex) {
+    selectColumn(colIndex, th) {
         if (colIndex == -1) {
             this.tabela.querySelectorAll("td.th_selected").forEach(td => td.classList.remove("th_selected"));
             return;
@@ -89,8 +73,15 @@ class TGrid {
         this.tabela.querySelectorAll("tr")
             .forEach( (c, idx) => {
                 if (idx == 0) return; // pula header
-                c.cells[colIndex].classList.toggle("th_selected");
+                if ( th.selected ) {
+                    c.cells[colIndex].classList.remove("th_selected");
+                } else {
+                    c.cells[colIndex].classList.add("th_selected");
+
+                }
             });
+        th.selected = !th.selected;
+        this.generateStats();        
     }
 
     configuraResize(th, resizer) {
@@ -101,24 +92,19 @@ class TGrid {
         const table = th.closest("table");
 
         resizer.addEventListener("mousedown", (e) => {
-
             startX = e.pageX;
             startWidth = th.offsetWidth;
             startTableWidth = table.offsetWidth;
-
             document.body.style.cursor = "col-resize";
             document.body.style.userSelect = "none";
-
             document.addEventListener("mousemove", mouseMove);
             document.addEventListener("mouseup", mouseUp);
 
         });
 
         function mouseMove(e) {
-
             const diff = e.pageX - startX;
             const newWidth = startWidth + diff;
-
             if (newWidth > 50) {
                 th.style.width = newWidth + "px";
                 table.style.width = (startTableWidth + diff) + "px";
@@ -126,13 +112,10 @@ class TGrid {
         }
 
         function mouseUp() {
-
             document.body.style.cursor = "";
             document.body.style.userSelect = "";
-
             document.removeEventListener("mousemove", mouseMove);
             document.removeEventListener("mouseup", mouseUp);
-
         }
     }
 
@@ -144,6 +127,7 @@ class TGrid {
         }
 
         td.classList.toggle("th_selected");
+        this.report.innerHTML = "";
     }
 
     desenharTabela() {
@@ -157,7 +141,8 @@ class TGrid {
         this.columns.forEach( (c, colIndex) => {
             const th = document.createElement("th");
             th.textContent = c;
-            th.onclick = () => this.selectColumn(colIndex);
+            th.selected    = false;
+            th.onclick = () => this.selectColumn(colIndex, th);
             th.style.cursor = 'pointer';
             headerRow.appendChild(th);
             if (colIndex > 0) {
@@ -204,7 +189,8 @@ class TGrid {
 
                 td.textContent = linha[col] ?? "";
                 td.value = linha[col] ?? "";
-                td.onclick = (e) => this.selectCell(td, e.ctrlKey); //this.selectColumn(-1);
+                td.onclick = (e) => this.selectCell(td, e.ctrlKey); 
+                td.style.userSelect = 'none';
 
                 if ( this.columns_types[idx_td].includes("PRE") && td.value !== "") {
                     td.addEventListener("mousemove", (e) => {
@@ -307,26 +293,111 @@ class TGrid {
             btnFetch.onclick = () => { js_db_fetch(); };
             this.pager.appendChild(btnFetch);
         }
+        this.report = document.createElement("span");
+        this.report.style.padding    = '10px';
+        this.report.style.color      = 'red';
+        this.report.style.fontWeight = 'bold';
+        this.pager.appendChild(this.report);
     }
 
 
     prepareControl() {
         let selecting = false;
+        let startCell = null;
+
+        const selectRange = (cell1, cell2) => {
+            const r1 = cell1.parentElement.rowIndex;
+            const c1 = cell1.cellIndex;
+
+            const r2 = cell2.parentElement.rowIndex;
+            const c2 = cell2.cellIndex;
+
+            const minR = Math.min(r1, r2);
+            const maxR = Math.max(r1, r2);
+
+            const minC = Math.min(c1, c2);
+            const maxC = Math.max(c1, c2);
+
+            for (let r = minR; r <= maxR; r++) {
+                const row = this.tabela.rows[r];
+
+                for (let c = minC; c <= maxC; c++) {
+                    row.cells[c]?.classList.add("th_selected");
+                }
+            }
+            this.generateStats();
+        };
+
         this.tabela.addEventListener("mousedown", (e) => {
             const td = e.target.closest("td");
-            if (!td || !e.ctrlKey) return;
+            if (!td /*|| !e.ctrlKey*/) return;
             selecting = true;
-            td.classList.toggle("th_selected");
+            startCell = td;
+            td.classList.add("th_selected");
+            e.preventDefault();
+            this.tabela.focus();
         });
-        this.tabela.addEventListener("mouseover", (e) => {
+
+        document.addEventListener("mousemove", (e) => {
             if (!selecting) return;
-            const td = e.target.closest("td");
-            if (td) {
-                td.classList.add("th_selected");
-            }
+            this.selectColumn(-1, null);
+            const el = document.elementFromPoint(e.clientX, e.clientY);
+            const td = el?.closest("td");
+            if (!td || !this.tabela.contains(td)) return;
+            selectRange(startCell, td);
         });
+
         document.addEventListener("mouseup", () => {
             selecting = false;
+            startCell = null;
+        });
+
+        this.tabela.tabIndex = 0; // permite receber foco
+
+        this.tabela.addEventListener("keydown", (e) => {
+            if (e.ctrlKey && e.key.toLowerCase() === "c") {
+                e.preventDefault();
+                this.copiarSelecionados();
+            }
         });        
     }
+
+
+
+    generateStats() {
+        this.report.innerHTML = '';
+
+        const cells = Array.from(
+            this.tabela.querySelectorAll("td.th_selected")
+        );
+
+        if (cells.length === 0) {
+            return;
+        }
+
+        // Verifica se todas as células pertencem à mesma coluna
+        const coluna = cells[0].cellIndex;
+
+        if (!cells.every(cell => cell.cellIndex === coluna)) {
+            return;
+        }
+
+        const valores = [];
+
+        for (const cell of cells) {
+            const valor = Number(cell.innerText.trim());
+            if (isNaN(valor)) {
+                return; 
+            }
+            valores.push(valor);
+        }
+        let soma  = valores.reduce((a, b) => a + b, 0);
+        let menor = Math.min(...valores);
+        let maior = Math.max(...valores);
+        let qtd   = valores.length;
+
+        this.report.innerHTML = ` [ sum=${soma} min=${menor} max=${maior} count=${qtd} ] `;
+    }    
+    
+
 }

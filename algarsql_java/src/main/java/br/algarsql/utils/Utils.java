@@ -89,11 +89,13 @@ public class Utils {
             if (!rs.next()) {
                 ret[0] = "ERROR: Database entry not found.";
             }
-            rs.close();
             String db_tns = rs.getString(1);
+            rs.close();
 
-            rs = st.executeQuery(String.format(Constants.C_CHANGE_PASSWORD_GET_USER_FOUND, username,
-                    username, alias));
+            rs = st.executeQuery(Constants.C_CHANGE_PASSWORD_GET_USER_FOUND
+                    .replaceAll("<1>", username)
+                    .replaceAll("<2>", alias));
+
             if (!rs.next()) {
                 ret[0] = "ERROR: User not found.";
             }
@@ -107,6 +109,7 @@ public class Utils {
 
             conn = DriverManager.getConnection("jdbc:oracle:thin:@" + db_tns, Constants.FARMPRD_USR,
                     Constants.FARMPRD_PWD);
+            st = conn.createStatement();
             rs = st.executeQuery(String.format(Constants.C_CHANGE_PASSWOR_GET_USER, userNameFound));
             if (!rs.next()) {
                 ret[0] = "ERROR: User " + userNameFound + " does not exist in database " + alias
@@ -127,7 +130,7 @@ public class Utils {
             Connection conn = DriverManager.getConnection("jdbc:oracle:thin:@" + db_tns,
                     Constants.FARMPRD_USR, Constants.FARMPRD_PWD);
             Statement st = conn.createStatement();
-            st.execute(String.format(Constants.C_CHANGE_PASSWORD, db_user, db_password));
+            st.execute(Constants.C_CHANGE_PASSWORD.replaceAll("<1>",db_user).replaceAll("<2>", db_password));
             conn.close();
             return "Success Change Password for user " + db_user;
         } catch (Exception e) {
@@ -281,8 +284,9 @@ public class Utils {
                 ps.execute();
             }       
             if ("SQL_TEMPLATES.NEW".equals(tipo)) {
-                PreparedStatement ps = conn.prepareStatement("insert into sql_templates(node,info) values (?,'-')");
+                PreparedStatement ps = conn.prepareStatement("insert into sql_templates(node,info) values (?,?)");
                 ps.setString(1, tagName );
+                ps.setString(2, tagValue.toString());
                 ps.execute();
             }                     
             conn.close();

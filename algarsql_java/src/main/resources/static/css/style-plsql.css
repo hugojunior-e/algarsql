@@ -281,10 +281,6 @@ button:disabled {
     text-overflow: ellipsis;
 }
 
-.grid table td {
-    user-select: none;
-}
-
 .grid table th {
     background: var(--cor-grid-th-bg);
     font-weight: bold;
@@ -298,7 +294,7 @@ button:disabled {
 }
 
 .th_selected {
-    background: #cce0ff;
+    background: #6d6acb;
 }
 
 .tooltip {

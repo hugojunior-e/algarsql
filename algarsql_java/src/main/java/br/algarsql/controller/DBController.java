@@ -169,7 +169,7 @@ public class DBController {
 
             if (action.equals("change_password_get_user")) {
                 String[] msg = Utils.changePasswordGetUser(request.getParameter("alias"),
-                        request.getParameter("username"));
+                        o.toString());
                 ret.put("db_user", msg[1]);
                 ret.put("db_tns", msg[2]);
                 ret.put("status_msg", msg[0]);
@@ -246,8 +246,13 @@ public class DBController {
             }
 
             if (action.equals("findobj")) {
-                String sql = String.format(Constants.C_SQL_FIND_OBJECT,
-                        request.getParameter("object_name").toString());
+                String on = request.getParameter("object_name").toString();
+                String ct = request.getParameter("code_text").toString();
+                String sql = Constants.C_SQL_FIND_OBJECT
+                    .replaceAll("<1>", on)
+                    .replaceAll("<2>", ct)
+                    .replaceAll("<3>", ct.length() < 3 ? "1":"2");
+
                 db.SELECT(sql, false, false, -1);
 
             }

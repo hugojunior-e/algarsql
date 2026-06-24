@@ -187,8 +187,8 @@ public class ParallelProcess extends Thread {
                 while (db.rs.next()) {
                     Row row = sheet.createRow(rowNum++);
                     for (int i = 1; i <= colCount; i++) {
-                        Object value = db.rs.getObject(i);
-                        row.createCell(i - 1).setCellValue(value == null ? "" : value.toString());
+                        String value = db.rs.getString(i);
+                        row.createCell(i - 1).setCellValue(value == null ? "" : value);
                     }
                 }
 

@@ -19,6 +19,23 @@ function playBip() {
     }
 }
 
+
+function downloadString(conteudo, nomeArquivo = "arquivo.txt") {
+    const blob = new Blob([conteudo], { type: "text/plain;charset=utf-8" });
+
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = nomeArquivo;
+
+    document.body.appendChild(a);
+    a.click();
+
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
 function clearTable(table) {
     const clone = table.cloneNode(true);
 
@@ -52,7 +69,6 @@ function copyToClip(texto) {
     textarea.select();
     document.execCommand("copy");
     document.body.removeChild(textarea);
-    alert("Copy Success!");    
 }
 
 function toSingleTable(dat) {
@@ -361,7 +377,7 @@ function getStatementAtCursor(text_full, offset) {
                 continue;
             }
 
-            if (c === ';' || c === '/') {
+            if (c === ';') {
                 tokens.push({ type: "symbol", value: c, pos: i });
             }
 
@@ -415,12 +431,6 @@ function getStatementAtCursor(text_full, offset) {
 
         if (t.type === "symbol") {
             if (t.value === ';' && blockLevel === 0) {
-                end = t.pos;
-                break;
-            }
-
-            // suporte ao "/" isolado (SQL Developer style)
-            if (t.value === '/' && blockLevel === 0) {
                 end = t.pos;
                 break;
             }
@@ -712,7 +722,7 @@ function js_template_load( node_filter = null ) {
                 acao       = "rename";
             }
 
-            ajax("/template", { "action": acao, "name": info, "type": type, "new_name": newName, "value":"-" }, function (a) {
+            ajax("/template", { "action": acao, "name": info, "type": type, "new_name": newName, "value":global_var.editorSQL.getValue() }, function (a) {
                 alert(a.status_msg);
                 js_template_load(no_to_find);
             });
@@ -730,7 +740,7 @@ function js_template_load( node_filter = null ) {
 
 function js_find_object_execute() {
     id_find_object_grid.innerHTML = '';
-    ajax("/db_execute", { "action": "findobj", "object_name": id_find_object_name.value }, function (a) {
+    ajax("/db_execute", { "action": "findobj", "object_name": id_find_object_name.value, "code_text": id_find_code_text.value }, function (a) {
         if ( a.status_code != 0 ) {
             alert(a.startus_msg);
             return;
@@ -741,9 +751,9 @@ function js_find_object_execute() {
             a.columns_types,
             100,
             [
-                { texto: 'DDL', funcao: function (item) { js_db_ddl(item.OWNER + '...' + item.OBJECT_TYPE + '...' + item.OBJECT_NAME); } },
-
-                { texto: 'edit', funcao: function (item) { js_editor_mode_open(item.OWNER + '...' + item.OBJECT_TYPE + '...' + item.OBJECT_NAME); } }
+                { texto: 'DDL', funcao: function (item) { js_ddl_view(item.OWNER + '...' + item.OBJECT_TYPE + '...' + item.OBJECT_NAME); } },
+                { texto: 'edit', funcao: function (item) { js_editor_mode_open(item.OWNER + '...' + item.OBJECT_TYPE + '...' + item.OBJECT_NAME); } },
+                { texto: 'export', funcao: function (item) { js_ddl_view(item.OWNER + '...' + item.OBJECT_TYPE + '...' + item.OBJECT_NAME, true); } }
             ]
         );
         global_var.grid_find_objects.desenharTabela();
@@ -798,7 +808,13 @@ function js_recall_sql_execute() {
             a.columns_types,
             100,
             [
-                { texto: 'copy', funcao: function (item) { copyToClip(item.SQL); } }
+                { 
+                    texto: 'copy', 
+                    funcao: function (item) { 
+                                copyToClip(item.SQL); 
+                                alert('Copied to Clipboard!');
+                            }
+                }
             ]            
         );
         global_var.grid_recall_sql.columns_types[2] = 'PRE';
@@ -1010,6 +1026,39 @@ function js_db_grid_editrow_save() {
 
 /*
     ==========================================================================================------------------------------------
+    comment: Funções para extracao de DDL
+    ==========================================================================================------------------------------------
+*/
+
+
+function js_ddl_view(obj, exp = false) {
+    object_name = obj;
+    if ( obj instanceof Element ) {
+        object_name = obj.getAttribute("nodeInfo").replaceAll("|", "...");
+    }
+    change_icon(true);
+    if ( exp ) {
+        id_message_box_form.style.display = 'flex';
+        id_message_box_text.innerHTML = "Saving DDL...";
+    }
+    ajax("/db_execute", { "action": "ddl", "object_name": object_name }, function (a) {
+        if ( a.status_code != 0 ) {
+            alert(a.status_msg);
+            return;
+        }
+        if ( exp ) {
+            downloadString(a.ddl, object_name + ".sql");
+            id_message_box_text.innerHTML = "Downloaded Sucess...";
+        } else {
+            js_window_popup("DDL: " + object_name, a.ddl);
+        }
+        change_icon(false);
+    });
+}
+
+
+/*
+    ==========================================================================================------------------------------------
     comment: Funções de banco de dados
     ==========================================================================================------------------------------------
 */
@@ -1026,30 +1075,6 @@ function js_db_status(in_transaction = null, in_running = null, is_connected = n
         id_menu_rollback.disabled = !in_transaction;
     }
 }
-
-
-
-
-function js_db_ddl(obj) {
-    object_name = obj;
-    if ( obj instanceof Element ) {
-        object_name = obj.getAttribute("nodeInfo").replaceAll("|", "...");
-    }
-    change_icon(true);
-    ajax("/db_execute", { "action": "ddl", "object_name": object_name }, function (a) {
-        if ( a.status_code != 0 ) {
-            alert(a.status_msg);
-            return;
-        }
-        js_window_popup("DDL: " + object_name, a.ddl);
-        change_icon(false);
-    });
-}
-
-
-
-
-
 
 function js_db_execute() {
     js_template_save_opened();
@@ -1069,7 +1094,7 @@ function js_db_execute() {
     ajax("/db_execute", { "action": "execute", "sql": sql }, function (a) {
         global_var.tm_elapsed.stop();
 
-        let last_output = toSingleTable({
+        global_var.last_output = toSingleTable({
             "status_code" : a.status_code,
             "status_msg"  : a.status_msg,
             "dbms_output" : a.dbms,
@@ -1078,7 +1103,7 @@ function js_db_execute() {
         });
 
         if ( a.status_code != 0 ) {
-            showMemoArea( last_output );
+            showMemoArea( global_var.last_output );
             change_icon(false);
             return;
         }
@@ -1088,7 +1113,7 @@ function js_db_execute() {
             global_var.grid_query.setContent(a.data, a.columns, a.columns_types, 50, [], sql);
             global_var.grid_query.desenharTabela();
         } else {
-            showMemoArea( last_output );
+            showMemoArea( global_var.last_output );
             js_db_status(in_transaction = true);
             playBip();
         }
@@ -1469,11 +1494,12 @@ async function configuraAutoStart(configBip) {
         config_loaded: false,
         cache: new LocalDB(),
         editorSQL: await createEditorSQL(sql_autostart),
-        bip: configBip
+        bip: configBip,
+        last_output: ""
     };
 
     global_var.grid_query.fetch_on_next_button = true;
-    global_var.tree_objects.endNodeClick        = "js_db_ddl";
+    global_var.tree_objects.endNodeClick        = "js_ddl_view";
     global_var.tree_login.endNodeClick          = "js_tree_login_saved";
     global_var.tree_login.endNodeText           = "nodeValue.split('/')[0] + '@' + nodeValue.split('/')[2]";
     global_var.tree_templates.endNodeClick      = "js_templates_open_item";
@@ -1484,6 +1510,8 @@ async function configuraAutoStart(configBip) {
 
 
     window.addEventListener("beforeunload", function (e) {
+        localStorage.setItem('F5-CONTENT' , global_var.editorSQL.getValue());
+        localStorage.setItem('F5-TEMPLATE', id_menu_template_name.innerText);
         e.preventDefault();
         e.returnValue = "";
     });
@@ -1501,9 +1529,21 @@ async function configuraAutoStart(configBip) {
     }
 
 
-
-
     history.pushState(null, '', '/');
+
+    var f5_data     = localStorage.getItem('F5-CONTENT');
+    var f5_template = localStorage.getItem('F5-TEMPLATE');
+
+    if ( sql_autostart == null && f5_data != null ) {
+        global_var.editorSQL.setValue( f5_data );
+        localStorage.removeItem('F5-CONTENT');
+    }
+
+    if ( sql_autostart == null && f5_template != null ) {
+        id_menu_template_name.innerText = f5_template;
+        localStorage.removeItem('F5-TEMPLATE');
+    }
+
 }
 
 
@@ -1542,7 +1582,7 @@ function js_window_popup(name, content, html = false) {
         </body>
     `;
 
-    x = window.open("", name, "width=800,height=400,scrollbars=yes,resizable=yes");
+    x = window.open("", name);//, "width=800,height=400,scrollbars=yes,resizable=yes"
     x.document.body.innerHTML = page;
 
     if ( name == 'VIEW CELL') {

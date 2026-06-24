@@ -133,7 +133,7 @@
         FORM MESSAGE BOX
         -->
 
-        <div id="id_message_box_form" class="itools_modal">
+        <div id="id_message_box_form" class="itools_modal" style="z-index: 30000;">
             <div class="dialog" style="width:400px;height:20%">
                 <div class="header">
                     <span>MessageBox</span>
@@ -193,6 +193,8 @@
                         <tr>
                             <td>Type Object Name:</td>
                             <td><input type="text" id="id_find_object_name" value="%"></td>
+                            <td>Code Text:</td>
+                            <td><input type="text" id="id_find_code_text" value="%"></td>
                             <td><button onclick="js_find_object_execute()">Find Obj</button></td>
                         </tr>
                     </table>

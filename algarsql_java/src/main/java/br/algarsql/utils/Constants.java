@@ -100,16 +100,27 @@ public class Constants {
             """;
 
     public static final String C_SQL_FIND_OBJECT = """
+           SELECT * FROM
+           (
               SELECT owner,
                      object_name,
                      object_type,
-                     CREATED,
-                     LAST_DDL_TIME,
-                     STATUS
+                     'by name' method
                 FROM ALL_OBJECTS
-               WHERE OBJECT_NAME LIKE upper('%s')
+               WHERE 1=<3>
+                 AND OBJECT_NAME LIKE upper('<1>')
                  AND OBJECT_TYPE NOT IN ('SYNONYM')
                order by owner,object_type,object_name
+            )  
+            union
+            select * from 
+            (
+              SELECT s.owner, s.name, s.type, 'by code' method FROM all_source s
+              WHERE 2=<3>
+              AND s.name LIKE upper('<1>')
+              AND upper(s.text) LIKE upper('%<2>%')
+              group by s.owner, s.name, s.type
+            )  
             """;
 
     public static final String C_SQL_ALL_ERRORS = """
@@ -322,15 +333,15 @@ public class Constants {
     public static final String C_CHANGE_PASSWORD =
             """
                               DECLARE
-                                P_Nm_Usuario    VARCHAR2(128)  := '%s';
-                                P_Senha_Usuario VARCHAR2(4000) := '%s';
+                                P_Nm_Usuario    VARCHAR2(128)  := '<1>';
+                                P_Senha_Usuario VARCHAR2(4000) := '<2>';
                                 P_Msg_Retorno   VARCHAR2(2048) := 'SUCESSO';
                                 v_user_banco    VARCHAR2(128);
                                 v_qtd           number;
                               BEGIN
                                   PKG_RESET_SENHA_USUARIO.PRO_RESET_SENHA ( upper(P_Nm_Usuario) , P_Senha_Usuario , P_Msg_Retorno );
 
-                                  if (P_Msg_Retorno LIKE '%ERRO%') then
+                                  if (P_Msg_Retorno LIKE '%ERRO%' or upper(P_Msg_Retorno) like '%EXISTE%'  ) then
                                       raise_application_error(-20003, P_Msg_Retorno );
                                   end if;
 
@@ -362,7 +373,7 @@ public class Constants {
                                   INNER JOIN blazonadm.B_USER tb_user                          ON tb_user.id = tb_conta.user_id
                                   WHERE 1 = 1
                                   AND upper(tb_recurso.name) LIKE '%BANCO DE DADOS%PRD' -- NOME DO RECURSO
-                                  and upper( tb_user.USERNAME ) = upper('%s')  --entre aq com o usuario de rede ( logado no app algarsql )
+                                  and upper( tb_user.USERNAME ) = upper('<1>')  --entre aq com o usuario de rede ( logado no app algarsql )
 
                                   UNION
 
@@ -374,13 +385,13 @@ public class Constants {
                                   INNER JOIN blazonadm.B_USER tb_user                          ON tb_user.id = tb_conta.user_id
                                   WHERE 1 = 1
                                   AND upper(tb_recurso.name) = 'CONNECT MASTER' -- NOME DO RECURSO
-                                  and upper( tb_user.USERNAME ) = upper('%s') --entre aq com o usuario de rede ( logado no app algarsql )
+                                  and upper( tb_user.USERNAME ) = upper('<1>') --entre aq com o usuario de rede ( logado no app algarsql )
 
                           )
                           WHERE DATA_BASE IN (
                                   select NAME
                                   from deployadm.T_CFG_BASE tcb
-                                  START WITH tcb.NAME = '%s'  --ENTRE AQ COM A BASE QUE QUER TROCAR A SENHA
+                                  START WITH tcb.NAME = '<2>'  --ENTRE AQ COM A BASE QUE QUER TROCAR A SENHA
                                   CONNECT BY PRIOR ID = BASE_DEP_ID
                           )
                     """;
