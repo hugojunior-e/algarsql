@@ -436,7 +436,10 @@ public class ORACLE {
             for (int i = 1; i <= md.getColumnCount(); i++) {
                 Object value = rs.getObject(i);
 
-                if (md.getColumnTypeName(i).toUpperCase().contains("LOB")) {
+                if ( value == null ) {
+                    value = "";
+                    
+                } else if (md.getColumnTypeName(i).toUpperCase().contains("LOB")) {
                     if (value instanceof Clob) {
                         Clob clob = (Clob) value;
                         value = clob.getSubString(1, (int) clob.length());
@@ -447,14 +450,14 @@ public class ORACLE {
                 } else if (value instanceof java.sql.Timestamp) {
                     value = fmt.format(rs.getTimestamp(i).toLocalDateTime());
                 } else {
-                    value = rs.getString(i);
+                    value = value.toString();
                 }
                 novo.put(md.getColumnName(i), value);
             }
             col_data.add(novo);
 
             if (count >= fetchSize && fetchSize != -1) {
-                return;
+                break;
             }
         }
         this.rs.close();
