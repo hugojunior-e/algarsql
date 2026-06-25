@@ -4,7 +4,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -99,37 +98,7 @@ public class DBController {
         db.EXECUTE(SQL_UPDATE_AUX, false, params.toArray(), false);
     }
 
-    private String describeObject(DATABASE db, String object_name) {
-        String ret = "";
 
-        String sql = String.format(Constants.C_SQL_TABLE_DESCRIBE_COLS, object_name);
-        db.SELECT(sql, false, false, -1);
-        ret += "<h3>Table Columns</h3>";
-        ret += Utils.htmlTable(db.col_names, db.col_data);
-
-        sql = String.format(Constants.C_SQL_TABLE_INDEXES, object_name);
-        db.SELECT(sql, false, false, -1);
-        ret += "<h3>Table Indexes</h3>";
-        ret += Utils.htmlTable(db.col_names, db.col_data);
-
-        sql = String.format(Constants.C_SQL_TABLE_DESCRIBE_PROP, object_name);
-        db.SELECT(sql, false, false, -1);
-
-        List<Map<String, Object>> col_prop = new ArrayList<>();
-        for (Map<String, Object> linha : db.col_data) {
-            for (Map.Entry<String, Object> entry : linha.entrySet()) {
-                Map<String, Object> reg = new HashMap<>();
-                reg.put("Property", entry.getKey());
-                reg.put("Value", entry.getValue());
-                col_prop.add(reg);
-            }
-        }
-
-        ret += "<h3>Table Properties</h3>";
-        ret += Utils.htmlTable(List.of("Property", "Value"), col_prop);
-
-        return ret;
-    }
 
     @RequestMapping(value = "/db_execute", method = {RequestMethod.GET, RequestMethod.POST})
     public Map<String, Object> dbExecute(HttpServletRequest request, HttpServletResponse response, HttpSession session) {
@@ -271,7 +240,7 @@ public class DBController {
             }
 
             if (action.equals("describe")) {
-                describe = describeObject(db, request.getParameter("object_name").toString());
+                describe = db.DESCRIBE( request.getParameter("object_name").toString() );
             }
 
             if (action.equals("test_procedure")) {

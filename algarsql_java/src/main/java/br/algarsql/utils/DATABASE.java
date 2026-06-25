@@ -356,4 +356,10 @@ public abstract class DATABASE {
     // =========================================================================
 
     public abstract String EXPLAIN(String p_sql);
+
+    // =========================================================================
+    // DESCRIBE
+    // =========================================================================
+
+    public abstract String DESCRIBE(String p_object_name);
 }

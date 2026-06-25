@@ -321,4 +321,37 @@ public class TDBOracle extends DATABASE{
         }
     }
 
+    @Override
+    public String DESCRIBE(String p_object_name) {
+        String ret = "";
+
+        String sql = String.format(Constants.C_SQL_TABLE_DESCRIBE_COLS, p_object_name);
+        this.SELECT(sql, false, false, -1);
+        ret += "<h3>Table Columns</h3>";
+        ret += Utils.htmlTable(this.col_names, this.col_data);
+
+        sql = String.format(Constants.C_SQL_TABLE_INDEXES, p_object_name);
+        this.SELECT(sql, false, false, -1);
+        ret += "<h3>Table Indexes</h3>";
+        ret += Utils.htmlTable(this.col_names, this.col_data);
+
+        sql = String.format(Constants.C_SQL_TABLE_DESCRIBE_PROP, p_object_name);
+        this.SELECT(sql, false, false, -1);
+
+        List<Map<String, Object>> col_prop = new ArrayList<>();
+        for (Map<String, Object> linha : this.col_data) {
+            for (Map.Entry<String, Object> entry : linha.entrySet()) {
+                Map<String, Object> reg = new HashMap<>();
+                reg.put("Property", entry.getKey());
+                reg.put("Value", entry.getValue());
+                col_prop.add(reg);
+            }
+        }
+
+        ret += "<h3>Table Properties</h3>";
+        ret += Utils.htmlTable(List.of("Property", "Value"), col_prop);
+
+        return ret;
+    }
+
 }

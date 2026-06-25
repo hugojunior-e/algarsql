@@ -13,7 +13,10 @@ public class TDBMySql extends DATABASE {
 
     @Override
     public void STOP() {
-        throw new UnsupportedOperationException("Unimplemented method 'STOP'");
+        try {
+            this.cur.cancel();    
+        } catch (Exception e) {
+        }
     }
 
     @Override
@@ -35,6 +38,11 @@ public class TDBMySql extends DATABASE {
     @Override
     public String EXPLAIN(String p_sql) {
         return "Unimplemented method 'EXPLAIN'";
+    }
+
+    @Override
+    public String DESCRIBE(String p_object_name) {
+        return "Unimplemented method 'DESCRIBE'";
     }
 
     
