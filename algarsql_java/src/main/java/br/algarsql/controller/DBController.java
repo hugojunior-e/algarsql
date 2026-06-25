@@ -162,6 +162,8 @@ public class DBController {
                         request.getParameter("direct").toString().equals("1")
                 );
                 db.username = username;
+                db.CONNECT();
+
                 session.setAttribute(xTabId, db);
                 ret.put("status_msg", db.status_msg);
                 ret.put("status_code", db.status_code);
@@ -197,11 +199,6 @@ public class DBController {
                 ret.put("status_msg", "No Connections Found");
                 return ret;
             }
-
-            if (action.equals("is_running")) {
-                ret.put("is_running", db.is_running);
-                return ret;
-            }            
 
             if (action.equals("logoff")) {
                 db.disconnect();

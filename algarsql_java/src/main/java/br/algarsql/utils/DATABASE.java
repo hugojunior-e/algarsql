@@ -1,6 +1,7 @@
 package br.algarsql.utils;
 
 import oracle.jdbc.OracleConnection;
+import oracle.jdbc.OracleTypes;
 import java.sql.Blob;
 import java.sql.CallableStatement;
 import java.sql.Clob;
@@ -9,6 +10,7 @@ import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -58,36 +60,46 @@ public abstract class DATABASE {
 
 
     public static DATABASE createConnection(String p_usuario, String p_senha, String p_tns, boolean p_is_direct) {
-        TDBOracle o = new TDBOracle();
-
-        o.db_is_direct = p_is_direct;
-        o.login_sid    = 0;
-        o.status_code  = 0;
-        o.status_msg   = "OK";
-
-        try {
-            if (p_usuario == null || p_senha == null || p_tns == null) {
-                throw new Exception("Parameter User/Pass Invalid!");
-            }
-            o.db_usuario = p_usuario;
-            o.db_senha   = p_senha;
-            o.db_tns     = p_tns;
-
-            String db_type = p_tns.startsWith("jdbc") ? p_tns : "jdbc:oracle:thin:@";
-
-            o.con = DriverManager.getConnection(db_type + p_tns,p_usuario, p_senha);
-            o.con.setAutoCommit(false);
-
-            o.afterConnect();
-
-        } catch (Exception e) {
-            o.status_code = -1;
-            o.status_msg = e.getMessage();
+        DATABASE o = null;
+        
+        if ( p_tns.startsWith("jdbc") ) {
+            if ( p_tns.contains("oracle") )  o = new TDBOracle();
+            if ( p_tns.contains("mysql")  )  o = new TDBMySql();
+        } else {
+            o = new TDBOracle();
         }
+
+        o.db_usuario   = p_usuario;
+        o.db_senha     = p_senha;
+        o.db_tns       = p_tns;
+        o.db_is_direct = p_is_direct;
+
+        if ( !(o instanceof TDBOracle) ) {
+            o.db_is_direct = true;
+        }
+
         return o;
     }
 
 
+    public void CONNECT() {
+        this.login_sid    = 0;
+        this.status_code  = 0;
+        this.status_msg   = "OK";
+
+        try {
+            String db_type = this.db_tns.startsWith("jdbc") ? this.db_tns : "jdbc:oracle:thin:@";
+
+            this.con = DriverManager.getConnection(db_type + this.db_tns,this.db_usuario, this.db_senha);
+            this.con.setAutoCommit(false);
+
+            this.afterConnect();
+
+        } catch (Exception e) {
+            this.status_code = -1;
+            this.status_msg = e.getMessage();
+        }
+    }    
 
 
     // =========================================================================
@@ -147,14 +159,14 @@ public abstract class DATABASE {
     // pingConnection
     // =========================================================================
 
-     abstract protected void pingConnection();
+     protected abstract void pingConnection();
     
 
     // =========================================================================
     // AFTER CONNECT
     // =========================================================================
 
-    abstract public void afterConnect();
+    public abstract void afterConnect();
 
     // =========================================================================
     // disconnect
@@ -199,7 +211,7 @@ public abstract class DATABASE {
     // STOP
     // =========================================================================
 
-    abstract public void STOP();
+    public abstract void STOP();
 
     // =========================================================================
     // get_line_column
@@ -223,13 +235,60 @@ public abstract class DATABASE {
     // EXECUTE
     // =========================================================================
 
-    abstract public void EXECUTE(String p_sql, boolean logger, Object[] p_bind_values, boolean direct);
+    public abstract void EXECUTE(String p_sql, boolean logger, Object[] p_bind_values, boolean direct);
 
     // =========================================================================
     // SELECT
     // =========================================================================
 
-    abstract public void SELECT(String p_sql, boolean direct, boolean logger, Integer fetchSize);
+    public void SELECT(String p_sql, boolean direct, boolean logger, Integer fetchSize) {
+        prepareVars(p_sql, logger);
+
+        try {
+            this.is_running = true;
+            if (rs != null && !rs.isClosed()) {
+                rs.close();
+                cur.close();
+            }
+
+            cur = con.prepareStatement(p_sql);
+            cur.setFetchSize(1000);
+
+            if (direct || this.db_is_direct) {
+                this.rs = this.cur.executeQuery(p_sql);
+            } else {
+                this.cs = this.con.prepareCall(Constants.C_SQL_SELECT);
+                cs.setString(1, p_sql);
+                cs.registerOutParameter(2, OracleTypes.CURSOR);
+                cs.execute();
+                this.rs = (ResultSet) cs.getObject(2);
+            }
+
+            ResultSetMetaData md = rs.getMetaData();
+
+            for (int i = 1; i <= md.getColumnCount(); i++) {
+                col_names.add(md.getColumnName(i));
+                col_types.add(md.getColumnTypeName(i));
+            }
+
+            if (fetchSize != -2) {
+                this.FETCH(fetchSize);
+            }
+
+            status_code = 0;
+            status_msg = "SUCESSO";
+
+        } catch (SQLException e) {
+            status_code = -1;
+            int[] lc = get_line_column(p_sql, e.getErrorCode());
+            status_msg = e.getMessage() + "\nError at line " + lc[0] + ", column " + lc[1];
+        } catch (Exception e) {
+            status_code = -1;
+            status_msg = e.getMessage();
+        } finally {
+            this.is_running = false;
+        }        
+    }
 
     // =========================================================================
     // FETCH
@@ -284,17 +343,17 @@ public abstract class DATABASE {
     // DDL
     // =========================================================================
 
-    abstract public String DDL(String owner, String type, String name) ;
+    public abstract String DDL(String owner, String type, String name) ;
 
     // =========================================================================
     // PROCEDURE
     // =========================================================================
 
-    abstract public String PROCEDURE(String obj);
+    public abstract String PROCEDURE(String obj);
 
     // =========================================================================
     // EXPLAIN
     // =========================================================================
 
-    abstract public String EXPLAIN(String p_sql);
+    public abstract String EXPLAIN(String p_sql);
 }
