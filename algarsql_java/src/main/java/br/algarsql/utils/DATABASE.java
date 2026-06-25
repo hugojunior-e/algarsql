@@ -34,18 +34,18 @@ public abstract class DATABASE {
 
     public String last_sql = "-";
 
-    public String login_global_name = "";
-    public int login_sid = 0;
-    public String login_banner = "";
+    public String  login_global_name = "";
+    public int     login_sid = 0;
+    public String  login_banner = "";
 
-    protected String db_usuario = null;
-    protected String db_senha = null;
-    protected String db_tns = null;
-    protected boolean db_is_direct = false;
+    protected String   db_usuario = null;
+    protected String   db_senha = null;
+    protected String   db_tns = null;
+    protected boolean  db_is_direct = false;
 
-    public List<String> col_names = new ArrayList<>();
-    public List<String> col_types = new ArrayList<>();
-    public List<Map<String, Object>> col_data = new ArrayList<>();
+    public List<String>               col_names = new ArrayList<>();
+    public List<String>               col_types = new ArrayList<>();
+    public List<Map<String, Object>>  col_data = new ArrayList<>();
 
     public String dbms_output = "";
     public String username = "";
@@ -59,9 +59,11 @@ public abstract class DATABASE {
     public ArrayList<String> tree_users = new ArrayList<>();
 
 
+
+
     public static DATABASE createConnection(String p_usuario, String p_senha, String p_tns, boolean p_is_direct) {
         DATABASE o = null;
-        
+
         if ( p_tns.startsWith("jdbc") ) {
             if ( p_tns.contains("oracle") )  o = new TDBOracle();
             if ( p_tns.contains("mysql")  )  o = new TDBMySql();
@@ -71,7 +73,7 @@ public abstract class DATABASE {
 
         o.db_usuario   = p_usuario;
         o.db_senha     = p_senha;
-        o.db_tns       = p_tns;
+        o.db_tns       = p_tns.startsWith("jdbc") ? p_tns : "jdbc:oracle:thin:@" + p_tns;
         o.db_is_direct = p_is_direct;
 
         if ( !(o instanceof TDBOracle) ) {
@@ -88,9 +90,7 @@ public abstract class DATABASE {
         this.status_msg   = "OK";
 
         try {
-            String db_type = this.db_tns.startsWith("jdbc") ? this.db_tns : "jdbc:oracle:thin:@";
-
-            this.con = DriverManager.getConnection(db_type + this.db_tns,this.db_usuario, this.db_senha);
+            this.con = DriverManager.getConnection(db_tns,this.db_usuario, this.db_senha);
             this.con.setAutoCommit(false);
 
             this.afterConnect();
@@ -211,7 +211,22 @@ public abstract class DATABASE {
     // STOP
     // =========================================================================
 
-    public abstract void STOP();
+    public void STOP() {
+        try {
+            if ( this.db_tns.contains("oracle") ) {
+                OracleConnection oc = con.unwrap(OracleConnection.class);
+                oc.cancel();
+                stop_status_count++;
+                if (stop_status_count > 3) {
+                    oc.abort();
+                }
+            } else {
+                this.cur.cancel();                    
+            }
+        } catch (Exception ignored) {
+            ignored.printStackTrace();
+        }        
+    }
 
     // =========================================================================
     // get_line_column
@@ -241,7 +256,7 @@ public abstract class DATABASE {
     // SELECT
     // =========================================================================
 
-    public void SELECT(String p_sql, boolean direct, boolean logger, Integer fetchSize) {
+    public void SELECT(String p_sql, boolean logger, Integer fetchSize) {
         prepareVars(p_sql, logger);
 
         try {
@@ -254,7 +269,7 @@ public abstract class DATABASE {
             cur = con.prepareStatement(p_sql);
             cur.setFetchSize(1000);
 
-            if (direct || this.db_is_direct) {
+            if (this.db_is_direct) {
                 this.rs = this.cur.executeQuery(p_sql);
             } else {
                 this.cs = this.con.prepareCall(Constants.C_SQL_SELECT);
@@ -362,4 +377,10 @@ public abstract class DATABASE {
     // =========================================================================
 
     public abstract String DESCRIBE(String p_object_name);
+
+    // =========================================================================
+    // TREE_OBJECTS
+    // =========================================================================
+
+    public abstract void TREE_OBJECTS();
 }

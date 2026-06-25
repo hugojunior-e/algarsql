@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import oracle.jdbc.OracleConnection;
 import oracle.jdbc.OracleTypes;
 
@@ -52,7 +53,7 @@ public class TDBOracle extends DATABASE{
             if (this.db_is_direct == false) {
                 this.SELECT(
                         "SELECT OWNER FROM ALL_VIEWS WHERE VIEW_NAME = 'VW_SESSIONS' ORDER BY 1",
-                        this.db_is_direct, false, -2);
+                        false, -2);
                 if (this.rs.next()) {
                     this.sql_session = Constants.C_SQL_SESSIONS_ALGAR.replace("<TABELA>",
                             rs.getString(1) + ".VW_SESSIONS");
@@ -65,25 +66,6 @@ public class TDBOracle extends DATABASE{
             status_msg = e.getMessage();
         }
     }
-
-    // =========================================================================
-    // STOP
-    // =========================================================================
-
-    @Override
-    public void STOP()  {
-        try {
-            OracleConnection oc = con.unwrap(OracleConnection.class);
-            oc.cancel();
-            stop_status_count++;
-            if (stop_status_count > 3) {
-                oc.abort();
-            }
-        } catch (Exception ignored) {
-            ignored.printStackTrace();
-        }
-    }
-
 
     // =========================================================================
     // EXECUTE
@@ -254,7 +236,7 @@ public class TDBOracle extends DATABASE{
             }
 
             String sql = String.format(Constants.C_SQL_PROCEDURE_ARGS, v_owner, v_name, v_package);
-            this.SELECT(sql, false, false, -2);
+            this.SELECT(sql, false, -2);
 
             List<String> decls = new ArrayList<>();
             List<String> params = new ArrayList<>();
@@ -309,7 +291,7 @@ public class TDBOracle extends DATABASE{
         try {
             EXECUTE("DELETE FROM PLAN_TABLE", false, null, true);
             EXECUTE("EXPLAIN PLAN FOR\n" + p_sql, false, null, true);
-            SELECT("SELECT PLAN_TABLE_OUTPUT FROM TABLE(DBMS_XPLAN.DISPLAY())", true, false, -1);
+            SELECT("SELECT PLAN_TABLE_OUTPUT FROM TABLE(DBMS_XPLAN.DISPLAY())", false, -1);
             List<String> lines = new ArrayList<>();
 
             for (Map<String, Object> row : col_data) {
@@ -326,17 +308,17 @@ public class TDBOracle extends DATABASE{
         String ret = "";
 
         String sql = String.format(Constants.C_SQL_TABLE_DESCRIBE_COLS, p_object_name);
-        this.SELECT(sql, false, false, -1);
+        this.SELECT(sql, false, -1);
         ret += "<h3>Table Columns</h3>";
         ret += Utils.htmlTable(this.col_names, this.col_data);
 
         sql = String.format(Constants.C_SQL_TABLE_INDEXES, p_object_name);
-        this.SELECT(sql, false, false, -1);
+        this.SELECT(sql, false, -1);
         ret += "<h3>Table Indexes</h3>";
         ret += Utils.htmlTable(this.col_names, this.col_data);
 
         sql = String.format(Constants.C_SQL_TABLE_DESCRIBE_PROP, p_object_name);
-        this.SELECT(sql, false, false, -1);
+        this.SELECT(sql, false, -1);
 
         List<Map<String, Object>> col_prop = new ArrayList<>();
         for (Map<String, Object> linha : this.col_data) {
@@ -352,6 +334,32 @@ public class TDBOracle extends DATABASE{
         ret += Utils.htmlTable(List.of("Property", "Value"), col_prop);
 
         return ret;
+    }
+
+    @Override
+    public void TREE_OBJECTS() {
+        this.tree_str = "";
+        this.tree_tables.clear();
+        this.tree_users.clear();
+
+        try {
+            this.SELECT(Constants.C_SQL_TREE, false, -2);
+            while (this.rs.next()) {
+                String tree = this.rs.getString("OWNER") + "|" + this.rs.getString("OBJECT_TYPE") + "|"
+                        + this.rs.getString("OBJECT_NAME");
+                this.tree_str += tree + "\n";
+                if (this.rs.getString("OBJECT_TYPE").equals("TABLE")
+                        || this.rs.getString("OBJECT_TYPE").equals("VIEW")) {
+                    this.tree_tables.add(this.rs.getString("OBJECT_NAME"));
+                    this.tree_users.add(this.rs.getString("OWNER"));
+                }
+            }
+        } catch (Exception e) {
+            // Handle exception
+        }
+
+        this.tree_users = this.tree_users.stream().distinct().sorted()
+                .collect(Collectors.toCollection(ArrayList::new));
     }
 
 }

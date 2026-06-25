@@ -5,7 +5,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -23,35 +22,6 @@ import jakarta.servlet.http.HttpSession;
 
 @RestController
 public class DBController {
-
-    // ==========================================================================================
-    //
-    // ==========================================================================================
-
-    private void calculateTreeObjects(DATABASE db) {
-        db.tree_str = "";
-        db.tree_tables.clear();
-        db.tree_users.clear();
-
-        try {
-            db.SELECT(Constants.C_SQL_TREE, false, false, -2);
-            while (db.rs.next()) {
-                String tree = db.rs.getString("OWNER") + "|" + db.rs.getString("OBJECT_TYPE") + "|"
-                        + db.rs.getString("OBJECT_NAME");
-                db.tree_str += tree + "\n";
-                if (db.rs.getString("OBJECT_TYPE").equals("TABLE")
-                        || db.rs.getString("OBJECT_TYPE").equals("VIEW")) {
-                    db.tree_tables.add(db.rs.getString("OBJECT_NAME"));
-                    db.tree_users.add(db.rs.getString("OWNER"));
-                }
-            }
-        } catch (Exception e) {
-            // Handle exception
-        }
-
-        db.tree_users = db.tree_users.stream().distinct().sorted()
-                .collect(Collectors.toCollection(ArrayList::new));
-    }
 
     // ==========================================================================================
     //
@@ -193,7 +163,7 @@ public class DBController {
 
                 if (sql_tipo.sql_type == SQLCodeType.SELECT) {
                     sql = Utils.compactSQL(sql);
-                    db.SELECT(sql, false, true, 50);
+                    db.SELECT(sql, true, 50);
                 }
                 if (sql_tipo.sql_type == SQLCodeType.DML) {
                     sql = Utils.compactSQL(sql);
@@ -206,7 +176,7 @@ public class DBController {
                     db.EXECUTE(sql, false, null, false);
                     if (db.status_code == 0) {
                         db.SELECT(String.format(Constants.C_SQL_ALL_ERRORS, sql_tipo.object_owner,
-                                sql_tipo.object_name), false, false, -1);
+                                sql_tipo.object_name), false, -1);
                         sql_tipo.sql_type = SQLCodeType.SELECT;
                     }
                 }
@@ -220,14 +190,14 @@ public class DBController {
                     .replaceAll("<2>", ct)
                     .replaceAll("<3>", ct.length() < 3 ? "1":"2");
 
-                db.SELECT(sql, false, false, -1);
+                db.SELECT(sql, false, -1);
 
             }
 
             if (action.equals("view_sessions")) {
                 String sql = db.sql_session.replaceAll("<WHERE>",
                         request.getParameter("status").toString());
-                db.SELECT(sql, false, false, -1);
+                db.SELECT(sql, false, -1);
             }
 
             if (action.equals("save_row_grid")) {
@@ -259,7 +229,7 @@ public class DBController {
                     sql = String.format(Constants.C_SQL_ALL_TAB_COLUMNS, type_filter);
                 }
                 sql_tipo.sql_type = SQLCodeType.NONE;
-                db.SELECT(sql, false, false, -1);
+                db.SELECT(sql, false, -1);
             }
 
             if (action.equals("ddl")) {
@@ -274,7 +244,7 @@ public class DBController {
             }
 
             if (action.equals("connect_after")) {
-                calculateTreeObjects(db);
+                db.TREE_OBJECTS();
             }
 
             if (action.equals("export_to_file")) {
