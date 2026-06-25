@@ -11,7 +11,7 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 
 public class ParallelProcess extends Thread {
-    private ORACLE db;
+    private DATABASE db;
     String sql;
     int file_type;
     String file_name;
@@ -24,7 +24,7 @@ public class ParallelProcess extends Thread {
     //
     // ==========================================================================================
 
-    public ParallelProcess(int i_block, ORACLE db, String sql, int file_type, String table_name) {
+    public ParallelProcess(int i_block, DATABASE db, String sql, int file_type, String table_name) {
         this.i_block = i_block;
         this.db = db;
         this.sql = sql;
@@ -33,7 +33,7 @@ public class ParallelProcess extends Thread {
         db.status_code_parallel = 1;
     }
 
-    public ParallelProcess(int i_block, ORACLE db, String sql, boolean first_line_titles,
+    public ParallelProcess(int i_block, DATABASE db, String sql, boolean first_line_titles,
             String csv_data, String file_name) {
         this.i_block = i_block;
         this.db = db;

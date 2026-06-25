@@ -1,86 +1,24 @@
 package br.algarsql.utils;
 
-import java.sql.Blob;
 import java.sql.CallableStatement;
-import java.sql.Clob;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import oracle.jdbc.OracleConnection;
 import oracle.jdbc.OracleTypes;
 
-public class ORACLE {
-
-    // =========================================================================
-    // VARS
-    // =========================================================================
-    public int status_code = 0;
-    public int status_code_parallel = 0;
-    public int stop_status_count = 0;
-    public String status_msg = "OK";
-
-    public Connection con = null;
-    public PreparedStatement cur = null;
-    private CallableStatement cs = null;
-    public ResultSet rs = null;
-
-    public String last_sql = "-";
-
-    public String login_global_name = "";
-    public int login_sid = 0;
-    public String login_banner = "";
-
-    private String db_usuario = null;
-    private String db_senha = null;
-    private String db_tns = null;
-    private boolean db_is_direct = false;
-
-    public List<String> col_names = new ArrayList<>();
-    public List<String> col_types = new ArrayList<>();
-    public List<Map<String, Object>> col_data = new ArrayList<>();
-
-    public String dbms_output = "";
-    public String username = "";
-    public String sql_session = "";
-    DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-
-    public boolean is_running = false;
-
-    public String tree_str = "";
-    public ArrayList<String> tree_tables = new ArrayList<>();
-    public ArrayList<String> tree_users = new ArrayList<>();
-
-    // =========================================================================
-    // =========================================================================
-    // value
-    // =========================================================================
-
-    public String value(Object v) {
-        if (v == null) {
-            return "null";
-        }
-
-        if (v instanceof java.util.Date) {
-            return "to_date('" + v + "','YYYY-MM-DD HH24:MI:SS')";
-        }
-        return "'" + v.toString().replace("'", "''") + "'";
-    }
+public class TDBOracle extends DATABASE{
 
     // =========================================================================
     // pingConnection
     // =========================================================================
 
-    private void pingConnection() {
+    protected void pingConnection() {
         try {
             OracleConnection oc = con.unwrap(OracleConnection.class);
             con.isValid(3);
@@ -88,56 +26,17 @@ public class ORACLE {
                 throw new Exception("Connection lost.");
             }
         } catch (Exception e) {
-            CONNECT(db_usuario, db_senha, db_tns, db_is_direct);
-            System.out.print("Reconnecting user " + db_usuario);
+            //CONNECT(db_usuario, db_senha, db_tns, db_is_direct);
         }
     }
     
 
     // =========================================================================
-    // prepareVars
-    // =========================================================================
-
-    private void prepareVars(String p_sql, boolean logger) {
-        pingConnection();
-        dbms_output = "";
-        col_names.clear();
-        col_types.clear();
-        col_data.clear();
-        stop_status_count = 0;
-        if (logger && !last_sql.equals(p_sql)) {
-            Utils.configSave(login_global_name, p_sql, "SQL_HISTORY", username);
-            last_sql = p_sql;
-        }
-    }
-
-    // =========================================================================
     // CONNECT
     // =========================================================================
 
-    public void CONNECT(String p_usuario, String p_senha, String p_tns, boolean p_is_direct) {
-        db_is_direct = p_is_direct;
-        login_sid = 0;
-        status_code = 0;
-        status_msg = "OK";
-
+    public void afterConnect() {
         try {
-            if (p_usuario == null || p_senha == null || p_tns == null) {
-                throw new Exception("Parameter User/Pass Invalid!");
-            }
-            this.db_usuario = p_usuario;
-            this.db_senha = p_senha;
-            this.db_tns = p_tns;
-
-            Properties props = new Properties();
-            props.put("user", p_usuario);
-            props.put("password", p_senha);            
-            props.put("oracle.net.keepAlive", "true");
-            props.put("oracle.jdbc.ReadTimeout", "3600000");
-            props.put("oracle.net.CONNECT_TIMEOUT", "3600000");
-
-            con = DriverManager.getConnection("jdbc:oracle:thin:@" + p_tns, props);
-            con.setAutoCommit(false);
             con.createStatement().execute(Constants.C_SQL_START);
 
             PreparedStatement ps = con.prepareStatement(
@@ -151,10 +50,10 @@ public class ORACLE {
             rs.close();
 
             this.sql_session = Constants.C_SQL_SESSIONS_ORA;
-            if (p_is_direct == false) {
+            if (this.db_is_direct == false) {
                 this.SELECT(
                         "SELECT OWNER FROM ALL_VIEWS WHERE VIEW_NAME = 'VW_SESSIONS' ORDER BY 1",
-                        p_is_direct, false, -2);
+                        this.db_is_direct, false, -2);
                 if (this.rs.next()) {
                     this.sql_session = Constants.C_SQL_SESSIONS_ALGAR.replace("<TABELA>",
                             rs.getString(1) + ".VW_SESSIONS");
@@ -162,45 +61,6 @@ public class ORACLE {
                 this.rs.close();
             }
 
-        } catch (Exception e) {
-            status_code = -1;
-            status_msg = e.getMessage();
-        }
-    }
-
-    // =========================================================================
-    // disconnect
-    // =========================================================================
-
-    public void disconnect() {
-        try {
-            if (con != null) {
-                con.close();
-            }
-        } catch (Exception ignored) {
-        }
-    }
-
-    // =========================================================================
-    // commit
-    // =========================================================================
-
-    public void commit() {
-        try {
-            con.commit();
-        } catch (Exception e) {
-            status_code = -1;
-            status_msg = e.getMessage();
-        }
-    }
-
-    // =========================================================================
-    // rollback
-    // =========================================================================
-
-    public void rollback() {
-        try {
-            con.rollback();
         } catch (Exception e) {
             status_code = -1;
             status_msg = e.getMessage();
@@ -224,42 +84,6 @@ public class ORACLE {
         }
     }
 
-    // =========================================================================
-    // create_lob
-    // =========================================================================
-
-    public Object create_lob(Object data, boolean is_blob) throws Exception {
-        OracleConnection oc = con.unwrap(OracleConnection.class);
-
-        if (is_blob) {
-            Blob blob = oc.createBlob();
-            blob.setBytes(1, data.toString().getBytes() );
-            return blob;
-        }
-        Clob clob = oc.createClob();
-        clob.setString(1, data.toString());
-        return clob;
-    }
-
-
-
-    // =========================================================================
-    // get_line_column
-    // =========================================================================
-
-    public int[] get_line_column(String sql, int offset) {
-        String[] lines = sql.split("\n");
-        int current = 0;
-        for (int i = 0; i < lines.length; i++) {
-            String line = lines[i] + "\n";
-            if (current + line.length() >= offset) {
-                int column = offset - current;
-                return new int[] {i + 1, column};
-            }
-            current += line.length();
-        }
-        return new int[] {-1, -1};
-    }
 
     // =========================================================================
     // EXECUTE
@@ -421,52 +245,7 @@ public class ORACLE {
         }
     }
 
-    public void FETCH(int fetchSize) throws Exception {
-        this.col_data.clear();
-        if (this.rs == null || rs.isClosed()) {
-            return;
-        }
-
-        ResultSetMetaData md = rs.getMetaData();
-        int count = 0;
-        while (rs.next()) {
-            count++;
-            Map<String, Object> novo = new LinkedHashMap<>();
-
-            for (int i = 1; i <= md.getColumnCount(); i++) {
-                Object value = rs.getObject(i);
-
-                if ( value == null ) {
-                    value = "";
-                    
-                } else if (md.getColumnTypeName(i).toUpperCase().contains("LOB")) {
-                    if (value instanceof Clob) {
-                        Clob clob = (Clob) value;
-                        value = clob.getSubString(1, (int) clob.length());
-                    } else if (value instanceof Blob) {
-                        Blob blob = (Blob) value;
-                        value = new String(blob.getBytes(1, (int) blob.length()));
-                    }
-                } else if (value instanceof java.sql.Timestamp) {
-                    value = fmt.format(rs.getTimestamp(i).toLocalDateTime());
-                } else {
-                    value = value.toString();
-                }
-                novo.put(md.getColumnName(i), value);
-            }
-            col_data.add(novo);
-
-            if (count >= fetchSize && fetchSize != -1) {
-                break;
-            }
-        }
-        this.rs.close();
-        this.cur.close();
-        this.rs = null;
-        this.cur = null;
-    }
-
-    // =========================================================================
+       // =========================================================================
     // DDL
     // =========================================================================
 
@@ -588,5 +367,5 @@ public class ORACLE {
         } catch (Exception e) {
             return e.getMessage();
         }
-    }
+    }    
 }

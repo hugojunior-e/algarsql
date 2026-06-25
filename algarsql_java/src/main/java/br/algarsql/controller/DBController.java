@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import br.algarsql.utils.Constants;
-import br.algarsql.utils.ORACLE;
+import br.algarsql.utils.DATABASE;
 import br.algarsql.utils.ParallelProcess;
 import br.algarsql.utils.SQLCodeType;
 import br.algarsql.utils.Utils;
@@ -29,7 +29,7 @@ public class DBController {
     //
     // ==========================================================================================
 
-    private void calculateTreeObjects(ORACLE db) {
+    private void calculateTreeObjects(DATABASE db) {
         db.tree_str = "";
         db.tree_tables.clear();
         db.tree_users.clear();
@@ -59,7 +59,7 @@ public class DBController {
     // ==========================================================================================
 
     @SuppressWarnings("unchecked")
-    private void executeUpdateFromForm(ORACLE db, String rowid, String sql, String json_items)
+    private void executeUpdateFromForm(DATABASE db, String rowid, String sql, String json_items)
             throws Exception {
         ObjectMapper mapper = new ObjectMapper();
         Map<String, Object> dados = mapper.readValue(json_items, Map.class);
@@ -99,7 +99,7 @@ public class DBController {
         db.EXECUTE(SQL_UPDATE_AUX, false, params.toArray(), false);
     }
 
-    private String describeObject(ORACLE db, String object_name) {
+    private String describeObject(DATABASE db, String object_name) {
         String ret = "";
 
         String sql = String.format(Constants.C_SQL_TABLE_DESCRIBE_COLS, object_name);
@@ -135,7 +135,7 @@ public class DBController {
     public Map<String, Object> dbExecute(HttpServletRequest request, HttpServletResponse response, HttpSession session) {
         Map<String, Object> ret = new HashMap<>();
 
-        ORACLE db = null;
+        DATABASE db = null;
         String action = request.getParameter("action");
         String xTabId = request.getHeader("X-Tab-ID");
         String describe = "";
@@ -155,11 +155,12 @@ public class DBController {
             username = o.toString();
 
             if (action.equals("connect")) {
-                db = new ORACLE();
-                db.CONNECT(request.getParameter("usr").toString(),
+                db = DATABASE.createConnection(
+                        request.getParameter("usr").toString(),
                         request.getParameter("pwd").toString(),
                         request.getParameter("tns").toString(),
-                        request.getParameter("direct").toString().equals("1"));
+                        request.getParameter("direct").toString().equals("1")
+                );
                 db.username = username;
                 session.setAttribute(xTabId, db);
                 ret.put("status_msg", db.status_msg);
@@ -186,7 +187,7 @@ public class DBController {
             }
 
           
-            db = (ORACLE) session.getAttribute(xTabId);
+            db = (DATABASE) session.getAttribute(xTabId);
 
             ret.put("status_code", 0);
             ret.put("status_msg", "Sucesso");
