@@ -50,7 +50,7 @@ public class DBController {
                     LocalDate localDate = LocalDate.parse(fv.toString(), formatter);
                     fv = java.sql.Date.valueOf(localDate);
                 } else if (ft.contains("LOB")) {
-                    fv = db.create_lob(fv.toString(), ft.contains("BLOB"));
+                    fv = db.createOracleLob(fv.toString(), ft.contains("BLOB"));
                 }
                 HashMap<String, Object> obj = new HashMap<>();
                 obj.put("name", fn);
@@ -65,7 +65,7 @@ public class DBController {
         String SQL_UPDATE_AUX =
                 "UPDATE (" + sql + ") SET " + set_clause + " WHERE ROWID = '" + rowid + "'";
 
-        db.EXECUTE(SQL_UPDATE_AUX, false, params.toArray(), false);
+        db.executeStatement(SQL_UPDATE_AUX, false, params.toArray(), false);
     }
 
 
@@ -101,7 +101,7 @@ public class DBController {
                         request.getParameter("direct").toString().equals("1")
                 );
                 db.username = username;
-                db.CONNECT();
+                db.connectDatabase();
 
                 session.setAttribute(xTabId, db);
                 ret.put("status_msg", db.status_msg);
@@ -145,7 +145,7 @@ public class DBController {
             }
 
             if (action.equals("stop")) {
-                db.STOP();
+                db.stopExecution();
             }
 
             if (action.equals("commit")) {
@@ -163,20 +163,19 @@ public class DBController {
 
                 if (sql_tipo.sql_type == SQLCodeType.SELECT) {
                     sql = Utils.compactSQL(sql);
-                    db.SELECT(sql, true, 50);
+                    db.executeSelect(sql, true, 50);
                 }
                 if (sql_tipo.sql_type == SQLCodeType.DML) {
                     sql = Utils.compactSQL(sql);
-                    db.EXECUTE(sql, true, null, false);
+                    db.executeStatement(sql, true, null, false);
                 }
                 if (sql_tipo.sql_type == SQLCodeType.PLSQL_BLOCK) {
-                    db.EXECUTE(sql, true, null, false);
+                    db.executeStatement(sql, true, null, false);
                 }
                 if (sql_tipo.sql_type == SQLCodeType.COMPILE) {
-                    db.EXECUTE(sql, false, null, false);
+                    db.executeStatement(sql, false, null, false);
                     if (db.status_code == 0) {
-                        db.SELECT(String.format(Constants.C_SQL_ALL_ERRORS, sql_tipo.object_owner,
-                                sql_tipo.object_name), false, -1);
+                        db.allErrors(sql_tipo.object_owner,sql_tipo.object_name);
                         sql_tipo.sql_type = SQLCodeType.SELECT;
                     }
                 }
@@ -185,19 +184,12 @@ public class DBController {
             if (action.equals("findobj")) {
                 String on = request.getParameter("object_name").toString();
                 String ct = request.getParameter("code_text").toString();
-                String sql = Constants.C_SQL_FIND_OBJECT
-                    .replaceAll("<1>", on)
-                    .replaceAll("<2>", ct)
-                    .replaceAll("<3>", ct.length() < 3 ? "1":"2");
-
-                db.SELECT(sql, false, -1);
-
+                db.findObject(on, ct);
             }
 
             if (action.equals("view_sessions")) {
-                String sql = db.sql_session.replaceAll("<WHERE>",
-                        request.getParameter("status").toString());
-                db.SELECT(sql, false, -1);
+                String sql = db.sql_session.replaceAll("<WHERE>", request.getParameter("status").toString());
+                db.executeSelect(sql, false, -1);
             }
 
             if (action.equals("save_row_grid")) {
@@ -210,11 +202,11 @@ public class DBController {
             }
 
             if (action.equals("describe")) {
-                describe = db.DESCRIBE( request.getParameter("object_name").toString() );
+                describe = db.describeObject( request.getParameter("object_name").toString() );
             }
 
             if (action.equals("test_procedure")) {
-                String ret_proc = db.PROCEDURE(request.getParameter("object_name").toString());
+                String ret_proc = db.createProcedureTest(request.getParameter("object_name").toString());
                 ret.put("status_code", 0);
                 ret.put("status_msg", ret_proc);
                 return ret;
@@ -229,22 +221,22 @@ public class DBController {
                     sql = String.format(Constants.C_SQL_ALL_TAB_COLUMNS, type_filter);
                 }
                 sql_tipo.sql_type = SQLCodeType.NONE;
-                db.SELECT(sql, false, -1);
+                db.executeSelect(sql, false, -1);
             }
 
             if (action.equals("ddl")) {
                 String[] x = request.getParameter("object_name").toString().toUpperCase()
                         .split("\\.\\.\\.");
-                ddl = db.DDL(x[0], x[1], x[2]);
+                ddl = db.extractDDL(x[0], x[1], x[2]);
             }
 
             if (action.equals("explain")) {
                 String sql = Utils.compactSQL(request.getParameter("sql").toString());
-                explain = db.EXPLAIN(sql);
+                explain = db.executeExplain(sql);
             }
 
             if (action.equals("connect_after")) {
-                db.TREE_OBJECTS();
+                db.treeObjects();
             }
 
             if (action.equals("export_to_file")) {
@@ -258,7 +250,7 @@ public class DBController {
             }
 
             if (action.equals("fetch")) {
-                db.FETCH(500);
+                db.fetchData(500);
             }
 
             if (action.equals("csv_completer")) {

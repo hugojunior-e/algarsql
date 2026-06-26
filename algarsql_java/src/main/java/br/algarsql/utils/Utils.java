@@ -52,14 +52,14 @@ public class Utils {
             format.options.put("useTab", false);
             format.options.put("breaksComma", Breaks.After);
             format.options.put("breaksProcArgs", false);
-            format.options.put("breaksConcat", Breaks.Before);
+            format.options.put("breaksConcat", false); //Breaks.Before
             format.options.put("breaksAroundLogicalConjunctions", Breaks.Before);
             format.options.put("breaksAfterSelect", false);
             format.options.put("commasPerLine", 0);
             format.options.put("breakOnSubqueries", false);
             format.options.put("breakAnsiiJoin", false);
             format.options.put("breakParenCondition", false);
-            format.options.put("maxCharLineSize", 120);
+            format.options.put("maxCharLineSize", 180);
             format.options.put("forceLinebreaksBeforeComment", false);
             format.options.put("extraLinesAfterSignificantStatements", BreaksX2.Keep);
             format.options.put("flowControl", FlowControl.IndentedActions);

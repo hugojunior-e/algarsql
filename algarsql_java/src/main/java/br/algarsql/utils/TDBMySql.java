@@ -4,6 +4,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 public class TDBMySql extends DATABASE {
 
@@ -17,13 +19,13 @@ public class TDBMySql extends DATABASE {
     }
 
     @Override
-    public void EXECUTE(String p_sql, boolean logger, Object[] p_bind_values, boolean direct) {
-        throw new UnsupportedOperationException("Unimplemented method 'EXECUTE'");
+    public void executeStatement(String p_sql, boolean logger, Object[] p_bind_values, boolean direct) {
+        throw new UnsupportedOperationException("Unimplemented method 'executeStatement'");
     }
 
 
     @Override
-    public String DDL(String owner, String type, String name) {
+    public String extractDDL(String owner, String type, String name) {
         String sql = "SHOW CREATE " + type.toUpperCase() + " `" + owner + "`.`" + name + "`";
         try {
             this.cs = con.prepareCall(sql);
@@ -44,37 +46,83 @@ public class TDBMySql extends DATABASE {
     }
 
     @Override
-    public String PROCEDURE(String obj) {
+    public String createProcedureTest(String obj) {
         return "Unimplemented method 'PROCEDURE'";
     }
 
 
+
     @Override
-    public String EXPLAIN(String p_sql) {
-        String sql = "EXPLAIN ANALYZE " + p_sql;
+    public String describeObject(String p_object_name) {
+        return "Unimplemented method 'describeObject'";
+    }
+
+    @Override
+    public void treeObjects() {
+        this.tree_str = "";
+        this.tree_tables.clear();
+        this.tree_users.clear();
+
+        try {
+            this.executeSelect(Constants.C_MYSQL_TREE, false, -2);
+            while (this.rs.next()) {
+                String tree = this.rs.getString("OWNER") + "|" + this.rs.getString("OBJECT_TYPE") + "|"
+                        + this.rs.getString("OBJECT_NAME");
+                this.tree_str += tree + "\n";
+                if (this.rs.getString("OBJECT_TYPE").equals("TABLE")
+                        || this.rs.getString("OBJECT_TYPE").equals("VIEW")) {
+                    this.tree_tables.add(this.rs.getString("OBJECT_NAME"));
+                    this.tree_users.add(this.rs.getString("OWNER"));
+                }
+            }
+        } catch (Exception e) {
+            // Handle exception
+        }
+
+        this.tree_users = this.tree_users.stream().distinct().sorted()
+                .collect(Collectors.toCollection(ArrayList::new));        
+    }
+
+    // =========================================================================
+    // executeExplain
+    // =========================================================================
+
+    @Override
+    public String executeExplain(String p_sql) {
         String ret = "";
 
         try {
+            String sql = "EXPLAIN ANALYZE " + p_sql;
             PreparedStatement ps = con.prepareStatement(sql);
             ResultSet rs = ps.executeQuery();
             while (rs.next()) {
-                ret = rs.getString(1);
+                ret = ret + rs.getString(1) + "\n";
             }
-            ps.close();
-        } catch(Exception e) {
+            ps.close();   
+        } catch ( Exception e ) {
+            ret = e.toString();
         }
-        return ret;
+
+        return ret.trim();
     }
 
+    // =========================================================================
+    // allErrors
+    // =========================================================================
 
     @Override
-    public String DESCRIBE(String p_object_name) {
-        return "Unimplemented method 'DESCRIBE'";
+    public void allErrors(String object_owner, String object_name) {
+        prepareVars("",false);
     }
+
+
+    // =========================================================================
+    // findObject
+    // =========================================================================
 
     @Override
-    public void TREE_OBJECTS() {
-    }
-
+    public void findObject(String object_name, String code_text) {
+        prepareVars("",false);
+    }    
     
 }

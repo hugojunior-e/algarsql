@@ -27,7 +27,7 @@ public class ParallelProcessController {
         public Map<String, Object> stopProcess(HttpServletRequest request,HttpSession session) {
             String xTabId = request.getHeader("X-Tab-ID");
             DATABASE db = (DATABASE) session.getAttribute(xTabId);
-            db.STOP();
+            db.stopExecution();
             Map<String, Object> ret = new HashMap<>();
             ret.put("status_code", db.status_code_parallel);
             ret.put("status_msg", db.status_msg);

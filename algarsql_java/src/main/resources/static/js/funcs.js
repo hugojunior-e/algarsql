@@ -1560,7 +1560,6 @@ function js_window_popup(name, content, html = false) {
                     font-family: 'Courier New', Courier, monospace;
                     font-size: 12px;
                     padding: 10px;
-                    border-left: 1px solid red;
                 }
 
                 table {
@@ -1582,8 +1581,10 @@ function js_window_popup(name, content, html = false) {
         </body>
     `;
 
-    x = window.open("", name);//, "width=800,height=400,scrollbars=yes,resizable=yes"
+    x                         = window.open("", name);//, "width=800,height=400,scrollbars=yes,resizable=yes"
     x.document.body.innerHTML = page;
+    x.document.title          = name;
+    x.focus();
 
     if ( name == 'VIEW CELL') {
         var str = content;

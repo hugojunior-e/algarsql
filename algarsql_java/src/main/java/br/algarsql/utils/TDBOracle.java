@@ -2,6 +2,7 @@ package br.algarsql.utils;
 
 import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -26,7 +27,7 @@ public class TDBOracle extends DATABASE{
                 throw new Exception("Connection lost.");
             }
         } catch (Exception e) {
-            CONNECT();
+            connectDatabase();
         }
     }
 
@@ -51,7 +52,7 @@ public class TDBOracle extends DATABASE{
 
             this.sql_session = Constants.C_SQL_SESSIONS_ORA;
             if (this.db_is_direct == false) {
-                this.SELECT(
+                this.executeSelect(
                         "SELECT OWNER FROM ALL_VIEWS WHERE VIEW_NAME = 'VW_SESSIONS' ORDER BY 1",
                         false, -2);
                 if (this.rs.next()) {
@@ -68,11 +69,11 @@ public class TDBOracle extends DATABASE{
     }
 
     // =========================================================================
-    // EXECUTE
+    // executeStatement
     // =========================================================================
 
     @Override
-    public void EXECUTE(String p_sql, boolean logger, Object[] p_bind_values, boolean direct) {
+    public void executeStatement(String p_sql, boolean logger, Object[] p_bind_values, boolean direct) {
         prepareVars(p_sql, logger);
 
         try {
@@ -176,12 +177,12 @@ public class TDBOracle extends DATABASE{
         }
     }
 
-       // =========================================================================
-    // DDL
+// =========================================================================
+    // extractDDL
     // =========================================================================
 
     @Override
-    public String DDL(String owner, String type, String name) {
+    public String extractDDL(String owner, String type, String name) {
         prepareVars("", false);
         String ret = "";
         try {
@@ -211,7 +212,7 @@ public class TDBOracle extends DATABASE{
     // =========================================================================
 
     @Override
-    public String PROCEDURE(String obj) {
+    public String createProcedureTest(String obj) {
         try {
 
             String[] dat = obj.trim().toUpperCase().split("\\.");
@@ -236,7 +237,7 @@ public class TDBOracle extends DATABASE{
             }
 
             String sql = String.format(Constants.C_SQL_PROCEDURE_ARGS, v_owner, v_name, v_package);
-            this.SELECT(sql, false, -2);
+            this.executeSelect(sql, false, -2);
 
             List<String> decls = new ArrayList<>();
             List<String> params = new ArrayList<>();
@@ -283,42 +284,26 @@ public class TDBOracle extends DATABASE{
     }
 
     // =========================================================================
-    // EXPLAIN
+    // describeObject
     // =========================================================================
 
-    @Override
-    public String EXPLAIN(String p_sql) {
-        try {
-            EXECUTE("DELETE FROM PLAN_TABLE", false, null, true);
-            EXECUTE("EXPLAIN PLAN FOR\n" + p_sql, false, null, true);
-            SELECT("SELECT PLAN_TABLE_OUTPUT FROM TABLE(DBMS_XPLAN.DISPLAY())", false, -1);
-            List<String> lines = new ArrayList<>();
-
-            for (Map<String, Object> row : col_data) {
-                lines.add(row.get("PLAN_TABLE_OUTPUT").toString());
-            }
-            return String.join("\n", lines);
-        } catch (Exception e) {
-            return e.getMessage();
-        }
-    }
 
     @Override
-    public String DESCRIBE(String p_object_name) {
+    public String describeObject(String p_object_name) {
         String ret = "";
 
         String sql = String.format(Constants.C_SQL_TABLE_DESCRIBE_COLS, p_object_name);
-        this.SELECT(sql, false, -1);
+        this.executeSelect(sql, false, -1);
         ret += "<h3>Table Columns</h3>";
         ret += Utils.htmlTable(this.col_names, this.col_data);
 
         sql = String.format(Constants.C_SQL_TABLE_INDEXES, p_object_name);
-        this.SELECT(sql, false, -1);
+        this.executeSelect(sql, false, -1);
         ret += "<h3>Table Indexes</h3>";
         ret += Utils.htmlTable(this.col_names, this.col_data);
 
         sql = String.format(Constants.C_SQL_TABLE_DESCRIBE_PROP, p_object_name);
-        this.SELECT(sql, false, -1);
+        this.executeSelect(sql, false, -1);
 
         List<Map<String, Object>> col_prop = new ArrayList<>();
         for (Map<String, Object> linha : this.col_data) {
@@ -337,13 +322,13 @@ public class TDBOracle extends DATABASE{
     }
 
     @Override
-    public void TREE_OBJECTS() {
+    public void treeObjects() {
         this.tree_str = "";
         this.tree_tables.clear();
         this.tree_users.clear();
 
         try {
-            this.SELECT(Constants.C_SQL_TREE, false, -2);
+            this.executeSelect(Constants.C_SQL_TREE, false, -2);
             while (this.rs.next()) {
                 String tree = this.rs.getString("OWNER") + "|" + this.rs.getString("OBJECT_TYPE") + "|"
                         + this.rs.getString("OBJECT_NAME");
@@ -361,5 +346,54 @@ public class TDBOracle extends DATABASE{
         this.tree_users = this.tree_users.stream().distinct().sorted()
                 .collect(Collectors.toCollection(ArrayList::new));
     }
+
+    // =========================================================================
+    // executeExplain
+    // =========================================================================
+
+    @Override
+    public String executeExplain(String p_sql) {
+        String ret = "";
+
+        try {
+            con.createStatement().executeUpdate("DELETE FROM PLAN_TABLE");
+            con.createStatement().executeUpdate("EXPLAIN PLAN FOR\n" + p_sql);
+            String sql = "SELECT PLAN_TABLE_OUTPUT FROM TABLE(DBMS_XPLAN.DISPLAY())";
+            PreparedStatement ps = con.prepareStatement(sql);
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                ret = ret + rs.getString(1) + "\n";
+            }
+            ps.close();  
+                 
+        } catch ( Exception e ) {
+            ret = e.toString();
+        }
+
+        return ret.trim();
+    }
+
+    // =========================================================================
+    // allErrors
+    // =========================================================================
+
+    @Override
+    public void allErrors(String object_owner, String object_name) {
+        executeSelect(String.format(Constants.C_SQL_ALL_ERRORS, object_owner, object_name), false, -1);
+    }
+
+    // =========================================================================
+    // findObject
+    // =========================================================================
+
+    @Override
+    public void findObject(String object_name, String code_text) {
+        String sql = Constants.C_SQL_FIND_OBJECT
+            .replaceAll("<1>", object_name)
+            .replaceAll("<2>", code_text)
+            .replaceAll("<3>", code_text.length() < 3 ? "1":"2");
+
+        executeSelect(sql, false, -1);
+    }      
 
 }

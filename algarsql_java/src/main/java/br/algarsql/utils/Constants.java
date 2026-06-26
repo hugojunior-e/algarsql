@@ -4,26 +4,18 @@ import org.springframework.context.ApplicationContext;
 
 public class Constants {
 
-    public static final String PAGE_LOGIN = "/login";
-
-    public static final String FARMPRD_USR = "ALGARSQLAPP";
-    public static final String FARMPRD_PWD = "P7RT6L#26sql";
-    public static final String FARMPRD_DSN = "exa07-scan-prd.network.ctbc:1521/FARMPRD";
-
-    public static String TEMP_DIR = "/algar/temp/";
-    public static final String WORKDIR = "/algarsql";
-
     public static ApplicationContext applicationContext;
 
-    public static String nvl(Object p) {
-        return p == null ? "" : p.toString();
-    }
+    public static final String PAGE_LOGIN    = "/login";
+    public static final String FARMPRD_USR   = "ALGARSQLAPP";
+    public static final String FARMPRD_PWD   = "P7RT6L#26sql";
+    public static final String FARMPRD_DSN   = "exa07-scan-prd.network.ctbc:1521/FARMPRD";
+    public static final String WORKDIR       = "/algarsql";
 
     // =========================================================================================
-    // Constantes
+    // SQL_ORACLE
     // =========================================================================================
 
-    public static final String C_APP_VERSION = "AlgarSQL 2.3";
 
     public static final String C_SQL_SELECT = "{ call user_exec.pc_exec_dml.pr_exec_select(?, ?) }";
 
@@ -329,6 +321,46 @@ public class Constants {
                         order by OWNER,OBJECT_TYPE,OBJECT_NAME
                     """;
 
+
+
+
+
+
+    public static final String C_MYSQL_TREE = """
+        SELECT
+            TABLE_SCHEMA AS OWNER,
+            'TABLE' AS OBJECT_TYPE,
+            TABLE_NAME AS OBJECT_NAME
+        FROM information_schema.TABLES
+        WHERE TABLE_TYPE = 'BASE TABLE'
+          AND TABLE_SCHEMA NOT IN ('information_schema','mysql','performance_schema','sys')
+        UNION ALL
+        SELECT
+            TABLE_SCHEMA AS OWNER,
+            'VIEW' AS OBJECT_TYPE,
+            TABLE_NAME AS OBJECT_NAME
+        FROM information_schema.VIEWS
+        WHERE TABLE_SCHEMA NOT IN ('information_schema','mysql','performance_schema','sys')
+        UNION ALL
+        SELECT
+            ROUTINE_SCHEMA AS OWNER,
+            ROUTINE_TYPE AS OBJECT_TYPE,
+            ROUTINE_NAME AS OBJECT_NAME
+        FROM information_schema.ROUTINES
+        WHERE ROUTINE_SCHEMA NOT IN ('information_schema','mysql','performance_schema','sys')
+        UNION ALL
+        SELECT
+            TRIGGER_SCHEMA AS OWNER,
+            'TRIGGER' AS OBJECT_TYPE,
+            TRIGGER_NAME AS OBJECT_NAME
+        FROM information_schema.TRIGGERS
+        WHERE TRIGGER_SCHEMA  NOT IN ('information_schema','mysql','performance_schema','sys')
+        ORDER BY OWNER, OBJECT_TYPE, OBJECT_NAME        
+        """;                    
+
+    // =========================================================================================
+    // SQL CHANGE PASSWORD
+    // =========================================================================================
 
     public static final String C_CHANGE_PASSWORD =
             """

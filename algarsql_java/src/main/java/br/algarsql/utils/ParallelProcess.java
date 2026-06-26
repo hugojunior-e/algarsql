@@ -69,7 +69,7 @@ public class ParallelProcess extends Thread {
                     sql_aux = sql_aux.replace("<" + reg + ">", records[reg].trim());
                 }
 
-                db.SELECT(sql_aux, false, -2);
+                db.executeSelect(sql_aux, false, -2);
                 if (db.status_code != 0) {
                     db.status_msg =
                             "ERROR: Executing SQL for line " + (i + 1) + ": " + db.status_msg;
@@ -107,7 +107,7 @@ public class ParallelProcess extends Thread {
         db.status_msg = "Exporting data....";
 
         try {
-            db.SELECT(sql, false, -2);
+            db.executeSelect(sql, false, -2);
 
             if (db.status_code != 0) {
                 return;

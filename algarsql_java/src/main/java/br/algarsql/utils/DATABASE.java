@@ -84,7 +84,7 @@ public abstract class DATABASE {
     }
 
 
-    public void CONNECT() {
+    public void connectDatabase() {
         this.login_sid    = 0;
         this.status_code  = 0;
         this.status_msg   = "OK";
@@ -103,10 +103,10 @@ public abstract class DATABASE {
 
 
     // =========================================================================
-    // create_lob
+    // createOracleLob
     // =========================================================================
 
-    public Object create_lob(Object data, boolean is_blob) throws Exception {
+    public Object createOracleLob(Object data, boolean is_blob) throws Exception {
         OracleConnection oc = con.unwrap(OracleConnection.class);
 
         if (is_blob) {
@@ -211,7 +211,7 @@ public abstract class DATABASE {
     // STOP
     // =========================================================================
 
-    public void STOP() {
+    public void stopExecution() {
         try {
             if ( this.db_tns.contains("oracle") ) {
                 OracleConnection oc = con.unwrap(OracleConnection.class);
@@ -232,7 +232,7 @@ public abstract class DATABASE {
     // get_line_column
     // =========================================================================
 
-    public int[] get_line_column(String sql, int offset) {
+    private int[] get_line_column(String sql, int offset) {
         String[] lines = sql.split("\n");
         int current = 0;
         for (int i = 0; i < lines.length; i++) {
@@ -247,16 +247,16 @@ public abstract class DATABASE {
     }
 
     // =========================================================================
-    // EXECUTE
+    // executeStatement
     // =========================================================================
 
-    public abstract void EXECUTE(String p_sql, boolean logger, Object[] p_bind_values, boolean direct);
+    public abstract void executeStatement(String p_sql, boolean logger, Object[] p_bind_values, boolean direct);
 
     // =========================================================================
     // SELECT
     // =========================================================================
 
-    public void SELECT(String p_sql, boolean logger, Integer fetchSize) {
+    public void executeSelect(String p_sql, boolean logger, Integer fetchSize) {
         prepareVars(p_sql, logger);
 
         try {
@@ -287,7 +287,7 @@ public abstract class DATABASE {
             }
 
             if (fetchSize != -2) {
-                this.FETCH(fetchSize);
+                this.fetchData(fetchSize);
             }
 
             status_code = 0;
@@ -306,10 +306,10 @@ public abstract class DATABASE {
     }
 
     // =========================================================================
-    // FETCH
+    // fetchData
     // =========================================================================
 
-    public void FETCH(int fetchSize) throws Exception {
+    public void fetchData(int fetchSize) throws Exception {
         this.col_data.clear();
         if (this.rs == null || rs.isClosed()) {
             return;
@@ -355,32 +355,45 @@ public abstract class DATABASE {
     }
 
     // =========================================================================
-    // DDL
+    // extractDDL
     // =========================================================================
 
-    public abstract String DDL(String owner, String type, String name) ;
+    public abstract String extractDDL(String owner, String type, String name) ;
 
     // =========================================================================
-    // PROCEDURE
+    // createProcedureTest
     // =========================================================================
 
-    public abstract String PROCEDURE(String obj);
+    public abstract String createProcedureTest(String obj);
 
     // =========================================================================
-    // EXPLAIN
+    // executeExplain
     // =========================================================================
 
-    public abstract String EXPLAIN(String p_sql);
+    public abstract String executeExplain(String p_sql); 
 
     // =========================================================================
-    // DESCRIBE
+    // describeObject
     // =========================================================================
 
-    public abstract String DESCRIBE(String p_object_name);
+    public abstract String describeObject(String p_object_name);
 
     // =========================================================================
     // TREE_OBJECTS
     // =========================================================================
 
-    public abstract void TREE_OBJECTS();
+    public abstract void treeObjects();
+
+    // =========================================================================
+    // allErrors
+    // =========================================================================
+
+    public abstract void allErrors(String object_owner, String object_name);
+
+    // =========================================================================
+    // findObject
+    // =========================================================================
+
+    public abstract void findObject(String object_name, String code_text);
+
 }
