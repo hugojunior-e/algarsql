@@ -45,7 +45,7 @@ public abstract class DATABASE {
 
     public List<String>               col_names = new ArrayList<>();
     public List<String>               col_types = new ArrayList<>();
-    public List<Map<String, Object>>  col_data = new ArrayList<>();
+    public List<Map<String, Object>>  col_data  = new ArrayList<>();
 
     public String dbms_output = "";
     public String username = "";
@@ -379,7 +379,7 @@ public abstract class DATABASE {
     public abstract String describeObject(String p_object_name);
 
     // =========================================================================
-    // TREE_OBJECTS
+    // treeObjects
     // =========================================================================
 
     public abstract void treeObjects();
@@ -395,5 +395,11 @@ public abstract class DATABASE {
     // =========================================================================
 
     public abstract void findObject(String object_name, String code_text);
+
+    // =========================================================================
+    // filterTableColumns
+    // =========================================================================
+
+    public abstract void filterTableColumns(String type_object, String type_filter);
 
 }

@@ -1,5 +1,6 @@
 package br.algarsql.utils;
 
+import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -26,19 +27,20 @@ public class TDBMySql extends DATABASE {
 
     @Override
     public String extractDDL(String owner, String type, String name) {
-        String sql = "SHOW CREATE " + type.toUpperCase() + " `" + owner + "`.`" + name + "`";
+        String sql = "SHOW CREATE " + type + " `" + owner + "`.`" + name + "`";
         try {
-            this.cs = con.prepareCall(sql);
-            ResultSet rs = this.cs.executeQuery();
-            if (rs.next()) {
-                ResultSetMetaData md = rs.getMetaData();
+            CallableStatement cs2 = con.prepareCall(sql);
+            ResultSet rs2 = cs2.executeQuery();
+            if (rs2.next()) {
+                ResultSetMetaData md = rs2.getMetaData();
                 for (int i = 1; i <= md.getColumnCount(); i++) {
                     String col = md.getColumnLabel(i).toUpperCase();
                     if (col.contains("CREATE")) {
-                        return rs.getString(i);
+                        return rs2.getString(i);
                     }
                 }
             }
+            cs2.close();
             return null;
         } catch (SQLException e) {
             return e.toString();
@@ -64,7 +66,7 @@ public class TDBMySql extends DATABASE {
         this.tree_users.clear();
 
         try {
-            this.executeSelect(Constants.C_MYSQL_TREE, false, -2);
+            this.executeSelect(Constants.C_MYSQL_TREE.replaceAll("<1>", "%"), false, -2);
             while (this.rs.next()) {
                 String tree = this.rs.getString("OWNER") + "|" + this.rs.getString("OBJECT_TYPE") + "|"
                         + this.rs.getString("OBJECT_NAME");
@@ -122,6 +124,16 @@ public class TDBMySql extends DATABASE {
 
     @Override
     public void findObject(String object_name, String code_text) {
+        String sql = Constants.C_MYSQL_TREE.replaceAll("<1>", object_name);
+        executeSelect(sql, false, -1);        
+    }
+
+    // =========================================================================
+    // filterTableColumns
+    // =========================================================================    
+    
+    @Override
+    public void filterTableColumns(String type_object, String type_filter) {
         prepareVars("",false);
     }    
     

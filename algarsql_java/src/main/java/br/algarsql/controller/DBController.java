@@ -62,8 +62,7 @@ public class DBController {
         }
         set_clause = set_clause.substring(0, set_clause.length() - 2);
 
-        String SQL_UPDATE_AUX =
-                "UPDATE (" + sql + ") SET " + set_clause + " WHERE ROWID = '" + rowid + "'";
+        String SQL_UPDATE_AUX = "UPDATE (" + sql + ") SET " + set_clause + " WHERE ROWID = '" + rowid + "'";
 
         db.executeStatement(SQL_UPDATE_AUX, false, params.toArray(), false);
     }
@@ -102,10 +101,14 @@ public class DBController {
                 );
                 db.username = username;
                 db.connectDatabase();
+                db.treeObjects();
 
                 session.setAttribute(xTabId, db);
                 ret.put("status_msg", db.status_msg);
                 ret.put("status_code", db.status_code);
+                ret.put("tree", db.tree_str);
+                ret.put("object_tables", db.tree_tables.toArray());
+                ret.put("object_users", db.tree_users.toArray());
                 return ret;
             }
 
@@ -215,17 +218,12 @@ public class DBController {
             if (action.equals("tab_columns")) {
                 String type_object = request.getParameter("type_object").toString();
                 String type_filter = request.getParameter("type_filter").toString();
-                String sql = String.format(Constants.C_SQL_ALL_TABLES_COLUMNS, type_filter);
-
-                if (type_object.contains("TABLE")) {
-                    sql = String.format(Constants.C_SQL_ALL_TAB_COLUMNS, type_filter);
-                }
+                db.filterTableColumns(type_object, type_filter);
                 sql_tipo.sql_type = SQLCodeType.NONE;
-                db.executeSelect(sql, false, -1);
             }
 
             if (action.equals("ddl")) {
-                String[] x = request.getParameter("object_name").toString().toUpperCase()
+                String[] x = request.getParameter("object_name").toString()
                         .split("\\.\\.\\.");
                 ddl = db.extractDDL(x[0], x[1], x[2]);
             }
@@ -255,8 +253,7 @@ public class DBController {
 
             if (action.equals("csv_completer")) {
                 String sql = Utils.compactSQL(request.getParameter("sql").toString());
-                boolean first_line_titles =
-                        request.getParameter("first_line_titles").toString().equals("true");
+                boolean first_line_titles = request.getParameter("first_line_titles").toString().equals("true");
                 String csv_data = request.getParameter("file_data").toString();
                 String file_name = request.getParameter("file_name").toString();
                 new ParallelProcess(1, db, sql, first_line_titles, csv_data, file_name).start();
@@ -285,8 +282,6 @@ public class DBController {
         ret.put("explain", explain);
         ret.put("dbms", db.dbms_output);
         ret.put("sql_type", sql_tipo.sql_type);
-        ret.put("object_tables", db.tree_tables.toArray());
-        ret.put("object_users", db.tree_users.toArray());
         return ret;
     }
 }

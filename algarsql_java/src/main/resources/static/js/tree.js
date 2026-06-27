@@ -1,5 +1,6 @@
 class TreeView {
-    constructor() {
+    constructor(idd) {
+        this.idd = idd;
         this.nodes = [];
         this.openNodes = [];
         this.treeBuffer = [];
@@ -50,13 +51,10 @@ class TreeView {
     montaArvoreDados(arrNodes, startNode = 0, openNode = null) {
         this.treeBuffer = [];
         this.nodes = this.parseCsvToTreeArray(arrNodes);
+
         this.openNodes = [];
 
         if (this.nodes.length > 0) {
-            if (openNode != 0 && openNode != null) {
-                this.setOpenNodes(openNode);
-            }
-
             const recursedNodes = [];
             this.addNode(startNode, recursedNodes);
         }
@@ -120,15 +118,14 @@ class TreeView {
     }
 
     hasChildNode(parentNode) {
-        return this.nodes.some(n => n.split("|")[1] == parentNode);
+        return this.nodes.some(n => n.parent == parentNode);
     }
 
     lastSibling(node, parentNode) {
         let lastChild = 0;
         for (let i = 0; i < this.nodes.length; i++) {
-            const nodeValues = this.nodes[i].split("|");
-            if (nodeValues[1] == parentNode) {
-                lastChild = nodeValues[0];
+            if (this.nodes[i].parent == parentNode) {
+                lastChild = this.nodes[i].id;
             }
         }
         return lastChild == node;
@@ -137,7 +134,9 @@ class TreeView {
     addNode(parentNode, recursedNodes) {
         for (let i = 0; i < this.nodes.length; i++) {
             
-            const nodeValues = this.nodes[i].split("|");
+            const x = this.nodes[i]
+            const nodeValues = [ x.id, x.parent, x.name, x.link ]; //this.nodes[i].split("|");
+
             if (nodeValues[1] == parentNode) {
                 this.writeTreeString("<span>");
 
@@ -153,19 +152,22 @@ class TreeView {
 
                 recursedNodes.push(ls ? 0 : 1);
 
-                const vv_div = Date.now().toString();
+                const vv_div = `${this.idd}_${nodeValues[0]}`;
                 
                 // Nó com filhos
                 if (hcn) {
                     const isLast = ls ? 1 : 0;
                     
-                    const link = document.createElement('a');
-                    link.textContent = this.mais + this.treeIcones[1] + nodeValues[2];
-                    link.href        = `javascript: oc('${vv_div}_${nodeValues[0]}', ${isLast});`;
-                    link.setAttribute("nodeFolderID", "div" + vv_div + "_" + nodeValues[0]);
-                    link.setAttribute("nodeType", "FOLDER");
-                    link.setAttribute("nodeInfo", nodeValues[3].replaceAll('...','|'));
-                    this.writeTreeString(link.outerHTML);
+                    const linkHTML = `
+                        <a href="#"
+                            onclick="oc('${vv_div}_${nodeValues[0]}', ${isLast}); return false;"
+                            nodeFolderID="div${vv_div}_${nodeValues[0]}"
+                            nodeType="FOLDER"
+                            nodeInfo="${nodeValues[3].replaceAll('...', '|')}">
+                            ${this.mais}${this.treeIcones[1]}${nodeValues[2]}
+                        </a>`;
+
+                    this.writeTreeString(linkHTML);                    
 
                 } else {
                     // Nó folha
@@ -178,14 +180,15 @@ class TreeView {
                     }
 
                     if ( this.endNodeClick != null ) {
-                        const link = document.createElement('a');
-                        link.textContent = endNodeText;
-                        link.href        = "#";
-                        link.setAttribute("nodeType", "FILE");
-                        link.setAttribute("nodeInfo", nodeValues[3].replaceAll('...','|'));
-                        link.setAttribute("onclick", `${this.endNodeClick}(this)`);
-
-                        this.writeTreeString(link.outerHTML);
+                        const linkHTML = `
+                            <a href="#"
+                                nodeType="FILE"
+                                nodeInfo="${nodeValues[3].replaceAll('...', '|')}"
+                                onclick="${this.endNodeClick}(this)">
+                                ${endNodeText}
+                            </a>`;                        
+                        this.writeTreeString(linkHTML);
+                        
                     } else {
                         this.writeTreeString(endNodeText);
                     } 
@@ -233,7 +236,15 @@ class TreeView {
                     const name = parts[i];
                     const link = parts.slice(0, i + 1).join("...");
                     const parent = map[parentPath] || 0;
-                    result.push(`${id}|${parent}|${name}|${link}`);
+                    result.push(
+                            {
+                                id,
+                                parent,
+                                name,
+                                link
+                            }                        
+                    );
+                  
                 }
             }
         }

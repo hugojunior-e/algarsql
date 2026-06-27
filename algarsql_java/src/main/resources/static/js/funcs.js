@@ -267,33 +267,6 @@ function change_icon(running = null) {
 }
 
 
-async function js_monta_tree() {
-    let ret1 = await global_var.cache.loadData("astree_" + id_login_database.value);
-    let ret2 = await global_var.cache.loadData("astables_" + id_login_database.value);
-    let ret3 = await global_var.cache.loadData("asusers_" + id_login_database.value);
-
-    if (ret1 == null || ret2 == null || ret3 == null) {
-        ajax("/db_execute", { "action": "connect_after"}, async function (a) {
-            ret1 = await global_var.tree_objects.montaArvoreDados(a.tree);
-
-            id_tree_obj.innerHTML    = ret1;
-            global_var.object_tables = a.object_tables;
-            global_var.object_users  = a.object_users;
-
-            global_var.cache.saveData("astree_" + id_login_database.value, ret1);
-            global_var.cache.saveData("astables_" + id_login_database.value, a.object_tables);
-            global_var.cache.saveData("asusers_" + id_login_database.value, a.object_users);
-
-        });        
-
-    } else {
-        id_tree_obj.innerHTML    = ret1;
-        global_var.object_tables = ret2;
-        global_var.object_users  = ret3;
-    }
-    id_tree_obj.index = 0;
-}
-
 function js_dbtree_show() {
     id_tree_obj.innerHTML = id_tree_obj.value ?? 'No Connection Found';
     id_tree_obj.index     = 0;
@@ -493,10 +466,6 @@ function jsExportToFile(sql,type) {
 }
 
 
-function js_clear_cache() {
-    global_var.cache.clear();
-    alert('Cache Cleared! The tree will be reloaded on next access.');
-}
 /*
     ==========================================================================================------------------------------------
     comment: Funcoes para embelezar e formatar o codigo PL/SQL, utilizando uma chamada ao servidor para processar o código e retornar uma versão formatada, que é então exibida no editor SQL.
@@ -898,12 +867,22 @@ function js_login_change_password() {
 }
 
 function js_login_connect() {
-    ajax("/db_execute", { "action": "connect", "usr": id_login_username.value, "pwd": id_login_password.value, "tns": id_login_database.value, "direct": id_login_direct.value }, async function (a) {
+    ajax("/db_execute", { 
+                    "action": "connect", 
+                    "usr": id_login_username.value, 
+                    "pwd": id_login_password.value, 
+                    "tns": id_login_database.value, 
+                    "direct": id_login_direct.value 
+            }, async function (a) {
         change_icon(false);
 
         if ( a.status_code == 0 ) {
-            await js_monta_tree();
+            ret1                        = global_var.tree_objects.montaArvoreDados(a.tree);
+            id_tree_obj.innerHTML       = ret1;
             id_login_form.style.display = "none";    
+            global_var.object_tables    = a.object_tables;
+            global_var.object_users     = a.object_users;
+
         } else {
             alert( a.status_msg );
         }
@@ -1488,11 +1467,10 @@ async function configuraAutoStart(configBip) {
         grid_find_objects: new TGrid("id_find_object_grid"),
         grid_view_sessions: new TGrid("id_view_sessions_grid"),
         grid_recall_sql: new TGrid("id_recall_sql_grid"),
-        tree_login: new TreeView(),
-        tree_objects: new TreeView(),
-        tree_templates: new TreeView(),
+        tree_login: new TreeView('log'),
+        tree_objects: new TreeView('obj'),
+        tree_templates: new TreeView('tem'),
         config_loaded: false,
-        cache: new LocalDB(),
         editorSQL: await createEditorSQL(sql_autostart),
         bip: configBip,
         last_output: ""

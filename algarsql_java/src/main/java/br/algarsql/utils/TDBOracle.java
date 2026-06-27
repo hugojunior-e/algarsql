@@ -186,14 +186,12 @@ public class TDBOracle extends DATABASE{
         prepareVars("", false);
         String ret = "";
         try {
-
             String sql = Constants.C_SQL_DML;
             if (db_is_direct) {
                 sql = Constants.C_SQL_DML_DIRECT;
             }
 
-            CallableStatement ps1 = this.con.prepareCall(
-                    sql.replaceAll("<1>", type).replaceAll("<2>", owner).replaceAll("<3>", name));
+            CallableStatement ps1 = this.con.prepareCall(sql.replaceAll("<1>", type).replaceAll("<2>", owner).replaceAll("<3>", name));
             ps1.registerOutParameter(1, java.sql.Types.CLOB);
             ps1.execute();
             status_code = 0;
@@ -214,7 +212,6 @@ public class TDBOracle extends DATABASE{
     @Override
     public String createProcedureTest(String obj) {
         try {
-
             String[] dat = obj.trim().toUpperCase().split("\\.");
 
             String v_name = "%";
@@ -323,6 +320,7 @@ public class TDBOracle extends DATABASE{
 
     @Override
     public void treeObjects() {
+        StringBuilder sb = new StringBuilder();
         this.tree_str = "";
         this.tree_tables.clear();
         this.tree_users.clear();
@@ -330,11 +328,15 @@ public class TDBOracle extends DATABASE{
         try {
             this.executeSelect(Constants.C_SQL_TREE, false, -2);
             while (this.rs.next()) {
-                String tree = this.rs.getString("OWNER") + "|" + this.rs.getString("OBJECT_TYPE") + "|"
-                        + this.rs.getString("OBJECT_NAME");
-                this.tree_str += tree + "\n";
-                if (this.rs.getString("OBJECT_TYPE").equals("TABLE")
-                        || this.rs.getString("OBJECT_TYPE").equals("VIEW")) {
+                sb.append( this.rs.getString("OWNER") )
+                    .append( "|" )
+                    .append( this.rs.getString("OBJECT_TYPE") )
+                    .append( "|"  )
+                    .append( this.rs.getString("OBJECT_NAME") )
+                    .append("\n");
+                //this.tree_str += tree + "\n";
+
+                if (this.rs.getString("OBJECT_TYPE").equals("TABLE") || this.rs.getString("OBJECT_TYPE").equals("VIEW")) {
                     this.tree_tables.add(this.rs.getString("OBJECT_NAME"));
                     this.tree_users.add(this.rs.getString("OWNER"));
                 }
@@ -343,6 +345,7 @@ public class TDBOracle extends DATABASE{
             // Handle exception
         }
 
+        this.tree_str = sb.toString();
         this.tree_users = this.tree_users.stream().distinct().sorted()
                 .collect(Collectors.toCollection(ArrayList::new));
     }
@@ -395,5 +398,21 @@ public class TDBOracle extends DATABASE{
 
         executeSelect(sql, false, -1);
     }      
+
+    // =========================================================================
+    // filterTableColumns
+    // =========================================================================    
+    
+    @Override
+    public void filterTableColumns(String type_object, String type_filter) {
+        prepareVars("",false);
+        String sql = String.format(Constants.C_SQL_ALL_TABLES_COLUMNS, type_filter);
+
+        if (type_object.contains("TABLE")) {
+            sql = String.format(Constants.C_SQL_ALL_TAB_COLUMNS, type_filter);
+        }
+        executeSelect(sql, false, -1);        
+    }    
+
 
 }

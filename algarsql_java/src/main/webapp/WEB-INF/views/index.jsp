@@ -410,15 +410,10 @@
                             <td></td>
                             <td><a href=# onclick="js_login_change_password()">Change user Password</a></td>
                         </tr>
-                        <tr>
-                            <td></td>
-                            <td><a href=# onclick="js_clear_cache()">Clear Cache Tree</a></td>
-                        </tr>
                     </table>
                 </div>
             </div>
         </div>
-
 
 
         <div id="id_div_compiler" class="div_modal_editor">
