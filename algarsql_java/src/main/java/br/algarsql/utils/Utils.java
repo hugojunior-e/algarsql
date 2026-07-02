@@ -7,6 +7,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import org.springframework.web.util.HtmlUtils;
 import oracle.dbtools.app.Format.Breaks;
 import oracle.dbtools.app.Format.BreaksX2;
@@ -18,6 +19,7 @@ import java.text.SimpleDateFormat;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -164,7 +166,7 @@ public class Utils {
             params = new String[] {"%", "%"};
         }
 
-        String fileConfig = generateFileName(username + ".db", false);
+        String fileConfig = generateFileName(username.toLowerCase() + ".db", false);
         if (!new File(fileConfig).exists()) {
             return "";
         }
@@ -186,6 +188,51 @@ public class Utils {
                 }
                 return rows;
             }
+
+            if ("SQL_WORKDATA_LOAD".equals(tag)) {
+                HashMap<String, Object> ret = new HashMap<>();
+
+                String db_file = generateFileName(username.toLowerCase() + "_database.db", true);
+
+                if (!new File(db_file).exists()) {
+                    ret.put("data", new ArrayList<>());
+                    ret.put("columns", new ArrayList<>());
+                    ret.put("columns_types", new ArrayList<>());
+                    return ret;
+                }
+
+                Connection conn2 = DriverManager.getConnection("jdbc:sqlite:" + db_file);
+                Statement st2 = conn2.createStatement();
+                ResultSet rs2 = st2.executeQuery("SELECT * FROM dados LIMIT 10");
+                ResultSetMetaData md = rs2.getMetaData();
+                int columnCount = md.getColumnCount();
+                List<Map<String, String>> rows = new ArrayList<>();
+                List<String> columnNames = new ArrayList<>();
+                List<String> columnTypes = new ArrayList<>();
+                int flag = 0;
+                while (rs2.next()) {
+                    Map<String, String> row = new LinkedHashMap<>();
+                    for (int i = 1; i <= columnCount; i++) {
+                        String columnName = md.getColumnLabel(i);
+                        String value = rs2.getString(i);
+                        row.put(columnName, value);
+                        if (flag == 0) {
+                            columnNames.add(columnName);
+                            columnTypes.add(md.getColumnTypeName(i));
+                        }
+                    }
+                    flag = 1;
+                    rows.add(row);
+                }
+
+                rs2.close();
+                st2.close();
+                conn2.close();
+                ret.put("data", rows);
+                ret.put("columns", columnNames);
+                ret.put("columns_types", columnTypes);
+                return ret;
+            }            
 
             if ("SQL_TEMPLATES".equals(tag)) {
                 ResultSet rs = st.executeQuery("select * from sql_templates where node like '" + params[0] + "' order by node");
@@ -226,7 +273,7 @@ public class Utils {
 
     public static void configSave(String tagName, Object tagValue, String tipo, String username) {
 
-        String fileConfig = generateFileName(username + ".db", false);
+        String fileConfig = generateFileName(username.toLowerCase() + ".db", false);
 
         try {
             Connection conn = DriverManager.getConnection("jdbc:sqlite:" + fileConfig);
@@ -294,6 +341,7 @@ public class Utils {
             e.printStackTrace();
         }
     }
+
 
     // ==========================================================================================
     //

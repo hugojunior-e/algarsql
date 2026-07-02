@@ -13,7 +13,6 @@
         <script src="/js/funcs.js"></script>
         <script src="/js/tree.js"></script>
         <script src="/js/grid.js"></script>
-        <script src="/js/localdb.js"></script>
         <script src="/js/timer.js"></script>
     </head>
 
@@ -60,9 +59,9 @@
 
             <span class="separator"></span>
 
-            <button onclick="js_csv_completer_form()" class="tooltip">
-                <span class="tooltiptext">Csv Completer</span>
-                <img src="/imgs/csv.png">
+            <button onclick="js_workdata_form()" class="tooltip">
+                <span class="tooltiptext">Workdata Model</span>
+                <img src="/imgs/importar.png">
             </button>
 
             <button onclick="js_preferences_form()" class="tooltip">
@@ -117,7 +116,7 @@
 
                     <!-- GRID RESULTADO -->
                     <div class="grid">
-                        <table id="id_grid_dados"></table>
+                        <table id="id_grid_dados" title="Dbl Click to Edit"></table>
                         <div id="id_dbms_output" style="display: none;">
                             <pre id="id_dbms_output_data" style="padding: 0 10px;"></pre>
                         </div>
@@ -211,41 +210,76 @@
 
 
         <!--
-        FORM CSV COMPLETER
+        FORM WORKDATA
         -->
-        <div id="id_csv_completer_form" class="itools_modal">
-            <div class="dialog" style="width:1000px">
+        <div id="id_workdata_form" class="itools_modal">
+            <div class="dialog" style="width:1000px;height: 550px;">
                 <div class="header">
-                    <span>CSV Completer</span>
+                    <span>Workdata Model</span>
                     <button class="close-btn"
                         onclick="this.parentElement.parentElement.parentElement.style.display='none'">&times;</button>
                 </div>
                 <div class="content">
-                    <table>
-                        <tr>
-                            <td>Options?</td>
-                            <td><select id="id_csv_completer_options">
-                                    <option value="true" selected>Use first line as titles</option>
-                                    <option value="false">Don't use first line as titles</option>
-                                </select></td>
-                        </tr>
-                        <tr>
-                            <td>File Name:</td>
-                            <td><input type="file" id="id_csv_completer_filename"></td>
-                        </tr>
-                        <tr>
-                            <td>Query data Completer:</td>
-                            <td><textarea id="id_csv_completer_query" spellcheck="false"
-                                    style="height:200px"></textarea>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td></td>
-                            <td><button onclick="js_csv_completer_execute()">Execute</button>
-                                <pre id="id_csv_completer_status">-</pre>
-                            </td>
-                        </tr>
-                    </table>
+
+
+                    <div class="tabs">
+                        <div class="tab-btn active" tag="1" onclick="showTab(this)">
+                            CSV Completer
+                        </div>
+
+                        <div class="tab-btn" tag="2" onclick="showTab(this)">
+                            Import Data
+                        </div>
+                    </div>
+
+                    <div tag="tab1" class="tab-content active">
+                            <table>
+                                <tr>
+                                    <td>Options?</td>
+                                    <td><select id="id_csv_completer_options">
+                                            <option value="true" selected>Use first line as titles</option>
+                                            <option value="false">Don't use first line as titles</option>
+                                        </select></td>
+                                </tr>
+                                <tr>
+                                    <td>File Name:</td>
+                                    <td><input type="file" id="id_csv_completer_filename"></td>
+                                </tr>
+                                <tr>
+                                    <td>Query data Completer:</td>
+                                    <td><textarea id="id_csv_completer_query" spellcheck="false"
+                                            style="height:200px"></textarea>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td></td>
+                                    <td><button onclick="js_csv_completer_execute()">Execute</button>
+                                        <pre id="id_csv_completer_status">-</pre>
+                                    </td>
+                                </tr>
+                            </table>
+                    </div>
+
+                    <div tag="tab2" class="tab-content">
+                            <table width="100%">
+                                <tr>
+                                    <td width="100"><button onclick="js_workdata_import_view()">View Data</button></td>
+                                    <td><textarea id="id_workdata_import_query" spellcheck="false"
+                                            style="width:700px;height:50px">insert into ddx values ( <account_no> )</textarea></td>
+                                    <td width="100"><button onclick="js_workdata_import_populate()">Populate</button></td>
+                                </tr>
+                            </table>
+                            <div class="grid">
+                                <table id="id_workdata_import_grid">
+                                </table>
+                            </div>
+                            <div id="id_workdata_import_grid_pager" class="pager"></div>
+                            <span id="id_workdata_import_status">-</span>
+                        </pre>
+                    </div>
+
+
+
                 </div>
             </div>
         </div>
@@ -339,7 +373,6 @@
                     </div>
 
                     <button onclick="js_preferences_save()">Save</button>
-                    <a href="#" onclick="js_preferences_load_tns()">Load tnsnames.ora</a>
                 </div>
             </div>
         </div>

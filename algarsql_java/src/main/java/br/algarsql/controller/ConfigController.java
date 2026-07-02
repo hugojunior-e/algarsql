@@ -1,15 +1,10 @@
 package br.algarsql.controller;
 
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
@@ -40,74 +35,6 @@ public class ConfigController {
 
         
         ret.put("newcode", newCode);
-        return ret;
-    }
-
-
-    // ==========================================================================================
-    //
-    // ==========================================================================================
-
-    @RequestMapping(value = "/config_tnsnames", method = {RequestMethod.GET, RequestMethod.POST})
-    public Map<String, Object> configTnsnames() {
-        String fp = System.getenv().getOrDefault("TNS_ADMIN", "/algar");
-        String caminho = Paths.get(fp, "tnsnames.ora").toString();
-        List<String> results = new ArrayList<>();
-
-        results.add("File " + caminho + " not found.");
-        File file = new File(caminho);
-
-        if (file.exists()) {
-            try {
-
-                String content = Files.readString(file.toPath());
-                // ---------------------------------------------------------
-                // Remove comentários
-                // ---------------------------------------------------------
-
-                content = content.replaceAll("#.*", "");
-
-                // ---------------------------------------------------------
-                // Junta tudo em uma linha
-                // ---------------------------------------------------------
-
-                content = content.replaceAll("\\s+", " ");
-                content = content.trim().replace(" ", "");
-
-                // ---------------------------------------------------------
-                // Regex
-                // ---------------------------------------------------------
-
-                Pattern pattern = Pattern.compile(
-                        "(\\w+)\\s*=\\s*\\(DESCRIPTION=.*?" + "HOST\\s*=\\s*([^)]+).*?"
-                                + "PORT\\s*=\\s*(\\d+).*?"
-                                + "(SERVICE_NAME|SID)\\s*=\\s*([^)]+).*?\\)",
-                        Pattern.CASE_INSENSITIVE);
-
-                Matcher matcher = pattern.matcher(content);
-
-                results.clear();
-
-                while (matcher.find()) {
-
-                    String alias = matcher.group(1);
-                    String host = matcher.group(2);
-                    String port = matcher.group(3);
-                    String service = matcher.group(5);
-
-                    String formatted =
-                            String.format("%-35s | %s:%s/%s", alias, host, port, service);
-
-                    results.add(formatted);
-                }
-
-            } catch (Exception e) {
-                results.clear();
-                results.add(e.getMessage());
-            }
-        }
-        Map<String, Object> ret = new HashMap<>();
-        ret.put("tns_names", String.join("\n", results));
         return ret;
     }
 
@@ -211,4 +138,34 @@ public class ConfigController {
         ret.put("columns_types", List.of("DATETIME", "STRING", "STRING"));
         return ret;
     }
+
+
+
+// ==========================================================================================
+    //
+    // ==========================================================================================
+
+    @SuppressWarnings("unchecked")
+    @RequestMapping(value = "/config_workdata_load", method = {RequestMethod.GET, RequestMethod.POST})
+    public Map<String, Object> configWorkdataLoad(HttpServletResponse response,HttpServletRequest request,HttpSession session) throws Exception {
+
+        Map<String, Object> ret = new HashMap<>();
+        Object o = session.getAttribute("username");
+        if ( o == null ) {
+            response.setStatus(401);
+            ret.put("redirect", Constants.PAGE_LOGIN);
+            return ret;
+        }
+        String u = o.toString();
+
+
+        Object dadosBrutosObj = Utils.configValue("SQL_WORKDATA_LOAD", new String[] {}, u);
+        Map<String, Object> dados = (Map<String, Object>) dadosBrutosObj;
+
+        ret.put("data", dados.get("data"));
+        ret.put("columns", dados.get("columns"));
+        ret.put("columns_types", dados.get("columns_types"));
+        return ret;
+    }
+    
 }

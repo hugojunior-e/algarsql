@@ -72,12 +72,20 @@ function copyToClip(texto) {
 }
 
 function toSingleTable(dat) {
-    let html = '<table>';
+    const table = document.createElement("table");
     for (const [key, value] of Object.entries(dat)) {
-        html += `<tr><td>${key}</td><td><pre>${value}</pre></td></tr>`;            
+        const tr = document.createElement("tr");
+        const tdKey = document.createElement("td");
+        tdKey.textContent = key;
+        const tdValue = document.createElement("td");
+        const pre = document.createElement("pre");
+        pre.textContent = value == null ? "" : String(value);
+        tdValue.appendChild(pre);
+        tr.appendChild(tdKey);
+        tr.appendChild(tdValue);
+        table.appendChild(tr);
     }
-    html += '</table>';
-    return html;
+    return table.outerHTML;
 }
 
 
@@ -102,6 +110,19 @@ function showTab(btn) {
     bloco.querySelectorAll('div[tag="tab' + btn.getAttribute('tag') + '"]').forEach(t => t.classList.add('active'));
     btn.classList.add('active');
 }
+
+
+function toChar(date, mask = 'DD/MM/YYYY HH24:MI:SS') {
+    const pad = n => String(n).padStart(2, '0');
+    return mask
+        .replace('DD', pad(date.getDate()))
+        .replace('MM', pad(date.getMonth() + 1))
+        .replace('YYYY', date.getFullYear())
+        .replace('HH24', pad(date.getHours()))
+        .replace('MI', pad(date.getMinutes()))
+        .replace('SS', pad(date.getSeconds()));
+}
+
 
 /*
     ==========================================================================================------------------------------------ 
@@ -583,6 +604,30 @@ function js_global_thread_status(id_logger, id_logger_text) {
     ==========================================================================================------------------------------------
 */
 
+function js_workdata_import_populate() {
+    if ( confirm('Populate workdata model with this query?') ) {
+        ajax("/db_execute", { "action" : "workdata_import", "sql"    : id_workdata_import_query.value }, 
+                function (a) {
+                    js_global_thread_status(id_workdata_form, id_workdata_import_status);
+                }
+        );    
+    }
+}
+
+function js_workdata_import_view() {
+    ajax("/config_workdata_load", {}, function (a) {
+        global_var.grid_workdata_import.setContent(
+            a.data,
+            a.columns,
+            a.columns_types,
+            100,
+            []
+        );
+        global_var.grid_workdata_import.desenharTabela();
+    }, null, false);    
+}
+
+
 async function js_csv_completer_execute() {
 
     const input = document.getElementById("id_csv_completer_filename");
@@ -600,12 +645,12 @@ async function js_csv_completer_execute() {
     console.log(content);
 
     ajax("/db_execute", formData, function (a) {
-        js_global_thread_status(id_csv_completer_form, id_csv_completer_status);
+        js_global_thread_status(id_workdata_form, id_csv_completer_status);
     }, null, false);
 }
 
-function js_csv_completer_form() {
-    id_csv_completer_form.style.display = "flex";
+function js_workdata_form() {
+    id_workdata_form.style.display = "flex";
 }
 
 
@@ -804,12 +849,6 @@ function js_recall_sql_form() {
     ==========================================================================================------------------------------------
 */
 
-function js_preferences_load_tns() {
-    ajax("/config_tnsnames", {}, function (a) { 
-        js_window_popup("TNS Names", a.tns_names);
-    });
-}
-
 function js_preferences_form(x  = "flex") {
     ajax("/config_get", {}, function (a) {
         id_preferences_tns.value = a.tns;
@@ -874,17 +913,17 @@ function js_login_connect() {
                     "tns": id_login_database.value, 
                     "direct": id_login_direct.value 
             }, async function (a) {
-        change_icon(false);
-
         if ( a.status_code == 0 ) {
             ret1                        = global_var.tree_objects.montaArvoreDados(a.tree);
             id_tree_obj.innerHTML       = ret1;
+            id_tree_obj.index           = 0;
             id_login_form.style.display = "none";    
             global_var.object_tables    = a.object_tables;
             global_var.object_users     = a.object_users;
-
+            change_icon(false);
         } else {
             alert( a.status_msg );
+            change_icon();
         }
     });
 }
@@ -943,7 +982,7 @@ function js_db_grid_editrow(row, columns, columns_types) {
     columns.forEach((c, idx) => {
         if (idx === 0) return;
 
-        if (c == "ROWID") {
+        if ( c.toUpperCase() == "ROWID" ) {
             container.rowid = row.cells[idx].value;
             id_edit_row_bt_save.style.display = '';
         } else {
@@ -1074,11 +1113,9 @@ function js_db_execute() {
         global_var.tm_elapsed.stop();
 
         global_var.last_output = toSingleTable({
-            "status_code" : a.status_code,
-            "status_msg"  : a.status_msg,
-            "dbms_output" : a.dbms,
-            "timestamp"   : Date(),
-            "sql"         : sql
+            "status" : `${a.status_code} - ${a.status_msg}`,
+            "output" : a.dbms,
+            "sql"    : sql
         });
 
         if ( a.status_code != 0 ) {
@@ -1467,6 +1504,7 @@ async function configuraAutoStart(configBip) {
         grid_find_objects: new TGrid("id_find_object_grid"),
         grid_view_sessions: new TGrid("id_view_sessions_grid"),
         grid_recall_sql: new TGrid("id_recall_sql_grid"),
+        grid_workdata_import: new TGrid("id_workdata_import_grid"),
         tree_login: new TreeView('log'),
         tree_objects: new TreeView('obj'),
         tree_templates: new TreeView('tem'),

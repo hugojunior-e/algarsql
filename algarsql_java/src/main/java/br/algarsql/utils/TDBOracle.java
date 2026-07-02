@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
+import java.util.TreeSet;
 import oracle.jdbc.OracleConnection;
 import oracle.jdbc.OracleTypes;
 
@@ -73,13 +73,13 @@ public class TDBOracle extends DATABASE{
     // =========================================================================
 
     @Override
-    public void executeStatement(String p_sql, boolean logger, Object[] p_bind_values, boolean direct) {
+    public void executeStatement(String p_sql, boolean logger, Object[] p_bind_values) {
         prepareVars(p_sql, logger);
 
         try {
             this.is_running = true;
 
-            if (direct || this.db_is_direct) {
+            if (this.db_is_direct) {
                 PreparedStatement cur1 = con.prepareStatement(p_sql);
                 if (p_bind_values != null && p_bind_values.length > 0) {
                     for (int i = 0; i < p_bind_values.length; i++) {
@@ -320,34 +320,40 @@ public class TDBOracle extends DATABASE{
 
     @Override
     public void treeObjects() {
-        StringBuilder sb = new StringBuilder();
-        this.tree_str = "";
-        this.tree_tables.clear();
-        this.tree_users.clear();
+        StringBuilder sb = new StringBuilder(64 * 1024);
+
+        tree_str = "";
+        tree_tables = new ArrayList<>();
+        TreeSet<String> users = new TreeSet<>();
 
         try {
-            this.executeSelect(Constants.C_SQL_TREE, false, -2);
-            while (this.rs.next()) {
-                sb.append( this.rs.getString("OWNER") )
-                    .append( "|" )
-                    .append( this.rs.getString("OBJECT_TYPE") )
-                    .append( "|"  )
-                    .append( this.rs.getString("OBJECT_NAME") )
-                    .append("\n");
-                //this.tree_str += tree + "\n";
+            executeSelect(Constants.C_SQL_TREE, false, -2);
 
-                if (this.rs.getString("OBJECT_TYPE").equals("TABLE") || this.rs.getString("OBJECT_TYPE").equals("VIEW")) {
-                    this.tree_tables.add(this.rs.getString("OBJECT_NAME"));
-                    this.tree_users.add(this.rs.getString("OWNER"));
+            while (rs.next()) {
+
+                String owner = rs.getString("OWNER");
+                String type  = rs.getString("OBJECT_TYPE");
+                String name  = rs.getString("OBJECT_NAME");
+
+                sb.append(owner)
+                .append('|')
+                .append(type)
+                .append('|')
+                .append(name)
+                .append('\n');
+
+                if ("TABLE".equals(type) || "VIEW".equals(type)) {
+                    tree_tables.add(name);
+                    users.add(owner);
                 }
             }
+
         } catch (Exception e) {
-            // Handle exception
+            // tratar
         }
 
-        this.tree_str = sb.toString();
-        this.tree_users = this.tree_users.stream().distinct().sorted()
-                .collect(Collectors.toCollection(ArrayList::new));
+        tree_str = sb.toString();
+        tree_users = new ArrayList<>(users);
     }
 
     // =========================================================================

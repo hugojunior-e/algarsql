@@ -60,7 +60,9 @@ class TGrid {
 
     selectColumn(colIndex, th) {
         if (colIndex == -1) {
-            this.tabela.querySelectorAll("td.th_selected").forEach(td => td.classList.remove("th_selected"));
+            this.tabela.querySelectorAll("td").forEach(td => {
+                td.classList.remove("th_selected");
+            });
             return;
         }
         if (colIndex == 0) {
@@ -70,19 +72,26 @@ class TGrid {
             });
             return;
         }
-        this.tabela.querySelectorAll("tr")
-            .forEach( (c, idx) => {
-                if (idx == 0) return; // pula header
-                if ( th.selected ) {
-                    c.cells[colIndex].classList.remove("th_selected");
-                } else {
-                    c.cells[colIndex].classList.add("th_selected");
 
-                }
+        this.tabela.querySelectorAll("tr").forEach( (c, idx) => {
+                if (idx == 0) return;
+                c.cells[colIndex].classList.add("th_selected");
             });
-        th.selected = !th.selected;
+
         this.generateStats();        
     }
+
+
+    selectRow(coluna) {
+        var t = 0;
+        for (const td of coluna.parentElement.cells) {
+            if ( t > 0 ) {
+                td.classList.add("th_selected");
+            }
+            t = 1;
+        }
+    }
+
 
     configuraResize(th, resizer) {
         let startX;
@@ -174,14 +183,15 @@ class TGrid {
         linhas.forEach((linha, idx) => {
             const tr = tbody.insertRow();
 
+            tr.ondblclick = () => js_db_grid_editrow(tr, this.columns, this.columns_types);
+            
+
             // ROWNUM botao
             const tdRownum = tr.insertCell();
             const rownum = inicio + idx + 1;
             tdRownum.innerHTML = rownum;
-            if (this.options.edit) {
-                tdRownum.style.cursor = 'pointer';
-                tdRownum.onclick = () => js_db_grid_editrow(tr, this.columns, this.columns_types);
-            }
+            tdRownum.selected  = false;
+            tdRownum.onclick   = (e) => this.selectRow(tdRownum); //js_db_grid_editrow(tr, this.columns, this.columns_types);
 
             // Cria células a partir das chaves especificadas em colunasSemRownum
             this.colunasSemRownum.forEach((col, idx_td) => {
@@ -275,7 +285,7 @@ class TGrid {
         this.pager.appendChild(this.btnNext);
 
         if (this.options.export) {
-            ["insert", "csv", "excel", "copy"].forEach((txt, i) => {
+            ["insert", "csv", "excel","db","copy"].forEach((txt, i) => {
                 const btn = document.createElement("button");
                 btn.textContent = txt;
                 if ( txt == "copy" ) {
@@ -331,6 +341,10 @@ class TGrid {
         this.tabela.addEventListener("mousedown", (e) => {
             const td = e.target.closest("td");
             if (!td /*|| !e.ctrlKey*/) return;
+
+            // Não inicia seleção por arraste na coluna de seleção
+            if (td.cellIndex === 0) return;
+
             selecting = true;
             startCell = td;
             td.classList.add("th_selected");

@@ -11,11 +11,17 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 public abstract class DATABASE {
 
@@ -50,7 +56,7 @@ public abstract class DATABASE {
     public String dbms_output = "";
     public String username = "";
     public String sql_session = "";
-    DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+    SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
 
     public boolean is_running = false;
 
@@ -130,8 +136,8 @@ public abstract class DATABASE {
             return "null";
         }
 
-        if (v instanceof java.util.Date) {
-            return "to_date('" + v + "','YYYY-MM-DD HH24:MI:SS')";
+        if (v instanceof java.util.Date || v instanceof java.sql.Date || v instanceof java.sql.Timestamp) {
+            return "to_date('" + sdf.format(v).replaceAll("/", "-") + "','DD-MM-YYYY HH24:MI:SS')";
         }
         return "'" + v.toString().replace("'", "''") + "'";
     }
@@ -250,7 +256,7 @@ public abstract class DATABASE {
     // executeStatement
     // =========================================================================
 
-    public abstract void executeStatement(String p_sql, boolean logger, Object[] p_bind_values, boolean direct);
+    public abstract void executeStatement(String p_sql, boolean logger, Object[] p_bind_values);
 
     // =========================================================================
     // SELECT
@@ -282,7 +288,7 @@ public abstract class DATABASE {
             ResultSetMetaData md = rs.getMetaData();
 
             for (int i = 1; i <= md.getColumnCount(); i++) {
-                col_names.add(md.getColumnName(i));
+                col_names.add(md.getColumnLabel(i));
                 col_types.add(md.getColumnTypeName(i));
             }
 
@@ -335,17 +341,17 @@ public abstract class DATABASE {
                         Blob blob = (Blob) value;
                         value = new String(blob.getBytes(1, (int) blob.length()));
                     }
-                } else if (value instanceof java.sql.Timestamp) {
-                    value = fmt.format(rs.getTimestamp(i).toLocalDateTime());
+                } else if (value instanceof java.sql.Timestamp || value instanceof java.sql.Date || value instanceof java.util.Date) {
+                    value = sdf.format(value); 
                 } else {
                     value = value.toString();
                 }
-                novo.put(md.getColumnName(i), value);
+                novo.put(md.getColumnLabel(i), value);
             }
             col_data.add(novo);
 
             if (count >= fetchSize && fetchSize != -1) {
-                break;
+                return;
             }
         }
         this.rs.close();
@@ -401,5 +407,73 @@ public abstract class DATABASE {
     // =========================================================================
 
     public abstract void filterTableColumns(String type_object, String type_filter);
+
+
+
+    // =========================================================================
+    // executeUpdateFromPrimaryKey
+    // =========================================================================
+        
+
+    public void executeUpdateFromPrimaryKey(String rowid, String sql, String json_items)
+            throws Exception {
+
+        String tableName = "";
+        String pkName    = "ROWID";
+
+        Pattern p = Pattern.compile("\\bfrom\\s+([a-zA-Z0-9_]+(?:\\.[a-zA-Z0-9_]+)?)",Pattern.CASE_INSENSITIVE);
+        Matcher m = p.matcher(sql);
+
+        if (m.find()) {
+            tableName = m.group(1);
+        } 
+        
+        p = Pattern.compile("(?i)\\b(?:\\w+\\.)?(\\w+)\\s+(?:AS\\s+)?ROWID\\b");
+        m = p.matcher(sql);
+
+        if (m.find()) {
+            pkName = m.group(1);
+        }
+
+                
+        ObjectMapper mapper = new ObjectMapper();
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> dados = mapper.readValue(json_items, Map.class);
+
+        ArrayList<Object> params = new ArrayList<>();
+        String set_clause = "";
+        for (Map.Entry<String, Object> entry : dados.entrySet()) {
+            String fn = entry.getKey();
+
+            if (!fn.startsWith("@")) {
+                String ft = dados.get("@" + fn).toString();
+                Object fv = entry.getValue();
+
+                if ( fv == null || fv.toString().isEmpty()) {
+                    fv = null;
+                }
+                else if (ft.contains("DATE")) {
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+                    LocalDate localDate = LocalDate.parse(fv.toString(), formatter);
+                    fv = java.sql.Date.valueOf(localDate);
+                } else if (ft.contains("LOB")) {
+                    fv = this.createOracleLob(fv.toString(), ft.contains("BLOB"));
+                }
+                HashMap<String, Object> obj = new HashMap<>();
+                obj.put("name", fn);
+                obj.put("value", fv);
+
+                params.add(obj);
+                set_clause += fn + " = :" + fn + ", ";
+            }
+        }
+        set_clause = set_clause.substring(0, set_clause.length() - 2);
+
+        //String SQL_UPDATE_AUX = "UPDATE (" + sql + ") SET " + set_clause + " WHERE ROWID = '" + rowid + "'";
+        String SQL_UPDATE_AUX = "UPDATE " + tableName + " SET " + set_clause + " WHERE " + pkName + " = '" + rowid + "'";
+
+        this.executeStatement(SQL_UPDATE_AUX, false, params.toArray());
+    }    
 
 }

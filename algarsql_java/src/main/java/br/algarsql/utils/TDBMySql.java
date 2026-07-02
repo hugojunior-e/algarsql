@@ -20,7 +20,7 @@ public class TDBMySql extends DATABASE {
     }
 
     @Override
-    public void executeStatement(String p_sql, boolean logger, Object[] p_bind_values, boolean direct) {
+    public void executeStatement(String p_sql, boolean logger, Object[] p_bind_values) {
         throw new UnsupportedOperationException("Unimplemented method 'executeStatement'");
     }
 

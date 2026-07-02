@@ -10,6 +10,7 @@ class TreeView {
         this.mais = "➕";
         this.isPopupMenuPrepared = false;
         this.clickedLink = null;
+        this.children = new Map();
     }
 
 
@@ -51,6 +52,15 @@ class TreeView {
     montaArvoreDados(arrNodes, startNode = 0, openNode = null) {
         this.treeBuffer = [];
         this.nodes = this.parseCsvToTreeArray(arrNodes);
+
+        this.children = new Map();
+
+        for (const node of this.nodes) {
+            if (!this.children.has(node.parent)) {
+                this.children.set(node.parent, []);
+            }
+            this.children.get(node.parent).push(node);
+        }        
 
         this.openNodes = [];
 
@@ -117,31 +127,24 @@ class TreeView {
         return this.openNodes.includes(node);
     }
 
-    hasChildNode(parentNode) {
-        return this.nodes.some(n => n.parent == parentNode);
-    }
-
     lastSibling(node, parentNode) {
-        let lastChild = 0;
-        for (let i = 0; i < this.nodes.length; i++) {
-            if (this.nodes[i].parent == parentNode) {
-                lastChild = this.nodes[i].id;
-            }
-        }
-        return lastChild == node;
+        const children = this.children.get(parentNode);
+        return children[children.length - 1].id === node;        
     }
 
     addNode(parentNode, recursedNodes) {
-        for (let i = 0; i < this.nodes.length; i++) {
-            
-            const x = this.nodes[i]
-            const nodeValues = [ x.id, x.parent, x.name, x.link ]; //this.nodes[i].split("|");
+        const children = this.children.get(parentNode);
+        if (!children) return;
+
+        for (const x of children) {
+
+            const nodeValues = [ x.id, x.parent, x.name, x.link ];
 
             if (nodeValues[1] == parentNode) {
                 this.writeTreeString("<span>");
 
                 const ls = this.lastSibling(nodeValues[0], nodeValues[1]);
-                const hcn = this.hasChildNode(nodeValues[0]);
+                const hcn = this.children.has(nodeValues[0]);
                 const ino = this.isNodeOpen(nodeValues[0]);
 
                 // linhas do layout

@@ -418,7 +418,6 @@ button:disabled {
 .tab-btn.active {
     background: #8f1e1e;
     color: white;
-    border-top: 2px solid #007acc;
     font-weight: bold;
 }
 
