@@ -108,20 +108,20 @@
 
             <!-- PAINEL DIREITO -->
             <div class="right">
-                    <!-- CONTAINER DO MONACO -->
-                    <div id="editor-container"></div>
+                <!-- CONTAINER DO MONACO -->
+                <div id="editor-container"></div>
 
-                    <!-- SPLITTER HORIZONTAL -->
-                    <div class="splitter-horizontal" id="hsplit"></div>
+                <!-- SPLITTER HORIZONTAL -->
+                <div class="splitter-horizontal" id="hsplit"></div>
 
-                    <!-- GRID RESULTADO -->
-                    <div class="grid">
-                        <table id="id_grid_dados" title="Dbl Click to Edit"></table>
-                        <div id="id_dbms_output" style="display: none;">
-                            <pre id="id_dbms_output_data" style="padding: 0 10px;"></pre>
-                        </div>
+                <!-- GRID RESULTADO -->
+                <div class="grid">
+                    <table id="id_grid_dados" title="Dbl Click to Edit"></table>
+                    <div id="id_dbms_output" style="display: none;">
+                        <pre id="id_dbms_output_data" style="padding: 0 10px;"></pre>
                     </div>
-                    <div id="id_grid_dados_pager"></div>
+                </div>
+                <div id="id_grid_dados_pager"></div>
             </div>
         </div>
 
@@ -233,53 +233,50 @@
                     </div>
 
                     <div tag="tab1" class="tab-content active">
-                            <table>
-                                <tr>
-                                    <td>Options?</td>
-                                    <td><select id="id_csv_completer_options">
-                                            <option value="true" selected>Use first line as titles</option>
-                                            <option value="false">Don't use first line as titles</option>
-                                        </select></td>
-                                </tr>
-                                <tr>
-                                    <td>File Name:</td>
-                                    <td><input type="file" id="id_csv_completer_filename"></td>
-                                </tr>
-                                <tr>
-                                    <td>Query data Completer:</td>
-                                    <td><textarea id="id_csv_completer_query" spellcheck="false"
-                                            style="height:200px"></textarea>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td></td>
-                                    <td><button onclick="js_csv_completer_execute()">Execute</button>
-                                        <pre id="id_csv_completer_status">-</pre>
-                                    </td>
-                                </tr>
-                            </table>
+                        <table>
+                            <tr>
+                                <td>Options?</td>
+                                <td><select id="id_csv_completer_options">
+                                        <option value="true" selected>Use first line as titles</option>
+                                        <option value="false">Don't use first line as titles</option>
+                                    </select></td>
+                            </tr>
+                            <tr>
+                                <td>File Name:</td>
+                                <td><input type="file" id="id_csv_completer_filename"></td>
+                            </tr>
+                            <tr>
+                                <td>Query data Completer:</td>
+                                <td><textarea id="id_csv_completer_query" spellcheck="false"
+                                        style="height:200px;resize: none;"></textarea>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td></td>
+                                <td><button onclick="js_csv_completer_execute()">Execute</button>
+                                    <pre id="id_csv_completer_status">-</pre>
+                                </td>
+                            </tr>
+                        </table>
                     </div>
 
                     <div tag="tab2" class="tab-content">
-                            <table width="100%">
-                                <tr>
-                                    <td width="100"><button onclick="js_workdata_import_view()">View Data</button></td>
-                                    <td><textarea id="id_workdata_import_query" spellcheck="false"
-                                            style="width:700px;height:50px">insert into ddx values ( <account_no> )</textarea></td>
-                                    <td width="100"><button onclick="js_workdata_import_populate()">Populate</button></td>
-                                </tr>
+                        <table width="100%">
+                            <tr>
+                                <td width="100"><button onclick="js_workdata_import_view()">View Data</button></td>
+                                <td><textarea id="id_workdata_import_query" spellcheck="false"
+                                        style="width:700px;height:100px;resize: none;">insert into ddx values ( <account_no> )</textarea>
+                                </td>
+                                <td width="100"><button onclick="js_workdata_import_populate()">Populate</button></td>
+                            </tr>
+                        </table>
+                        <div class="grid">
+                            <table id="id_workdata_import_grid">
                             </table>
-                            <div class="grid">
-                                <table id="id_workdata_import_grid">
-                                </table>
-                            </div>
-                            <div id="id_workdata_import_grid_pager" class="pager"></div>
-                            <span id="id_workdata_import_status">-</span>
-                        </pre>
+                        </div>
+                        <div id="id_workdata_import_grid_pager" class="pager"></div>
+                        <span id="id_workdata_import_status">-</span>
                     </div>
-
-
-
                 </div>
             </div>
         </div>
@@ -346,11 +343,13 @@
                     </div>
 
                     <div tag="tab1" class="tab-content active">
-                        <textarea id="id_preferences_tns" spellcheck="false"></textarea>
+                        <textarea id="id_preferences_tns" spellcheck="false"
+                            style="height: 290px;resize: none;"></textarea>
                     </div>
 
                     <div tag="tab2" class="tab-content">
-                        <textarea id="id_preferences_tns_saved" spellcheck="false"></textarea>
+                        <textarea id="id_preferences_tns_saved" spellcheck="false"
+                            style="height: 290px;resize: none;"></textarea>
                     </div>
                     <div tag="tab3" class="tab-content">
                         <table>
@@ -368,11 +367,12 @@
                                         <option value="1">Yes</option>
                                         <option value="0">No</option>
                                     </select></td>
-                            </tr>                            
+                            </tr>
                         </table>
                     </div>
 
                     <button onclick="js_preferences_save()">Save</button>
+                    <a href=# onclick="js_preferences_tnsnames()">Load tnsnames.ora</a>
                 </div>
             </div>
         </div>
@@ -460,8 +460,8 @@
             <div class="popup-item" tag=delete>Delete</div>
             <div class="popup-item" tag=rename>Rename</div>
             <div class="popup-item" tag=moveto>Move to</div>
-        </div>     
-        
+        </div>
+
         <div id="id_tooltip"></div>
 
 

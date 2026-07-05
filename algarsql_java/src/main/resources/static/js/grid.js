@@ -191,8 +191,7 @@ class TGrid {
             const rownum = inicio + idx + 1;
             tdRownum.innerHTML = rownum;
             tdRownum.selected  = false;
-            tdRownum.onclick   = (e) => this.selectRow(tdRownum); //js_db_grid_editrow(tr, this.columns, this.columns_types);
-
+            tdRownum.onclick   = (e) => this.selectRow(tdRownum);
             // Cria células a partir das chaves especificadas em colunasSemRownum
             this.colunasSemRownum.forEach((col, idx_td) => {
                 const td = tr.insertCell();
@@ -222,7 +221,7 @@ class TGrid {
                     link.href = '#';
                     link.onclick = (e) => {
                         e.preventDefault(); 
-                        js_window_popup('VIEW CELL', td.value)
+                        js_window_popup('VIEW CELL - ' + this.columns_types[idx_td], td.value)
                     };
                     td.appendChild(link);                    
                 }
@@ -264,8 +263,22 @@ class TGrid {
         btnPrev.onclick     = () => { this.paginaAtual--; this.desenharTabela(); };
         this.pager.appendChild(btnPrev);
 
-        const info = document.createElement("span");
+        const info = document.createElement("a");
         info.textContent = ` Page ${this.paginaAtual} / ${this.totalPaginas} `;
+        info.href = "#";
+        info.onclick = (e) => { 
+            e.preventDefault(); 
+            const pagina = prompt(`Enter page number (1-${this.totalPaginas}):`, this.paginaAtual);
+            if (pagina !== null) {
+                const paginaNum = parseInt(pagina, 10);
+                if (!isNaN(paginaNum) && paginaNum >= 1 && paginaNum <= this.totalPaginas) {
+                    this.paginaAtual = paginaNum;
+                    this.desenharTabela();
+                } else {
+                    alert(`Invalid page number. Please enter a number between 1 and ${this.totalPaginas}.`);
+                }
+            }
+        };
         this.pager.appendChild(info);
 
         this.btnNext             = document.createElement("button");

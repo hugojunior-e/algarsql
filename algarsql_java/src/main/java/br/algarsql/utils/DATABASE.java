@@ -117,7 +117,10 @@ public abstract class DATABASE {
 
         if (is_blob) {
             Blob blob = oc.createBlob();
-            blob.setBytes(1, data.toString().getBytes() );
+            //byte[] bytes = data.toString().getBytes()
+            byte[] bytes = java.util.Base64.getDecoder().decode(data.toString());
+
+            blob.setBytes(1, bytes );
             return blob;
         }
         Clob clob = oc.createClob();
@@ -339,7 +342,10 @@ public abstract class DATABASE {
                         value = clob.getSubString(1, (int) clob.length());
                     } else if (value instanceof Blob) {
                         Blob blob = (Blob) value;
-                        value = new String(blob.getBytes(1, (int) blob.length()));
+                        //value = new String(blob.getBytes(1, (int) blob.length()));
+                        
+                        byte[] bytes = blob.getBytes(1, (int) blob.length());
+                        value = java.util.Base64.getEncoder().encodeToString(bytes);                       
                     }
                 } else if (value instanceof java.sql.Timestamp || value instanceof java.sql.Date || value instanceof java.util.Date) {
                     value = sdf.format(value); 

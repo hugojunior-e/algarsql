@@ -1,5 +1,7 @@
 package br.algarsql.controller;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -19,6 +21,29 @@ import br.algarsql.utils.Utils;
 @RestController
 public class ConfigController {
 
+    // ==========================================================================================
+    //
+    // ==========================================================================================
+
+    @RequestMapping(value = "/config_get_tnsnames", method = {RequestMethod.GET, RequestMethod.POST})
+    public Map<String, Object> configGetTnsnames(HttpServletResponse response,HttpServletRequest request, HttpSession session) throws Exception {
+        Map<String, Object> ret = new HashMap<>();
+
+        Object o = session.getAttribute("username");
+        if ( o == null ) {
+            response.setStatus(401);
+            ret.put("redirect", Constants.PAGE_LOGIN);
+            return ret;
+        }
+        
+        String newCode = Files.readString(Path.of( Constants.WORKDIR + "/tnsnames.ora"));
+        
+        ret.put("tnsnames", newCode);
+        return ret;
+    }
+    // ==========================================================================================
+    //
+    // ==========================================================================================
 
     @RequestMapping(value = "/format_plsql", method = {RequestMethod.GET, RequestMethod.POST})
     public Map<String, Object> formatPlsql(HttpServletResponse response,HttpServletRequest request, HttpSession session) throws Exception {
