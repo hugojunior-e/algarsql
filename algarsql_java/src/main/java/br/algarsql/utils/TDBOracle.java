@@ -40,8 +40,7 @@ public class TDBOracle extends DATABASE{
         try {
             con.createStatement().execute(Constants.C_SQL_START);
 
-            PreparedStatement ps = con.prepareStatement(
-                    "select global_name, banner, Sys_Context('USERENV', 'SID') from global_name, v$version");
+            PreparedStatement ps = con.prepareStatement("select global_name, banner, Sys_Context('USERENV', 'SID') from global_name, v$version");
             rs = ps.executeQuery();
             if (rs.next()) {
                 login_global_name = rs.getString(1);
@@ -55,11 +54,14 @@ public class TDBOracle extends DATABASE{
                 this.executeSelect(
                         "SELECT OWNER FROM ALL_VIEWS WHERE VIEW_NAME = 'VW_SESSIONS' ORDER BY 1",
                         false, -2);
-                if (this.rs.next()) {
-                    this.sql_session = Constants.C_SQL_SESSIONS_ALGAR.replace("<TABELA>",
-                            rs.getString(1) + ".VW_SESSIONS");
+                if ( this.status_code == 0 && this.rs != null ) {                       
+                    if (this.rs.next()) {
+                        this.sql_session = Constants.C_SQL_SESSIONS_ALGAR.replace("<TABELA>",
+                                rs.getString(1) + ".VW_SESSIONS");
+                    }
+                } else {
+                    this.db_is_direct = false;
                 }
-                this.rs.close();
             }
 
         } catch (Exception e) {

@@ -16,9 +16,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
 public class ParallelProcess extends Thread {
     private DATABASE db;
@@ -226,19 +226,15 @@ public class ParallelProcess extends Thread {
             // --
 
             if (file_type == 2) {
-                XSSFWorkbook workbook = new XSSFWorkbook();
+                SXSSFWorkbook workbook = new SXSSFWorkbook(100);
+                workbook.setCompressTempFiles(true); // comprime os arquivos temporários
                 Sheet sheet = workbook.createSheet("Dados");
                 int rowNum = 0;
-
                 Row header = sheet.createRow(rowNum++);
                 for (int i = 1; i <= colCount; i++) {
                     header.createCell(i - 1).setCellValue(meta.getColumnLabel(i));
                 }
-
-                for (int i = 0; i < colCount; i++) {
-                    sheet.autoSizeColumn(i);
-                }
-
+                qtd = 0;
                 while (db.rs.next()) {
                     Row row = sheet.createRow(rowNum++);
                     for (int i = 1; i <= colCount; i++) {
@@ -247,11 +243,16 @@ public class ParallelProcess extends Thread {
                     }
                     qtd++;
                     db.status_msg = "Exporting data.... " + qtd + " records exported.";
+                    // Opcional: força descarte das linhas antigas
+                    if (qtd % 1000 == 0) {
+                        ((org.apache.poi.xssf.streaming.SXSSFSheet) sheet).flushRows(100);
+                    }
                 }
-
-                FileOutputStream fos = new FileOutputStream(file_path);
-                workbook.write(fos);
-                fos.close();
+                try (FileOutputStream fos = new FileOutputStream(file_path)) {
+                    workbook.write(fos);
+                }
+                // Remove os arquivos temporários
+                workbook.dispose();
                 workbook.close();
             }
 

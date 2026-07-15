@@ -778,8 +778,10 @@ function js_template_save_opened() {
 
 
 function js_template_close() {
-    id_menu_template_name.innerText = "";
-    global_var.editorSQL.setValue("select * from dual");
+    if ( confirm("Are you sure you want to close this template?") ) {
+        id_menu_template_name.innerText = "";
+        global_var.editorSQL.setValue("select * from dual");
+    }
 }
 
 function js_templates_open_item(x) {
@@ -859,7 +861,7 @@ function js_find_object_execute() {
     id_find_object_grid.innerHTML = '';
     ajax("/db_execute", { "action": "findobj", "object_name": id_find_object_name.value, "code_text": id_find_code_text.value }, function (a) {
         if (a.status_code != 0) {
-            alert(a.startus_msg);
+            alert(a.status_msg);
             return;
         }
         global_var.grid_find_objects.setContent(

@@ -220,7 +220,7 @@ public class Constants {
             dbms_lob.createtemporary(v_ret, true);
 
             if v_type not in ('TABLE', 'VIEW', 'MATERIALIZED VIEW') then
-              dbms_lob.append(v_ret, 'CCRREEAATTEE OR REPLACE ');
+              dbms_lob.append(v_ret, 'CREATE OR REPLACE ');
               for cx in (select case when line = 1 and upper(text) not like '%' || upper(owner) || '.%' then
                                        REGEXP_REPLACE(text,name, owner || '.' || name, 1, 0, 'i')
                                      else
@@ -235,14 +235,14 @@ public class Constants {
                           order by type, line)
               loop
                 if (cx.line = 1 and cx.type = 'PACKAGE BODY') then
-                  dbms_lob.append(v_ret, '<end_package_spec>CCRREEAATTEE OR REPLACE ');
+                  dbms_lob.append(v_ret, '<end_package_spec>CREATE OR REPLACE ');
                 end if;
                 dbms_lob.append(v_ret, cx.text);
               end loop;
             end if;
 
             if v_type = 'TABLE' then
-              dbms_lob.append(v_ret, 'CCRREEAATTEE TABLE ' || v_owner || '.' || v_name || '(' || chr(10));
+              dbms_lob.append(v_ret, 'CREATE TABLE ' || v_owner || '.' || v_name || '(' || chr(10));
               for cx in (
                           SELECT '  '
                                  || RPAD(COLUMN_NAME,40,' ') || DATA_TYPE
@@ -282,7 +282,7 @@ public class Constants {
                  WHERE OWNER = v_owner
                    AND INDEX_NAME = CX.INDEX_NAME;
 
-                dbms_lob.append(v_ret,'CCRREEAATTEE ' || (CASE WHEN v_tipo = 'UNIQUE' THEN v_tIpo END) || ' INDEX ' || v_owner || '.' || cx.index_name || ' ON ' || v_owner || '.' || v_name || '(' || cx.campos || ');' || CHR(10));
+                dbms_lob.append(v_ret,'CREATE ' || (CASE WHEN v_tipo = 'UNIQUE' THEN v_tIpo END) || ' INDEX ' || v_owner || '.' || cx.index_name || ' ON ' || v_owner || '.' || v_name || '(' || cx.campos || ');' || CHR(10));
               END LOOP;
 
             end if;
@@ -295,7 +295,7 @@ public class Constants {
                       SELECT QUERY A FROM ALL_MVIEWS WHERE OWNER = v_owner AND MVIEW_NAME = v_name
               );
 
-              dbms_lob.append(v_ret, 'CCRREEAATTEE OR REPLACE ' || v_type || ' ' || v_owner || '.' || v_name || ' AS ' || chr(10));
+              dbms_lob.append(v_ret, 'CREATE OR REPLACE ' || v_type || ' ' || v_owner || '.' || v_name || ' AS ' || chr(10));
               dbms_lob.append(v_ret, V_TIPO);
             end if;
             :ddl := v_ret;
