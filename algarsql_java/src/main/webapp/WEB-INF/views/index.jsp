@@ -368,6 +368,14 @@
                                         <option value="0">No</option>
                                     </select></td>
                             </tr>
+
+                            <tr>
+                                <td>Font Size:</td>
+                                <td>
+                                    <input type="number" id="id_preferences_fontsize" min="8" max="32" value="${monacoFontSize}"
+                                        onchange="editor.updateOptions({fontSize: Number(this.value)})">                                    
+                                </td>
+                            </tr>                            
                         </table>
                     </div>
 
@@ -386,7 +394,7 @@
         <div id="id_edit_row_grid_form" class="itools_modal">
             <div class="dialog" style="width:80%;height:80%">
                 <div class="header">
-                    <span>Edit Row</span>
+                    <span id="id_edit_row_grid_tablename">Edit Row</span>
                     <button class="close-btn"
                         onclick="this.parentElement.parentElement.parentElement.style.display='none'">&times;</button>
                 </div>
@@ -442,6 +450,10 @@
                         <tr>
                             <td></td>
                             <td><a href=# onclick="js_login_change_password()">Change user Password</a></td>
+                        </tr>
+                        <tr>
+                            <td></td>
+                            <td><a href=# onclick="js_login_kill_sessions()">Kill My Sessions</a></td>
                         </tr>
                     </table>
                 </div>

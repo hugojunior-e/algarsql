@@ -52,6 +52,8 @@ public abstract class DATABASE {
     public List<String>               col_names = new ArrayList<>();
     public List<String>               col_types = new ArrayList<>();
     public List<Map<String, Object>>  col_data  = new ArrayList<>();
+    public  String                    col_for_update_rowid = null;
+    public  String                    col_for_update_table = null;
 
     public String dbms_output = "";
     public String username = "";
@@ -267,6 +269,8 @@ public abstract class DATABASE {
 
     public void executeSelect(String p_sql, boolean logger, Integer fetchSize) {
         prepareVars(p_sql, logger);
+        col_for_update_rowid = "";
+        col_for_update_table = "";
 
         try {
             this.is_running = true;
@@ -279,7 +283,7 @@ public abstract class DATABASE {
             cur.setFetchSize(1000);
 
             if (this.db_is_direct) {
-                this.rs = this.cur.executeQuery(p_sql);
+                this.rs = this.cur.executeQuery();
             } else {
                 this.cs = this.con.prepareCall(Constants.C_SQL_SELECT);
                 cs.setString(1, p_sql);
@@ -293,6 +297,16 @@ public abstract class DATABASE {
             for (int i = 1; i <= md.getColumnCount(); i++) {
                 col_names.add(md.getColumnLabel(i));
                 col_types.add(md.getColumnTypeName(i));
+                if ( md.getColumnName(i).toUpperCase().equals("ROWID") || md.getColumnLabel(i).toUpperCase().equals("ROWID")  ) {
+                    col_for_update_rowid = md.getColumnName(i);
+
+                    Pattern p = Pattern.compile("\\bfrom\\s+([a-zA-Z0-9_]+(?:\\.[a-zA-Z0-9_]+)?)",Pattern.CASE_INSENSITIVE);
+                    Matcher m = p.matcher(p_sql);
+
+                    if (m.find()) {
+                        col_for_update_table = m.group(1);
+                    } 
+                }
             }
 
             if (fetchSize != -2) {
@@ -342,8 +356,6 @@ public abstract class DATABASE {
                         value = clob.getSubString(1, (int) clob.length());
                     } else if (value instanceof Blob) {
                         Blob blob = (Blob) value;
-                        //value = new String(blob.getBytes(1, (int) blob.length()));
-                        
                         byte[] bytes = blob.getBytes(1, (int) blob.length());
                         value = java.util.Base64.getEncoder().encodeToString(bytes);                       
                     }
@@ -420,28 +432,8 @@ public abstract class DATABASE {
     // executeUpdateFromPrimaryKey
     // =========================================================================
         
-
     public void executeUpdateFromPrimaryKey(String rowid, String sql, String json_items)
             throws Exception {
-
-        String tableName = "";
-        String pkName    = "ROWID";
-
-        Pattern p = Pattern.compile("\\bfrom\\s+([a-zA-Z0-9_]+(?:\\.[a-zA-Z0-9_]+)?)",Pattern.CASE_INSENSITIVE);
-        Matcher m = p.matcher(sql);
-
-        if (m.find()) {
-            tableName = m.group(1);
-        } 
-        
-        p = Pattern.compile("(?i)\\b(?:\\w+\\.)?(\\w+)\\s+(?:AS\\s+)?ROWID\\b");
-        m = p.matcher(sql);
-
-        if (m.find()) {
-            pkName = m.group(1);
-        }
-
-                
         ObjectMapper mapper = new ObjectMapper();
 
         @SuppressWarnings("unchecked")
@@ -475,10 +467,7 @@ public abstract class DATABASE {
             }
         }
         set_clause = set_clause.substring(0, set_clause.length() - 2);
-
-        //String SQL_UPDATE_AUX = "UPDATE (" + sql + ") SET " + set_clause + " WHERE ROWID = '" + rowid + "'";
-        String SQL_UPDATE_AUX = "UPDATE " + tableName + " SET " + set_clause + " WHERE " + pkName + " = '" + rowid + "'";
-
+        String SQL_UPDATE_AUX = "UPDATE " + col_for_update_table + " SET " + set_clause + " WHERE " + col_for_update_rowid + " = '" + rowid + "'";
         this.executeStatement(SQL_UPDATE_AUX, false, params.toArray());
     }    
 

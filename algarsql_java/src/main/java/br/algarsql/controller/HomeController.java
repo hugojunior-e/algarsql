@@ -29,9 +29,15 @@ public class HomeController {
         String username = o.toString();
 
         String monacoThemeDefault = Utils.configValue("monacoTheme", null, username).toString();
+        String monacoFontSize = Utils.configValue("monacoFontSize", null, username).toString();
+        
         if (monacoThemeDefault.length() == 0) {
             monacoThemeDefault = "style-dark.css";
         };     
+
+        if (monacoFontSize.length() == 0) {
+            monacoFontSize = "12";
+        };         
         
         String bip = Utils.configValue("bip", null, username).toString();
         if (bip.length() == 0) {
@@ -40,6 +46,7 @@ public class HomeController {
 
         model.addAttribute("login", username);
         model.addAttribute("monacoTheme", monacoThemeDefault);
+        model.addAttribute("monacoFontSize", monacoFontSize);
         model.addAttribute("bip", bip);
         return "index";
     }

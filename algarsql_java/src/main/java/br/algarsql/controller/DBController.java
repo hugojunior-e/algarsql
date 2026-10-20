@@ -67,24 +67,29 @@ public class DBController {
                 return ret;
             }
 
-            if (action.equals("change_password_get_user")) {
-                String[] msg =
-                        Utils.changePasswordGetUser(request.getParameter("alias"), o.toString());
-                ret.put("db_user", msg[1]);
-                ret.put("db_tns", msg[2]);
-                ret.put("status_msg", msg[0]);
+            if (action.equals("db_get_my_user")) {
+                String msg = Utils.getMyDBUser(request.getParameter("alias").toString() , o.toString());
+                ret.put("status_msg", msg);
                 return ret;
             }
 
-            if (action.equals("change_password")) {
-                String msg = Utils.changePassword(request.getParameter("db_tns").toString(),
-                        request.getParameter("db_user").toString(),
-                        request.getParameter("db_password").toString());
+            if (action.equals("db_change_password")) {
+                String msg = Utils.changePassword(request.getParameter("tns").toString(),
+                        request.getParameter("username").toString(),
+                        request.getParameter("password").toString());
                 ret.put("status_code", 0);
                 ret.put("status_msg", msg);
                 return ret;
             }
 
+            if ( action.equals("db_kill_sessions")) {
+                String u = request.getParameter("username").toString();
+                String a = request.getParameter("tns").toString();
+                String r = Utils.killMySessionsOracle(a, u);
+                ret.put("status_msg", r);
+                return ret;
+            }
+                        
 
             db = (DATABASE) session.getAttribute(xTabId);
 
@@ -202,6 +207,8 @@ public class DBController {
                 db.fetchData(500);
             }
 
+
+
             if (action.equals("workdata_import")) {
                 String sql = Utils.compactSQL(request.getParameter("sql").toString());
                 new ParallelProcess(4, db, sql).start();
@@ -220,7 +227,6 @@ public class DBController {
                 ret.put("status_code", 0);
                 ret.put("status_msg", "Export started successfully");
                 return ret;
-
             }
         } catch (Exception e) {
             ret.put("status_code", -1);
@@ -242,6 +248,7 @@ public class DBController {
         ret.put("explain", explain);
         ret.put("dbms", db.dbms_output);
         ret.put("sql_type", sql_tipo.sql_type);
+        ret.put("for_update_table", db.col_for_update_table + "." + db.col_for_update_rowid);
         return ret;
     }
 }

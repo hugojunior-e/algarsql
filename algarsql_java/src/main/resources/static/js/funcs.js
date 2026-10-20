@@ -156,10 +156,11 @@ function clearTable(table) {
 }
 
 
-function configureTheme(theme) {
+function configureTheme() {
+    let theme         = id_preferences_monaco_theme.value;
+    let edt           = theme == "style-dark.css" ? 'vs-dark' : 'vs';
     id_theme_css.href = '/css/' + theme;
-    let edt = theme == "style-dark.css" ? 'vs-dark' : 'vs';
-    global_var.editorSQL.updateOptions({ theme: edt });
+    global_var.editorSQL.updateOptions({ theme: edt, fontSize: id_preferences_fontsize.value  });
 }
 
 function copyToClip(texto) {
@@ -965,9 +966,10 @@ function js_preferences_form(x = "flex") {
         id_preferences_tns.value = a.tns;
         id_preferences_tns_saved.value = a.tnsSaved;
         id_preferences_monaco_theme.value = a.monacoTheme;
+        id_preferences_fontsize.value = a.monacoFontSize;
         id_preferences_bip.value = a.bip;
         id_preferences_form.style.display = x;
-        configureTheme(a.monacoTheme);
+        configureTheme();
     });
 }
 
@@ -977,13 +979,14 @@ function js_preferences_save() {
         "tns": id_preferences_tns.value,
         "tnsSaved": id_preferences_tns_saved.value,
         "monacoTheme": id_preferences_monaco_theme.value,
+        "monacoFontSize": id_preferences_fontsize.value,
         "bip": id_preferences_bip.value
     };
 
     ajax("/config_save", r, function (a) {
         alert(a.status_msg);
         id_preferences_form.style.display = "none";
-        configureTheme(id_preferences_monaco_theme.value);
+        configureTheme();
         global_var.config_loaded = false;
         global_var.bip = id_preferences_bip.value;
     });
@@ -1002,13 +1005,28 @@ function js_logoff_form() {
 }
 
 
-function js_login_change_password() {
-    ajax("/db_execute", { "action": "change_password_get_user", "alias": id_login_database.options[id_login_database.selectedIndex].innerText }, async function (a) {
+function js_login_kill_sessions() {
+    ajax("/db_execute", { "action": "db_get_my_user", "alias": id_login_database.options[id_login_database.selectedIndex].innerText }, function (a) {
         if (a.status_msg.startsWith("ERROR")) {
             alert(a.status_msg);
         } else {
-            if (confirm("Change password for user " + a.db_user + "@" + id_login_database.options[id_login_database.selectedIndex].innerText + "?")) {
-                ajax("/db_execute", { "action": "change_password", "db_tns": a.db_tns, "db_user": a.db_user, "db_password": id_login_password.value }, async function (a) {
+            if (confirm("Kill All Sessions to user " + a.status_msg + "@" + id_login_database.options[id_login_database.selectedIndex].innerText + "?")) {
+                ajax("/db_execute", { "action": "db_kill_sessions", "username": id_login_username.value, "tns": id_login_database.value }, function (a) {
+                    alert(a.status_msg);
+                });
+            }
+        }
+    });
+}
+
+
+function js_login_change_password() {
+    ajax("/db_execute", { "action": "db_get_my_user", "alias": id_login_database.options[id_login_database.selectedIndex].innerText }, function (a) {
+        if (a.status_msg.startsWith("ERROR")) {
+            alert(a.status_msg);
+        } else {
+            if (confirm("Change password for user " + a.status_msg + "@" + id_login_database.options[id_login_database.selectedIndex].innerText + "?")) {
+                ajax("/db_execute", { "action": "db_change_password", "tns": id_login_database.value, "username": a.status_msg, "password": id_login_password.value }, function (a) {
                     alert(a.status_msg);
                 });
             }
@@ -1088,6 +1106,7 @@ function js_db_grid_editrow(row, columns, columns_types) {
     const container = document.getElementById('id_edit_row_grid_content');
     container.innerHTML = '';
     container.row = row;
+    container.rowid = '';
     id_edit_row_bt_save.style.display = 'none';
 
     columns.forEach((c, idx) => {
@@ -1095,7 +1114,7 @@ function js_db_grid_editrow(row, columns, columns_types) {
 
         valor = row.cells[idx].value;
 
-        if (c.toUpperCase() == "ROWID") {
+        if (c.toUpperCase() == "ROWID" || c.toUpperCase() ==  "PK_ROWID" ) {
             container.rowid = valor;
             id_edit_row_bt_save.style.display = '';
         } else {
@@ -1120,7 +1139,7 @@ function js_db_grid_editrow(row, columns, columns_types) {
             container.appendChild(tr);
         }
     });
-
+    id_edit_row_grid_tablename.innerHTML = 'Edit Row: ' + id_edit_row_grid_tablename.tablename + (container.rowid  == '' ? '' : ' = ' + container.rowid  );
     document.getElementById('id_edit_row_grid_form').style.display = 'flex';
 }
 
@@ -1245,6 +1264,7 @@ function js_db_execute() {
 
         if (a.sql_type == 1) {
             showMemoArea('@grid');
+            id_edit_row_grid_tablename.tablename = a.for_update_table;
             global_var.grid_query.setContent(a.data, a.columns, a.columns_types, 50, [], sql);
             global_var.grid_query.desenharTabela();
         } else {
@@ -1476,7 +1496,7 @@ function createEditorSQL(sql_autostart) {
                     language: "sql",
                     theme: id_theme_css.href.includes("dark") ? "vs-dark" : "vs",
                     automaticLayout: true,
-                    fontSize: 12,
+                    fontSize: id_preferences_fontsize.value,
                     minimap: { enabled: true }
                 }
             );
@@ -1647,6 +1667,7 @@ async function configuraAutoStart(configBip) {
     window.addEventListener("beforeunload", function (e) {
         localStorage.setItem('F5-CONTENT', global_var.editorSQL.getValue());
         localStorage.setItem('F5-TEMPLATE', id_menu_template_name.innerText);
+        js_logoff_form();
         e.preventDefault();
         e.returnValue = "";
     });

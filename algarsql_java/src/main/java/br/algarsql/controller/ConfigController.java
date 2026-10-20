@@ -84,6 +84,11 @@ public class ConfigController {
             monacoThemeDefault = "style-dark.css";
         };
 
+        String monacoFontSize = Utils.configValue("monacoFontSize", null, u).toString();
+        if (monacoFontSize.length() == 0) {
+            monacoFontSize = "12";
+        };
+
         String bip = Utils.configValue("bip", null, u).toString();
         if (bip.length() == 0) {
             bip = "1";
@@ -92,6 +97,7 @@ public class ConfigController {
         ret.put("tns", Utils.configValue("tns", null, u).toString());
         ret.put("bip", bip);
         ret.put("monacoTheme", monacoThemeDefault);
+        ret.put("monacoFontSize", monacoFontSize);
         return ret;
     }
 
@@ -102,7 +108,7 @@ public class ConfigController {
 
     @RequestMapping(value = "/config_save", method = {RequestMethod.GET, RequestMethod.POST})
     public Map<String, Object> configSave(HttpServletResponse response,HttpServletRequest request,HttpSession session, @RequestParam String tnsSaved,
-            @RequestParam String tns, @RequestParam String monacoTheme,  @RequestParam String bip ) throws Exception {
+            @RequestParam String tns, @RequestParam String monacoTheme, @RequestParam String monacoFontSize, @RequestParam String bip ) throws Exception {
         Map<String, Object> ret = new HashMap<>();
         Object o = session.getAttribute("username");
         if ( o == null ) {
@@ -116,6 +122,7 @@ public class ConfigController {
         Utils.configSave("tnsSaved", tnsSaved, "CONFIG", u);
         Utils.configSave("tns", tns, "CONFIG", u);
         Utils.configSave("monacoTheme", monacoTheme, "CONFIG", u);
+        Utils.configSave("monacoFontSize", monacoFontSize, "CONFIG", u);
         Utils.configSave("bip", bip, "CONFIG", u);
         ret.put("status_msg", "Configuration saved successfully.");
     

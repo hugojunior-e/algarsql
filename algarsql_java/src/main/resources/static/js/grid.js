@@ -37,9 +37,7 @@ class TGrid {
 
             if (selecionados.length > 0) {
                 temSelecao = true;
-                let linhaTexto = Array.from(selecionados)
-                    .map(td => td.innerText.trim())
-                    .join("\t");
+                let linhaTexto = Array.from(selecionados).map( td => td.innerText ).join("\t");
                 texto += linhaTexto + "\n";
             }
         });

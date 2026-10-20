@@ -79,53 +79,28 @@ public class Utils {
     //
     // ==========================================================================================
 
-    public static String[] changePasswordGetUser(String alias, String username) {
-        String[] ret = new String[] {"", "", ""};
+    public static String getMyDBUser(String alias, String username) {
+        String myuser = "-";
         try {
             Connection conn =
                     DriverManager.getConnection("jdbc:oracle:thin:@" + Constants.FARMPRD_DSN,
                             Constants.FARMPRD_USR, Constants.FARMPRD_PWD);
             Statement st = conn.createStatement();
-            ResultSet rs =
-                    st.executeQuery(String.format(Constants.C_CHANGE_PASSWORD_GET_TNS, alias));
-            if (!rs.next()) {
-                ret[0] = "ERROR: Database entry not found.";
-            }
-            String db_tns = rs.getString(1);
-            rs.close();
-
-            rs = st.executeQuery(Constants.C_CHANGE_PASSWORD_GET_USER_FOUND
+            ResultSet rs = st.executeQuery(Constants.C_CHANGE_PASSWORD_GET_USER_FOUND
                     .replaceAll("<1>", username)
                     .replaceAll("<2>", alias));
 
-            if (!rs.next()) {
-                ret[0] = "ERROR: User not found.";
-            }
-            String userNameFound = rs.getString(2);
-            rs.close();
-
-            conn.close();
-
-            ret[1] = userNameFound;
-            ret[2] = db_tns;
-
-            conn = DriverManager.getConnection("jdbc:oracle:thin:@" + db_tns, Constants.FARMPRD_USR,
-                    Constants.FARMPRD_PWD);
-            st = conn.createStatement();
-            rs = st.executeQuery(String.format(Constants.C_CHANGE_PASSWOR_GET_USER, userNameFound));
-            if (!rs.next()) {
-                ret[0] = "ERROR: User " + userNameFound + " does not exist in database " + alias
-                        + ".";
+            if (rs.next()) {
+                myuser = rs.getString(2);
             }
             rs.close();
-
-            conn.close();
-            ret[0] = "Success Change Password for user " + userNameFound;
-        } catch (Exception e) {
-            ret[0] = "ERROR: Database error: " + e.getMessage();
+            conn.close();  
+            return myuser;      
+        } catch(Exception exx) {
+            return "ERROR:" + exx.getMessage();
         }
-        return ret;
     }
+   
 
     public static String changePassword(String db_tns, String db_user, String db_password) {
         try {
@@ -138,6 +113,24 @@ public class Utils {
         } catch (Exception e) {
             return "Error Change Password for user " + db_user + ": " + e.getMessage();
         }
+    }
+
+    public static String killMySessionsOracle(String alias, String username) {
+        String ret = "";
+
+        try {
+            Connection conn =
+                    DriverManager.getConnection("jdbc:oracle:thin:@" + alias,
+                            Constants.FARMPRD_USR, Constants.FARMPRD_PWD);
+            Statement st = conn.createStatement();
+            st.execute( Constants.C_SQL_KILL_SESSIONS.replaceAll("<1>", username));
+            conn.close();
+           
+            ret = "Sessions Killed Sucessfuly! :: " + username;
+        } catch (Exception e) {
+            ret = "ERROR: Database error: " + e.getMessage();
+        }
+        return ret;
     }
 
     // ==========================================================================================

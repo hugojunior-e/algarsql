@@ -318,6 +318,16 @@ public class Constants {
 
 
 
+  public static final String C_SQL_KILL_SESSIONS = """
+        begin
+          for cx in (  select * from algarsqlapp.vw_kill_session 
+                          where upper(username) LIKE upper('<1>')
+                    )
+          loop
+            execute immediate cx.k;
+          end loop;
+        end;      
+      """;
   // =========================================================================================
   // SQL_MYSQL
   // =========================================================================================
@@ -378,12 +388,6 @@ public class Constants {
                         end if;
                     END;
           """;
-
-  public static final String C_CHANGE_PASSWORD_GET_TNS =
-      "select TNS_NAMES from deployadm.T_CFG_BASE tcb WHERE  upper(tcb.NAME) = upper('%s')";
-
-  public static final String C_CHANGE_PASSWOR_GET_USER =
-      "select count(1) from all_users where username = upper('%s')";
 
   public static final String C_CHANGE_PASSWORD_GET_USER_FOUND =
       """
