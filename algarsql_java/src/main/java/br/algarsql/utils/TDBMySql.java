@@ -1,22 +1,61 @@
 package br.algarsql.utils;
 
-import java.sql.CallableStatement;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.stream.Collectors;
+import java.util.Locale;
+import java.util.Set;
+import java.util.TreeSet;
 
 public class TDBMySql extends DATABASE {
 
+    public static final String C_MYSQL_TREE = """
+                  SELECT *
+                  FROM (
+                      SELECT
+                          TABLE_SCHEMA AS OWNER,
+                          TABLE_NAME AS OBJECT_NAME,
+                          'TABLE' AS OBJECT_TYPE
+                      FROM information_schema.TABLES
+
+                      UNION ALL
+
+                      SELECT
+                          ROUTINE_SCHEMA AS OWNER,
+                          ROUTINE_NAME AS OBJECT_NAME,
+                          ROUTINE_TYPE AS OBJECT_TYPE
+                      FROM information_schema.ROUTINES
+
+                      UNION ALL
+
+                      SELECT
+                          TRIGGER_SCHEMA AS OWNER,
+                          TRIGGER_NAME AS OBJECT_NAME,
+                          'TRIGGER' AS OBJECT_TYPE
+                      FROM information_schema.TRIGGERS
+
+                      UNION ALL
+
+                      SELECT
+                          EVENT_SCHEMA AS OWNER,
+                          EVENT_NAME AS OBJECT_NAME,
+                          'EVENT' AS OBJECT_TYPE
+                      FROM information_schema.EVENTS
+                  ) AS xxx
+                  WHERE UPPER(OBJECT_NAME) LIKE UPPER('<1>')
+                  ORDER BY OWNER, OBJECT_TYPE, OBJECT_NAME
+            """;
+
     @Override
     protected void pingConnection() {
-       
+
     }
 
     @Override
-    public void afterConnect() {
+    public void afterConnect() throws Exception {
+        global_con.setAutoCommit(false);
     }
 
     @Override
@@ -24,24 +63,46 @@ public class TDBMySql extends DATABASE {
         throw new UnsupportedOperationException("Unimplemented method 'executeStatement'");
     }
 
-
     @Override
     public String extractDDL(String owner, String type, String name) {
-        String sql = "SHOW CREATE " + type + " `" + owner + "`.`" + name + "`";
-        try {
-            CallableStatement cs2 = con.prepareCall(sql);
-            ResultSet rs2 = cs2.executeQuery();
-            if (rs2.next()) {
-                ResultSetMetaData md = rs2.getMetaData();
-                for (int i = 1; i <= md.getColumnCount(); i++) {
-                    String col = md.getColumnLabel(i).toUpperCase();
-                    if (col.contains("CREATE")) {
-                        return rs2.getString(i);
-                    }
+        if (owner == null || owner.isBlank()
+                || type == null || type.isBlank()
+                || name == null || name.isBlank()) {
+            return "Erro: owner, type e name são obrigatórios.";
+        }
+
+        String objectType = type.trim().toUpperCase(Locale.ROOT);
+
+        // Evita inserir comandos arbitrários no SQL.
+        if (!Set.of("TABLE", "VIEW", "PROCEDURE", "FUNCTION",
+                "TRIGGER", "EVENT").contains(objectType)) {
+            return "Erro: tipo de objeto MySQL não suportado: " + type;
+        }
+
+        String sql = "SHOW CREATE " + objectType + " `"
+                + owner.replace("`", "``") + "`.`"
+                + name.replace("`", "``") + "`";
+
+        try (PreparedStatement ps = global_con.prepareStatement(sql);
+                ResultSet rs = ps.executeQuery()) {
+
+            if (!rs.next()) {
+                return null;
+            }
+
+            ResultSetMetaData md = rs.getMetaData();
+
+            for (int i = 1; i <= md.getColumnCount(); i++) {
+                String column = md.getColumnLabel(i);
+
+                if (column != null
+                        && column.toUpperCase(Locale.ROOT).contains("CREATE")) {
+                    return rs.getString(i);
                 }
             }
-            cs2.close();
+
             return null;
+
         } catch (SQLException e) {
             return e.toString();
         }
@@ -52,8 +113,6 @@ public class TDBMySql extends DATABASE {
         return "Unimplemented method 'PROCEDURE'";
     }
 
-
-
     @Override
     public String describeObject(String p_object_name) {
         return "Unimplemented method 'describeObject'";
@@ -61,28 +120,40 @@ public class TDBMySql extends DATABASE {
 
     @Override
     public void treeObjects() {
-        this.tree_str = "";
-        this.tree_tables.clear();
-        this.tree_users.clear();
+        global_tree_str = "";
+        global_tree_tables.clear();
+        global_tree_users.clear();
+
+        StringBuilder treeBuilder = new StringBuilder();
+        Set<String> users = new TreeSet<>();
 
         try {
-            this.executeSelect(Constants.C_MYSQL_TREE.replaceAll("<1>", "%"), false, -2);
-            while (this.rs.next()) {
-                String tree = this.rs.getString("OWNER") + "|" + this.rs.getString("OBJECT_TYPE") + "|"
-                        + this.rs.getString("OBJECT_NAME");
-                this.tree_str += tree + "\n";
-                if (this.rs.getString("OBJECT_TYPE").equals("TABLE")
-                        || this.rs.getString("OBJECT_TYPE").equals("VIEW")) {
-                    this.tree_tables.add(this.rs.getString("OBJECT_NAME"));
-                    this.tree_users.add(this.rs.getString("OWNER"));
+            this.executeSelect(C_MYSQL_TREE.replace("<1>", "%"), false, -2);
+
+            while (global_rs.next()) {
+                String owner = global_rs.getString("OWNER");
+                String objectType = global_rs.getString("OBJECT_TYPE");
+                String objectName = global_rs.getString("OBJECT_NAME");
+
+                treeBuilder.append(owner)
+                        .append('|')
+                        .append(objectType)
+                        .append('|')
+                        .append(objectName)
+                        .append('\n');
+
+                if ("TABLE".equals(objectType) || "VIEW".equals(objectType)) {
+                    global_tree_tables.add(objectName);
+                    users.add(owner);
                 }
             }
-        } catch (Exception e) {
-            // Handle exception
-        }
 
-        this.tree_users = this.tree_users.stream().distinct().sorted()
-                .collect(Collectors.toCollection(ArrayList::new));        
+            global_tree_str = treeBuilder.toString();
+            global_tree_users = new ArrayList<>(users);
+
+        } catch (Exception e) {
+            System.err.println("Erro ao carregar objetos do MySQL: " + e.getMessage());
+        }
     }
 
     // =========================================================================
@@ -91,21 +162,37 @@ public class TDBMySql extends DATABASE {
 
     @Override
     public String executeExplain(String p_sql) {
-        String ret = "";
+        StringBuilder ret = new StringBuilder();
 
         try {
-            String sql = "EXPLAIN ANALYZE " + p_sql;
-            PreparedStatement ps = con.prepareStatement(sql);
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                ret = ret + rs.getString(1) + "\n";
+            String sql = "EXPLAIN " + p_sql;
+
+            try (PreparedStatement ps = global_con.prepareStatement(sql);
+                    ResultSet rs = ps.executeQuery()) {
+
+                ResultSetMetaData meta = rs.getMetaData();
+                int columns = meta.getColumnCount();
+
+                while (rs.next()) {
+                    for (int i = 1; i <= columns; i++) {
+                        if (i > 1) {
+                            ret.append(" | ");
+                        }
+
+                        ret.append(meta.getColumnLabel(i))
+                                .append(": ")
+                                .append(rs.getString(i));
+                    }
+
+                    ret.append("\n");
+                }
             }
-            ps.close();   
-        } catch ( Exception e ) {
-            ret = e.toString();
+
+        } catch (Exception e) {
+            ret.append(e.toString());
         }
 
-        return ret.trim();
+        return ret.toString().trim();
     }
 
     // =========================================================================
@@ -114,9 +201,8 @@ public class TDBMySql extends DATABASE {
 
     @Override
     public void allErrors(String object_owner, String object_name) {
-        prepareVars("",false);
+        this.prepareVars("", false);
     }
-
 
     // =========================================================================
     // findObject
@@ -124,17 +210,26 @@ public class TDBMySql extends DATABASE {
 
     @Override
     public void findObject(String object_name, String code_text) {
-        String sql = Constants.C_MYSQL_TREE.replaceAll("<1>", object_name);
-        executeSelect(sql, false, -1);        
+        String sql = C_MYSQL_TREE.replaceAll("<1>", object_name);
+        this.executeSelect(sql, false, -1);
     }
 
     // =========================================================================
     // filterTableColumns
-    // =========================================================================    
-    
+    // =========================================================================
+
     @Override
     public void filterTableColumns(String type_object, String type_filter) {
-        prepareVars("",false);
-    }    
-    
+        this.prepareVars("", false);
+    }
+
+    // =========================================================================
+    // selectBySecurity
+    // =========================================================================
+
+    @Override
+    public ResultSet selectBySecurity(String sql) throws Exception {
+        throw new UnsupportedOperationException("Unimplemented method 'selectBySecurity'");
+    }
+
 }

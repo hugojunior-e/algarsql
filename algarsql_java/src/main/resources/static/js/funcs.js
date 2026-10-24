@@ -712,6 +712,7 @@ function js_workdata_import_populate() {
     if (confirm('Populate workdata model with this query?')) {
         ajax("/db_execute", { "action": "workdata_import", "sql": id_workdata_import_query.value },
             function (a) {
+                js_db_status(in_transaction = true);
                 js_global_thread_status(id_workdata_form, id_workdata_import_status);
             }
         );
@@ -746,9 +747,8 @@ async function js_csv_completer_execute() {
     formData.append("sql", id_csv_completer_query.value);
     formData.append("first_line_titles", id_csv_completer_options.value);
 
-    console.log(content);
-
     ajax("/db_execute", formData, function (a) {
+        js_db_status(in_transaction = true);
         js_global_thread_status(id_workdata_form, id_csv_completer_status);
     }, null, false);
 }
@@ -1036,11 +1036,12 @@ function js_login_change_password() {
 
 function js_login_connect() {
     ajax("/db_execute", {
-        "action": "connect",
-        "usr": id_login_username.value,
-        "pwd": id_login_password.value,
-        "tns": id_login_database.value,
-        "direct": id_login_direct.value
+        "action" : "connect",
+        "usr"    : id_login_username.value,
+        "pwd"    : id_login_password.value,
+        "tns"    : id_login_database.value,
+        "direct" : id_login_direct.value,
+        "dbname" : id_login_database.options[id_login_database.selectedIndex].innerText
     }, async function (a) {
         if (a.status_code == 0) {
             ret1 = global_var.tree_objects.montaArvoreDados(a.tree);

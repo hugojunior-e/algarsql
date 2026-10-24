@@ -1,9 +1,7 @@
 package br.algarsql.utils;
 
 import oracle.jdbc.OracleConnection;
-import oracle.jdbc.OracleTypes;
 import java.sql.Blob;
-import java.sql.CallableStatement;
 import java.sql.Clob;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -28,26 +26,22 @@ public abstract class DATABASE {
     // =========================================================================
     // VARS
     // =========================================================================
-    public int status_code = 0;
-    public int status_code_parallel = 0;
-    public int stop_status_count = 0;
-    public String status_msg = "OK";
+    public int                        status_code = 0;
+    public int                        status_code_parallel = 0;
+    private int                       status_stop_count = 0;
+    public String                     status_msg = "OK";
 
-    public Connection con = null;
-    public PreparedStatement cur = null;
-    protected CallableStatement cs = null;
-    public ResultSet rs = null;
+    public Connection                 global_con = null;
+    public PreparedStatement          global_cur = null;
+    public ResultSet                  global_rs = null;
 
-    public String last_sql = "-";
 
-    public String  login_global_name = "";
-    public int     login_sid = 0;
-    public String  login_banner = "";
-
-    protected String   db_usuario = null;
-    protected String   db_senha = null;
-    protected String   db_tns = null;
-    protected boolean  db_is_direct = false;
+    private String                    db_usuario = null;
+    private String                    db_senha = null;
+    private String                    db_tns = null;
+    private String                    db_name = null;
+    protected boolean                 db_is_direct = false;
+    public String                     db_dbms = "";
 
     public List<String>               col_names = new ArrayList<>();
     public List<String>               col_types = new ArrayList<>();
@@ -55,54 +49,48 @@ public abstract class DATABASE {
     public  String                    col_for_update_rowid = null;
     public  String                    col_for_update_table = null;
 
-    public String dbms_output = "";
-    public String username = "";
-    public String sql_session = "";
-    SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+    public String                     username = "";
+    public String                     sql_session = "";
+    public SimpleDateFormat           sdf = new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+    private String                    last_sql = "-";
 
-    public boolean is_running = false;
-
-    public String tree_str = "";
-    public ArrayList<String> tree_tables = new ArrayList<>();
-    public ArrayList<String> tree_users = new ArrayList<>();
+    public String                     global_tree_str = "";
+    public ArrayList<String>          global_tree_tables = new ArrayList<>();
+    public ArrayList<String>          global_tree_users = new ArrayList<>();
 
 
 
 
-    public static DATABASE createConnection(String p_usuario, String p_senha, String p_tns, boolean p_is_direct) {
+    public static DATABASE createConnection(String p_usuario, String p_senha, String p_tns, boolean p_is_direct, String p_db_name) {
         DATABASE o = null;
 
         if ( p_tns.startsWith("jdbc") ) {
-            if ( p_tns.contains("oracle") )  o = new TDBOracle();
-            if ( p_tns.contains("mysql")  )  o = new TDBMySql();
+            if ( p_tns.contains("oracle")   )  o = new TDBOracle();
+            if ( p_tns.contains("mysql")    )  o = new TDBMySql();
+            if ( p_tns.contains("postgres") )  o = new TDBPosgreSql();
         } else {
             o = new TDBOracle();
         }
 
-        o.db_usuario   = p_usuario;
-        o.db_senha     = p_senha;
-        o.db_tns       = p_tns.startsWith("jdbc") ? p_tns : "jdbc:oracle:thin:@" + p_tns;
-        o.db_is_direct = p_is_direct;
-
+        o.db_usuario     = p_usuario;
+        o.db_senha       = p_senha;
+        o.db_tns         = p_tns.startsWith("jdbc") ? p_tns : "jdbc:oracle:thin:@" + p_tns;
+        o.db_is_direct   = p_is_direct;
+        o.db_name        = p_db_name;
         if ( !(o instanceof TDBOracle) ) {
             o.db_is_direct = true;
         }
-
         return o;
     }
 
 
     public void connectDatabase() {
-        this.login_sid    = 0;
         this.status_code  = 0;
         this.status_msg   = "OK";
 
         try {
-            this.con = DriverManager.getConnection(db_tns,this.db_usuario, this.db_senha);
-            this.con.setAutoCommit(false);
-
+            global_con = DriverManager.getConnection(db_tns,this.db_usuario, this.db_senha);
             this.afterConnect();
-
         } catch (Exception e) {
             this.status_code = -1;
             this.status_msg = e.getMessage();
@@ -115,11 +103,10 @@ public abstract class DATABASE {
     // =========================================================================
 
     public Object createOracleLob(Object data, boolean is_blob) throws Exception {
-        OracleConnection oc = con.unwrap(OracleConnection.class);
+        OracleConnection oc = global_con.unwrap(OracleConnection.class);
 
         if (is_blob) {
             Blob blob = oc.createBlob();
-            //byte[] bytes = data.toString().getBytes()
             byte[] bytes = java.util.Base64.getDecoder().decode(data.toString());
 
             blob.setBytes(1, bytes );
@@ -154,14 +141,14 @@ public abstract class DATABASE {
 
     protected void prepareVars(String p_sql, boolean logger) {
         pingConnection();
-        dbms_output = "";
-        col_names.clear();
-        col_types.clear();
-        col_data.clear();
-        stop_status_count = 0;
-        if (logger && !last_sql.equals(p_sql)) {
-            Utils.configSave(login_global_name, p_sql, "SQL_HISTORY", username);
-            last_sql = p_sql;
+        this.db_dbms = "";
+        this.col_names.clear();
+        this.col_types.clear();
+        this.col_data.clear();
+        this.status_stop_count = 0;
+        if (logger && !this.last_sql.equals(p_sql)) {
+            Utils.configSave(this.db_name, p_sql, "SQL_HISTORY", this.username);
+            this.last_sql = p_sql;
         }
     }
 
@@ -172,12 +159,11 @@ public abstract class DATABASE {
 
      protected abstract void pingConnection();
     
-
     // =========================================================================
     // AFTER CONNECT
     // =========================================================================
 
-    public abstract void afterConnect();
+    public abstract void afterConnect() throws Exception;
 
     // =========================================================================
     // disconnect
@@ -185,8 +171,8 @@ public abstract class DATABASE {
 
     public void disconnect() {
         try {
-            if (con != null) {
-                con.close();
+            if (global_con != null) {
+                global_con.close();
             }
         } catch (Exception ignored) {
         }
@@ -198,10 +184,10 @@ public abstract class DATABASE {
 
     public void commit() {
         try {
-            con.commit();
+            global_con.commit();
         } catch (Exception e) {
-            status_code = -1;
-            status_msg = e.getMessage();
+            this.status_code = -1;
+            this.status_msg = e.getMessage();
         }
     }
 
@@ -211,10 +197,10 @@ public abstract class DATABASE {
 
     public void rollback() {
         try {
-            con.rollback();
+            global_con.rollback();
         } catch (Exception e) {
-            status_code = -1;
-            status_msg = e.getMessage();
+            this.status_code = -1;
+            this.status_msg = e.getMessage();
         }
     }
 
@@ -225,14 +211,14 @@ public abstract class DATABASE {
     public void stopExecution() {
         try {
             if ( this.db_tns.contains("oracle") ) {
-                OracleConnection oc = con.unwrap(OracleConnection.class);
+                OracleConnection oc = global_con.unwrap(OracleConnection.class);
                 oc.cancel();
-                stop_status_count++;
-                if (stop_status_count > 3) {
+                this.status_stop_count++;
+                if (this.status_stop_count > 3) {
                     oc.abort();
                 }
             } else {
-                this.cur.cancel();                    
+                global_cur.cancel();                    
             }
         } catch (Exception ignored) {
             ignored.printStackTrace();
@@ -268,43 +254,38 @@ public abstract class DATABASE {
     // =========================================================================
 
     public void executeSelect(String p_sql, boolean logger, Integer fetchSize) {
-        prepareVars(p_sql, logger);
-        col_for_update_rowid = "";
-        col_for_update_table = "";
+        this.prepareVars(p_sql, logger);
+        this.col_for_update_rowid = "";
+        this.col_for_update_table = "";
 
         try {
-            this.is_running = true;
-            if (rs != null && !rs.isClosed()) {
-                rs.close();
-                cur.close();
+            if ( global_rs != null && !global_rs.isClosed() ) {
+                global_rs.close();
+                global_cur.close();
             }
 
-            cur = con.prepareStatement(p_sql);
-            cur.setFetchSize(1000);
+            global_cur = global_con.prepareStatement(p_sql);
+            global_cur.setFetchSize(1000);
 
             if (this.db_is_direct) {
-                this.rs = this.cur.executeQuery();
+                global_rs = global_cur.executeQuery();
             } else {
-                this.cs = this.con.prepareCall(Constants.C_SQL_SELECT);
-                cs.setString(1, p_sql);
-                cs.registerOutParameter(2, OracleTypes.CURSOR);
-                cs.execute();
-                this.rs = (ResultSet) cs.getObject(2);
+                global_rs = this.selectBySecurity(p_sql);
             }
 
-            ResultSetMetaData md = rs.getMetaData();
+            ResultSetMetaData md = global_rs.getMetaData();
 
             for (int i = 1; i <= md.getColumnCount(); i++) {
-                col_names.add(md.getColumnLabel(i));
-                col_types.add(md.getColumnTypeName(i));
+                this.col_names.add(md.getColumnLabel(i));
+                this.col_types.add(md.getColumnTypeName(i));
                 if ( md.getColumnName(i).toUpperCase().equals("ROWID") || md.getColumnLabel(i).toUpperCase().equals("ROWID")  ) {
-                    col_for_update_rowid = md.getColumnName(i);
+                    this.col_for_update_rowid = md.getColumnName(i);
 
                     Pattern p = Pattern.compile("\\bfrom\\s+([a-zA-Z0-9_]+(?:\\.[a-zA-Z0-9_]+)?)",Pattern.CASE_INSENSITIVE);
                     Matcher m = p.matcher(p_sql);
 
                     if (m.find()) {
-                        col_for_update_table = m.group(1);
+                        this.col_for_update_table = m.group(1);
                     } 
                 }
             }
@@ -313,19 +294,17 @@ public abstract class DATABASE {
                 this.fetchData(fetchSize);
             }
 
-            status_code = 0;
-            status_msg = "SUCESSO";
+            this.status_code = 0;
+            this.status_msg = "SUCESSO";
 
         } catch (SQLException e) {
-            status_code = -1;
+            this.status_code = -1;
             int[] lc = get_line_column(p_sql, e.getErrorCode());
-            status_msg = e.getMessage() + "\nError at line " + lc[0] + ", column " + lc[1];
+            this.status_msg = e.getMessage() + "\nError at line " + lc[0] + ", column " + lc[1];
         } catch (Exception e) {
-            status_code = -1;
-            status_msg = e.getMessage();
-        } finally {
-            this.is_running = false;
-        }        
+            this.status_code = -1;
+            this.status_msg = e.getMessage();
+        }       
     }
 
     // =========================================================================
@@ -334,18 +313,18 @@ public abstract class DATABASE {
 
     public void fetchData(int fetchSize) throws Exception {
         this.col_data.clear();
-        if (this.rs == null || rs.isClosed()) {
+        if (global_rs == null || global_rs.isClosed()) {
             return;
         }
 
-        ResultSetMetaData md = rs.getMetaData();
+        ResultSetMetaData md = global_rs.getMetaData();
         int count = 0;
-        while (rs.next()) {
+        while ( global_rs.next() ) {
             count++;
             Map<String, Object> novo = new LinkedHashMap<>();
 
             for (int i = 1; i <= md.getColumnCount(); i++) {
-                Object value = rs.getObject(i);
+                Object value = global_rs.getObject(i);
 
                 if ( value == null ) {
                     value = "";
@@ -366,16 +345,16 @@ public abstract class DATABASE {
                 }
                 novo.put(md.getColumnLabel(i), value);
             }
-            col_data.add(novo);
+            this.col_data.add(novo);
 
             if (count >= fetchSize && fetchSize != -1) {
                 return;
             }
         }
-        this.rs.close();
-        this.cur.close();
-        this.rs = null;
-        this.cur = null;
+        global_rs.close();
+        global_cur.close();
+        global_rs = null;
+        global_cur = null;
     }
 
     // =========================================================================
@@ -383,6 +362,13 @@ public abstract class DATABASE {
     // =========================================================================
 
     public abstract String extractDDL(String owner, String type, String name) ;
+
+
+    // =========================================================================
+    // selectBySecurity
+    // =========================================================================
+
+    public abstract ResultSet selectBySecurity(String sql) throws Exception;
 
     // =========================================================================
     // createProcedureTest
@@ -408,6 +394,7 @@ public abstract class DATABASE {
 
     public abstract void treeObjects();
 
+
     // =========================================================================
     // allErrors
     // =========================================================================
@@ -425,8 +412,6 @@ public abstract class DATABASE {
     // =========================================================================
 
     public abstract void filterTableColumns(String type_object, String type_filter);
-
-
 
     // =========================================================================
     // executeUpdateFromPrimaryKey

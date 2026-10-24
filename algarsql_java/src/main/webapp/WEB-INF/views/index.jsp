@@ -355,7 +355,7 @@
                         <table>
                             <tr>
                                 <td>Monaco Theme:</td>
-                                <td><select id="id_preferences_monaco_theme">
+                                <td><select id="id_preferences_monaco_theme" onchange="configureTheme()">
                                         <option value="style-dark.css">Dark</option>
                                         <option value="style-plsql.css">Light</option>
                                     </select></td>
@@ -373,7 +373,7 @@
                                 <td>Font Size:</td>
                                 <td>
                                     <input type="number" id="id_preferences_fontsize" min="8" max="32" value="${monacoFontSize}"
-                                        onchange="editor.updateOptions({fontSize: Number(this.value)})">                                    
+                                        onchange="configureTheme()">                                    
                                 </td>
                             </tr>                            
                         </table>

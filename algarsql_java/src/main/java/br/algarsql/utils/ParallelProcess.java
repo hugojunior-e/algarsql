@@ -69,6 +69,8 @@ public class ParallelProcess extends Thread {
         String[] lines = csv_data.split("\n");
         String f_saved_download = "[]-" + file_name + ".completed";
         String fsaved = Utils.generateFileName(f_saved_download, true);
+        boolean isSelect = this.sql.toUpperCase().trim().startsWith("SELECT");
+        int qtd_records = 0;
 
         try (FileWriter fw = new FileWriter(fsaved)) {
             for (int i = 0; i < lines.length; i++) {
@@ -86,28 +88,36 @@ public class ParallelProcess extends Thread {
                     sql_aux = sql_aux.replace("<" + reg + ">", records[reg].trim());
                 }
 
-                db.executeSelect(sql_aux, false, -2);
-                if (db.status_code != 0) {
-                    db.status_msg =
-                            "ERROR: Executing SQL for line " + (i + 1) + ": " + db.status_msg;
-                    return;
-                }
-                ResultSetMetaData meta = db.rs.getMetaData();
-                if (db.rs.next()) {
-                    for (int idx = 1; idx <= meta.getColumnCount(); idx++) {
-                        String value = db.rs.getString(idx);
-                        line += ";" + value;
+                if ( isSelect ) {
+                    db.executeSelect(sql_aux, false, -2);
+                    if (db.status_code != 0) {
+                        db.status_msg =
+                                "ERROR: Executing SQL for line " + (i + 1) + ": " + db.status_msg;
+                        return;
                     }
-                    fw.write(line + "\n");
+                    ResultSetMetaData meta = db.global_rs.getMetaData();
+                    if (db.global_rs.next()) {
+                        for (int idx = 1; idx <= meta.getColumnCount(); idx++) {
+                            String value = db.global_rs.getString(idx);
+                            line += ";" + value;
+                        }
+                        fw.write(line + "\n");
+                    }
+                } else {
+                    db.executeStatement(sql_aux, false, null);
                 }
-                db.rs.close();
+                db.global_rs.close();
+                qtd_records++;
 
-                db.status_msg = "Process Record " + (i + 1) + "....";
+                db.status_msg = "Process Record " + qtd_records + "....";
             }
 
             String ffp = new File(fsaved).getName();
-            db.status_msg = "<a style=\"cursor: pointer;\" onclick=\"js_download('" + ffp
-                    + "')\"> download file </a>";
+            if ( isSelect ) {
+                db.status_msg = "<a style=\"cursor: pointer;\" onclick=\"js_download('" + ffp + "')\"> download file </a>";
+            } else {
+                db.status_msg = "SUCCESS - Imported Records - " + qtd_records;
+            }
         } catch (Exception e) {
             db.status_msg = "ERROR: Exporting data...." + e.getMessage();
         }
@@ -170,7 +180,7 @@ public class ParallelProcess extends Thread {
             String file_path = Utils.generateFileName("[]-" + l_filenames[file_type], true);
             int qtd = 0;
 
-            ResultSetMetaData meta = db.rs.getMetaData();
+            ResultSetMetaData meta = db.global_rs.getMetaData();
             int colCount = meta.getColumnCount();
 
             // --
@@ -181,10 +191,10 @@ public class ParallelProcess extends Thread {
                 String s_insert_title = " INSERT INTO " + table_name + " ("
                         + String.join(", ", db.col_names) + ") VALUES (%s)";
                 FileWriter fw = new FileWriter(file_path);
-                while (db.rs.next()) {
+                while (db.global_rs.next()) {
                     List<String> values = new ArrayList<>();
-                    for (int i = 1; i <= db.rs.getMetaData().getColumnCount(); i++) {
-                        values.add(db.value(db.rs.getObject(i)));
+                    for (int i = 1; i <= db.global_rs.getMetaData().getColumnCount(); i++) {
+                        values.add(db.value(db.global_rs.getObject(i)));
                     }
                     String s_insert = String.format(s_insert_title, String.join(", ", values));
 
@@ -208,10 +218,10 @@ public class ParallelProcess extends Thread {
                 }
                 fw.write("\n");
 
-                while (db.rs.next()) {
+                while (db.global_rs.next()) {
                     List<String> values = new ArrayList<>();
-                    for (int i = 1; i <= db.rs.getMetaData().getColumnCount(); i++) {
-                        values.add("\"" + db.value(db.rs.getObject(i)) + "\"");
+                    for (int i = 1; i <= db.global_rs.getMetaData().getColumnCount(); i++) {
+                        values.add("\"" + db.value(db.global_rs.getObject(i)) + "\"");
                     }
                     String s_insert = String.join(";", values);
                     fw.write(s_insert + ";\n");
@@ -235,10 +245,10 @@ public class ParallelProcess extends Thread {
                     header.createCell(i - 1).setCellValue(meta.getColumnLabel(i));
                 }
                 qtd = 0;
-                while (db.rs.next()) {
+                while (db.global_rs.next()) {
                     Row row = sheet.createRow(rowNum++);
                     for (int i = 1; i <= colCount; i++) {
-                        String value = db.rs.getString(i);
+                        String value = db.global_rs.getString(i);
                         row.createCell(i - 1).setCellValue(value == null ? "" : value);
                     }
                     qtd++;
@@ -292,9 +302,9 @@ public class ParallelProcess extends Thread {
                 insert.append(")");
                 PreparedStatement ps = sqlite.prepareStatement(insert.toString());
                 sqlite.setAutoCommit(false);
-                while (db.rs.next()) {
+                while (db.global_rs.next()) {
                     for (int i = 1; i <= colCount; i++) {
-                        Object value = db.rs.getObject(i);
+                        Object value = db.global_rs.getObject(i);
 
                         if ( value == null ) {
                             value = "";
@@ -352,7 +362,7 @@ public class ParallelProcess extends Thread {
             Statement st2 = conn2.createStatement();
             ResultSet rs2 = st2.executeQuery("SELECT * FROM dados");
 
-            java.sql.PreparedStatement ps = db.con.prepareStatement(sqlPreparada);
+            java.sql.PreparedStatement ps = db.global_con.prepareStatement(sqlPreparada);
             int batchSize = 1000;
             int count = 0;
             while (rs2.next()) {
@@ -366,7 +376,7 @@ public class ParallelProcess extends Thread {
                 if (count % batchSize == 0) {
                     ps.executeBatch();
                     ps.clearBatch();
-                    ps = db.con.prepareStatement(sqlPreparada);
+                    ps = db.global_con.prepareStatement(sqlPreparada);
                 }
                 db.status_msg = "Imported " + count + " records.";
             }

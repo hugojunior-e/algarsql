@@ -47,10 +47,13 @@ public class DBController {
             username = o.toString();
 
             if (action.equals("connect")) {
-                db = DATABASE.createConnection(request.getParameter("usr").toString(),
+                db = DATABASE.createConnection(
+                        request.getParameter("usr").toString(),
                         request.getParameter("pwd").toString(),
                         request.getParameter("tns").toString(),
-                        request.getParameter("direct").toString().equals("1"));
+                        request.getParameter("direct").toString().equals("1"),
+                        request.getParameter("dbname").toString()
+                );
                 db.username = username;
                 db.connectDatabase();
                 if (db.status_code == 0) {
@@ -61,9 +64,9 @@ public class DBController {
                 session.setAttribute(xTabId, db);
                 ret.put("status_msg", db.status_msg);
                 ret.put("status_code", db.status_code);
-                ret.put("tree", db.tree_str);
-                ret.put("object_tables", db.tree_tables.toArray());
-                ret.put("object_users", db.tree_users.toArray());
+                ret.put("tree", db.global_tree_str);
+                ret.put("object_tables", db.global_tree_tables.toArray());
+                ret.put("object_users", db.global_tree_users.toArray());
                 return ret;
             }
 
@@ -243,10 +246,10 @@ public class DBController {
         ret.put("data", db.col_data);
         ret.put("columns", db.col_names.toArray());
         ret.put("columns_types", db.col_types.toArray());
-        ret.put("tree", db.tree_str);
+        ret.put("tree", db.global_tree_str);
         ret.put("describe", describe);
         ret.put("explain", explain);
-        ret.put("dbms", db.dbms_output);
+        ret.put("dbms", db.db_dbms);
         ret.put("sql_type", sql_tipo.sql_type);
         ret.put("for_update_table", db.col_for_update_table + "." + db.col_for_update_rowid);
         return ret;

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Algar SQL - Login</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to right, #0072ce, #00a78e);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .login-container {
+      background-color: white;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      text-align: center;
+      width: 100%;
+      max-width: 380px;
+    }
+
+    h2 {
+      margin-bottom: 30px;
+      color: #0072ce;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      background-color: #0072ce;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #005ca3;
+    }
+
+    .footer {
+      margin-top: 20px;
+      font-size: 12px;
+      color: #888;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="login-container">
+    <h2>Algar SQL</h2>
+
+    <h4>Username / Password Invalid</h4>
+
+    <button onclick="window.location.href='/login'">Try Again</button>
+
+    <div class="footer">
+      © 2026 Algar. All rights reserved.
+    </div>
+  </div>
+
+</body>
+
+</html>

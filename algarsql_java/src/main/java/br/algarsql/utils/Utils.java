@@ -107,7 +107,7 @@ public class Utils {
             Connection conn = DriverManager.getConnection("jdbc:oracle:thin:@" + db_tns,
                     Constants.FARMPRD_USR, Constants.FARMPRD_PWD);
             Statement st = conn.createStatement();
-            st.execute(Constants.C_CHANGE_PASSWORD.replaceAll("<1>",db_user).replaceAll("<2>", db_password));
+            st.execute(Constants.C_ORACLE_CHANGE_PASSWORD.replaceAll("<1>",db_user).replaceAll("<2>", db_password));
             conn.close();
             return "Success Change Password for user " + db_user;
         } catch (Exception e) {
@@ -123,7 +123,7 @@ public class Utils {
                     DriverManager.getConnection("jdbc:oracle:thin:@" + alias,
                             Constants.FARMPRD_USR, Constants.FARMPRD_PWD);
             Statement st = conn.createStatement();
-            st.execute( Constants.C_SQL_KILL_SESSIONS.replaceAll("<1>", username));
+            st.execute( Constants.C_ORACLE_KILL_SESSIONS.replaceAll("<1>", username));
             conn.close();
            
             ret = "Sessions Killed Sucessfuly! :: " + username;
