@@ -352,106 +352,82 @@ public class TDBOracle extends DATABASE {
     }
 
     // =========================================================================
+    // afterExecuteStatement
+    // =========================================================================
+
+    @Override
+    public void afterExecuteStatement() throws Exception {
+        try (CallableStatement cs = global_con.prepareCall(C_ORACLE_DBMS)) {
+            cs.registerOutParameter(1, OracleTypes.VARCHAR);
+            cs.execute();
+            this.db_dbms = cs.getString(1);
+        }
+    }
+
+    // =========================================================================
     // executeStatement
     // =========================================================================
 
     @Override
-    public void executeStatement(String p_sql, boolean logger, Object[] p_bind_values) {
-        this.prepareVars(p_sql, logger);
+    public void executeStatementBySecurity(String p_sql, boolean logger, Object[] p_bind_values)  throws Exception {
+        if (p_bind_values != null && p_bind_values.length > 0) {
+            CallableStatement cs1 = global_con.prepareCall(C_ORACLE_BIND_PREPARE);
+            cs1.setString(1, p_sql);
+            cs1.registerOutParameter(2, OracleTypes.INTEGER);
+            cs1.registerOutParameter(3, OracleTypes.VARCHAR);
+            cs1.executeUpdate();
+            status_code = cs1.getInt(2);
+            status_msg = cs1.getString(3);
+            cs1.close();
 
-        try {
-            if (this.db_is_direct) {
-                PreparedStatement cur1 = global_con.prepareStatement(p_sql);
-                if (p_bind_values != null && p_bind_values.length > 0) {
-                    for (int i = 0; i < p_bind_values.length; i++) {
-                        @SuppressWarnings("unchecked")
-                        HashMap<String, Object> reg = (HashMap<String, Object>) p_bind_values[i];
-                        Object fv = reg.get("value");
-                        cur1.setObject(i + 1, fv);
-                    }
-                }
-
-                int rows = cur1.executeUpdate();
-                status_code = 0;
-                status_msg = "SUCESSO - " + rows + " rows";
-                cur1.close();
-            } else {
-                if (p_bind_values != null && p_bind_values.length > 0) {
-
-                    // prepara variaveis do bind
-
-                    CallableStatement cs1 = global_con.prepareCall(C_ORACLE_BIND_PREPARE);
-                    cs1.setString(1, p_sql);
-                    cs1.registerOutParameter(2, OracleTypes.INTEGER);
-                    cs1.registerOutParameter(3, OracleTypes.VARCHAR);
-                    cs1.executeUpdate();
-                    status_code = cs1.getInt(2);
-                    status_msg = cs1.getString(3);
-                    cs1.close();
-
-                    if (status_code != 0) {
-                        return;
-                    }
-
-                    // popula valores das variaveis do bind
-
-                    for (int i = 0; i < p_bind_values.length; i++) {
-                        String var_name = "p_str";
-                        int var_idx = 1;
-                        @SuppressWarnings("unchecked")
-                        HashMap<String, Object> reg = (HashMap<String, Object>) p_bind_values[i];
-                        String fn = reg.get("name").toString();
-                        Object fv = reg.get("value");
-
-                        if (fv instanceof java.sql.Clob) {
-                            var_name = "p_clob";
-                            var_idx = 3;
-                        } else if (fv instanceof java.sql.Blob) {
-                            var_name = "p_blob";
-                            var_idx = 4;
-                        } else if (fv instanceof java.sql.Timestamp) {
-                            var_name = "p_date";
-                            var_idx = 2;
-                        }
-                        cs1 = global_con.prepareCall(String.format(C_ORACLE_BIND_VAR, var_name));
-                        cs1.setString(1, fn);
-                        cs1.setInt(2, var_idx);
-                        cs1.setObject(3, fv);
-                        cs1.execute();
-                        cs1.close();
-
-                    }
-
-                    // executa a sql com bind ja preparado e setado
-
-                    cs1 = global_con.prepareCall(C_ORACLE_BIND_EXECUTE);
-                    cs1.registerOutParameter(1, OracleTypes.INTEGER);
-                    cs1.registerOutParameter(2, OracleTypes.VARCHAR);
-                    cs1.execute();
-                    status_code = cs1.getInt(1);
-                    status_msg = cs1.getString(2);
-                    cs1.close();
-
-                } else {
-                    CallableStatement cs1 = global_con.prepareCall(C_ORACLE_EXEC);
-                    cs1.registerOutParameter(2, OracleTypes.INTEGER);
-                    cs1.registerOutParameter(3, OracleTypes.VARCHAR);
-                    cs1.setString(1, p_sql);
-                    cs1.execute();
-                    status_code = cs1.getInt(2);
-                    status_msg = cs1.getString(3);
-                    cs1.close();
-                }
+            if (status_code != 0) {
+                return;
             }
-            CallableStatement cs3 = global_con.prepareCall(C_ORACLE_DBMS);
-            cs3.registerOutParameter(1, OracleTypes.VARCHAR);
-            cs3.execute();
-            this.db_dbms = cs3.getString(1);
-            cs3.close();
 
-        } catch (Exception e) {
-            status_code = -1;
-            status_msg = e.getMessage();
+            for (int i = 0; i < p_bind_values.length; i++) {
+                String var_name = "p_str";
+                int var_idx = 1;
+                @SuppressWarnings("unchecked")
+                HashMap<String, Object> reg = (HashMap<String, Object>) p_bind_values[i];
+                String fn = reg.get("name").toString();
+                Object fv = reg.get("value");
+
+                if (fv instanceof java.sql.Clob) {
+                    var_name = "p_clob";
+                    var_idx = 3;
+                } else if (fv instanceof java.sql.Blob) {
+                    var_name = "p_blob";
+                    var_idx = 4;
+                } else if (fv instanceof java.sql.Timestamp) {
+                    var_name = "p_date";
+                    var_idx = 2;
+                }
+                cs1 = global_con.prepareCall(String.format(C_ORACLE_BIND_VAR, var_name));
+                cs1.setString(1, fn);
+                cs1.setInt(2, var_idx);
+                cs1.setObject(3, fv);
+                cs1.execute();
+                cs1.close();
+
+            }
+
+            cs1 = global_con.prepareCall(C_ORACLE_BIND_EXECUTE);
+            cs1.registerOutParameter(1, OracleTypes.INTEGER);
+            cs1.registerOutParameter(2, OracleTypes.VARCHAR);
+            cs1.execute();
+            status_code = cs1.getInt(1);
+            status_msg = cs1.getString(2);
+            cs1.close();
+
+        } else {
+            CallableStatement cs1 = global_con.prepareCall(C_ORACLE_EXEC);
+            cs1.registerOutParameter(2, OracleTypes.INTEGER);
+            cs1.registerOutParameter(3, OracleTypes.VARCHAR);
+            cs1.setString(1, p_sql);
+            cs1.execute();
+            status_code = cs1.getInt(2);
+            status_msg = cs1.getString(3);
+            cs1.close();
         }
     }
 
@@ -699,11 +675,11 @@ public class TDBOracle extends DATABASE {
     }
 
     // =========================================================================
-    // selectBySecurity
+    // executeSelectBySecurity
     // =========================================================================
 
     @Override
-    public ResultSet selectBySecurity(String sql) throws Exception {
+    public ResultSet executeSelectBySecurity(String sql) throws Exception {
         CallableStatement cs = global_con.prepareCall(C_ORACLE_SELECT);
         cs.setString(1, sql);
         cs.registerOutParameter(2, OracleTypes.CURSOR);

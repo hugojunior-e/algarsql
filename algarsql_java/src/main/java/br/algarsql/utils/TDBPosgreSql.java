@@ -52,7 +52,7 @@ public class TDBPosgreSql extends DATABASE {
     }
 
     @Override
-    public void executeStatement(String p_sql, boolean logger, Object[] p_bind_values) {
+    public void executeStatementBySecurity(String p_sql, boolean logger, Object[] p_bind_values) throws Exception{
         throw new UnsupportedOperationException("Unimplemented method 'executeStatement'");
     }
 
@@ -297,7 +297,7 @@ public class TDBPosgreSql extends DATABASE {
     // =========================================================================   
 
     @Override
-    public ResultSet selectBySecurity(String sql) throws Exception {
+    public ResultSet executeSelectBySecurity(String sql) throws Exception {
         throw new UnsupportedOperationException("Unimplemented method 'selectBySecurity'");
     }
 
@@ -321,5 +321,14 @@ public class TDBPosgreSql extends DATABASE {
         } catch(Exception ex) {
             ex.printStackTrace();
         }
+    }
+        
+    // =========================================================================
+    // afterExecuteStatement
+    // =========================================================================
+
+    @Override
+    public void afterExecuteStatement() throws Exception {
+        throw new UnsupportedOperationException("Unimplemented method 'afterExecuteStatement'");
     }    
 }

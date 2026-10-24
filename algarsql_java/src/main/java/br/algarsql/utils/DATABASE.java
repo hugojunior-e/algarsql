@@ -58,8 +58,6 @@ public abstract class DATABASE {
     public ArrayList<String>          global_tree_users = new ArrayList<>();
 
 
-
-
     public static DATABASE createConnection(
             String p_usuario,
             String p_senha,
@@ -112,7 +110,7 @@ public abstract class DATABASE {
         this.status_msg   = "OK";
 
         try {
-            global_con = DriverManager.getConnection(db_tns,this.db_usuario, this.db_senha);
+            global_con = DriverManager.getConnection(this.db_tns,this.db_usuario, this.db_senha);
             this.afterConnect();
         } catch (Exception e) {
             this.status_code = -1;
@@ -121,7 +119,6 @@ public abstract class DATABASE {
     }    
 
 
-    // =========================================================================
     // =========================================================================
     // value
     // =========================================================================
@@ -143,7 +140,7 @@ public abstract class DATABASE {
     // =========================================================================
 
     protected void prepareVars(String p_sql, boolean logger) {
-        pingConnection();
+        this.pingConnection();
         this.db_dbms = "";
         this.col_names.clear();
         this.col_types.clear();
@@ -155,18 +152,6 @@ public abstract class DATABASE {
         }
     }
 
-
-    // =========================================================================
-    // pingConnection
-    // =========================================================================
-
-     protected abstract void pingConnection();
-    
-    // =========================================================================
-    // AFTER CONNECT
-    // =========================================================================
-
-    public abstract void afterConnect() throws Exception;
 
     // =========================================================================
     // disconnect
@@ -208,12 +193,6 @@ public abstract class DATABASE {
     }
 
     // =========================================================================
-    // STOP
-    // =========================================================================
-
-    public abstract void stopExecution();
-
-    // =========================================================================
     // get_line_column
     // =========================================================================
 
@@ -235,10 +214,38 @@ public abstract class DATABASE {
     // executeStatement
     // =========================================================================
 
-    public abstract void executeStatement(String p_sql, boolean logger, Object[] p_bind_values);
+
+    public void executeStatement(String p_sql, boolean logger, Object[] p_bind_values) {
+        this.prepareVars(p_sql, logger);
+
+        try {
+            if (!this.db_is_direct) {
+                this.executeStatementBySecurity(p_sql, logger, p_bind_values);
+            } else {
+                try (PreparedStatement cur1 = global_con.prepareStatement(p_sql)) {
+                    if (p_bind_values != null) {
+                        for (int i = 0; i < p_bind_values.length; i++) {
+                            @SuppressWarnings("unchecked")
+                            Map<String, Object> reg = (Map<String, Object>) p_bind_values[i];
+                            cur1.setObject(i + 1, reg.get("value"));
+                        }
+                    }
+                    int rows = cur1.executeUpdate();
+                    status_code = 0;
+                    status_msg = "SUCESSO - " + rows + " rows";
+                }
+            }
+            this.afterExecuteStatement();
+        } catch (Exception e) {
+            status_code = -1;
+            status_msg = e.getMessage();
+        }
+    }
+
+
 
     // =========================================================================
-    // SELECT
+    // executeSelect
     // =========================================================================
 
     public void executeSelect(String p_sql, boolean logger, Integer fetchSize) {
@@ -258,7 +265,7 @@ public abstract class DATABASE {
             if (this.db_is_direct) {
                 global_rs = global_cur.executeQuery();
             } else {
-                global_rs = this.selectBySecurity(p_sql);
+                global_rs = this.executeSelectBySecurity(p_sql);
             }
 
             ResultSetMetaData md = global_rs.getMetaData();
@@ -346,6 +353,56 @@ public abstract class DATABASE {
     }
 
     // =========================================================================
+    // executeUpdateFromPrimaryKey
+    // =========================================================================
+        
+    public void executeUpdateFromPrimaryKey(String rowid, String sql, String json_items)
+            throws Exception {
+        ObjectMapper mapper = new ObjectMapper();
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> dados = mapper.readValue(json_items, Map.class);
+
+        List<Object> params = new ArrayList<>();
+        String set_clause = "";
+        for (Map.Entry<String, Object> entry : dados.entrySet()) {
+            String fn = entry.getKey();
+
+            if (!fn.startsWith("@")) {
+                String ft = dados.get("@" + fn).toString();
+                Object fv = entry.getValue();
+
+                if ( fv == null || fv.toString().isEmpty()) {
+                    fv = null;
+                }
+                else if (ft.contains("DATE")) {
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+                    LocalDate localDate = LocalDate.parse(fv.toString(), formatter);
+                    fv = java.sql.Date.valueOf(localDate);
+                } else if (ft.contains("LOB")) {
+                    fv = this.createBinaryObject(fv.toString(), ft.contains("BLOB"));
+                }
+                Map<String, Object> obj = new HashMap<>();
+                obj.put("name", fn);
+                obj.put("value", fv);
+
+                params.add(obj);
+                set_clause += fn + " = :" + fn + ", ";
+            }
+        }
+        set_clause = set_clause.substring(0, set_clause.length() - 2);
+        String SQL_UPDATE_AUX = "UPDATE " + col_for_update_table + " SET " + set_clause + " WHERE " + col_for_update_rowid + " = '" + rowid + "'";
+        this.executeStatement(SQL_UPDATE_AUX, false, params.toArray());
+    }    
+
+
+    // =========================================================================
+    // executeStatement
+    // =========================================================================
+
+    public abstract void executeStatementBySecurity(String p_sql, boolean logger, Object[] p_bind_values) throws Exception;
+
+    // =========================================================================
     // extractDDL
     // =========================================================================
 
@@ -353,10 +410,10 @@ public abstract class DATABASE {
 
 
     // =========================================================================
-    // selectBySecurity
+    // executeSelectBySecurity
     // =========================================================================
 
-    public abstract ResultSet selectBySecurity(String sql) throws Exception;
+    public abstract ResultSet executeSelectBySecurity(String sql) throws Exception;
 
     // =========================================================================
     // createProcedureTest
@@ -389,6 +446,12 @@ public abstract class DATABASE {
     public abstract Object createBinaryObject(Object data, boolean is_blob) throws Exception;
 
     // =========================================================================
+    // STOP
+    // =========================================================================
+
+    public abstract void stopExecution();
+
+    // =========================================================================
     // allErrors
     // =========================================================================
 
@@ -407,46 +470,20 @@ public abstract class DATABASE {
     public abstract void filterTableColumns(String type_object, String type_filter);
 
     // =========================================================================
-    // executeUpdateFromPrimaryKey
+    // pingConnection
     // =========================================================================
-        
-    public void executeUpdateFromPrimaryKey(String rowid, String sql, String json_items)
-            throws Exception {
-        ObjectMapper mapper = new ObjectMapper();
 
-        @SuppressWarnings("unchecked")
-        Map<String, Object> dados = mapper.readValue(json_items, Map.class);
+     protected abstract void pingConnection();
+    
+    // =========================================================================
+    // afterConnect
+    // =========================================================================
 
-        ArrayList<Object> params = new ArrayList<>();
-        String set_clause = "";
-        for (Map.Entry<String, Object> entry : dados.entrySet()) {
-            String fn = entry.getKey();
+    public abstract void afterConnect() throws Exception;
 
-            if (!fn.startsWith("@")) {
-                String ft = dados.get("@" + fn).toString();
-                Object fv = entry.getValue();
+    // =========================================================================
+    // afterExecuteStatement
+    // =========================================================================
 
-                if ( fv == null || fv.toString().isEmpty()) {
-                    fv = null;
-                }
-                else if (ft.contains("DATE")) {
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-                    LocalDate localDate = LocalDate.parse(fv.toString(), formatter);
-                    fv = java.sql.Date.valueOf(localDate);
-                } else if (ft.contains("LOB")) {
-                    fv = this.createBinaryObject(fv.toString(), ft.contains("BLOB"));
-                }
-                HashMap<String, Object> obj = new HashMap<>();
-                obj.put("name", fn);
-                obj.put("value", fv);
-
-                params.add(obj);
-                set_clause += fn + " = :" + fn + ", ";
-            }
-        }
-        set_clause = set_clause.substring(0, set_clause.length() - 2);
-        String SQL_UPDATE_AUX = "UPDATE " + col_for_update_table + " SET " + set_clause + " WHERE " + col_for_update_rowid + " = '" + rowid + "'";
-        this.executeStatement(SQL_UPDATE_AUX, false, params.toArray());
-    }    
-
+    public abstract void afterExecuteStatement() throws Exception;    
 }
