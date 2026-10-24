@@ -1,6 +1,5 @@
 package br.algarsql.utils;
 
-import oracle.jdbc.OracleConnection;
 import java.sql.Blob;
 import java.sql.Clob;
 import java.sql.Connection;
@@ -28,7 +27,7 @@ public abstract class DATABASE {
     // =========================================================================
     public int                        status_code = 0;
     public int                        status_code_parallel = 0;
-    private int                       status_stop_count = 0;
+    public int                        status_stop_count = 0;
     public String                     status_msg = "OK";
 
     public Connection                 global_con = null;
@@ -61,27 +60,51 @@ public abstract class DATABASE {
 
 
 
-    public static DATABASE createConnection(String p_usuario, String p_senha, String p_tns, boolean p_is_direct, String p_db_name) {
-        DATABASE o = null;
+    public static DATABASE createConnection(
+            String p_usuario,
+            String p_senha,
+            String p_tns,
+            boolean p_is_direct,
+            String p_db_name) {
 
-        if ( p_tns.startsWith("jdbc") ) {
-            if ( p_tns.contains("oracle")   )  o = new TDBOracle();
-            if ( p_tns.contains("mysql")    )  o = new TDBMySql();
-            if ( p_tns.contains("postgres") )  o = new TDBPosgreSql();
+        if (p_tns == null || p_tns.isBlank()) {
+            throw new IllegalArgumentException("A conexão TNS não pode ser vazia.");
+        }
+
+        String tns = p_tns.trim();
+        String tnsLower = tns.toLowerCase(java.util.Locale.ROOT);
+
+        DATABASE db;
+
+        if (!tnsLower.startsWith("jdbc:")) {
+            db = new TDBOracle();
+            tns = "jdbc:oracle:thin:@" + tns;
+
+        } else if (tnsLower.startsWith("jdbc:oracle:")) {
+            db = new TDBOracle();
+
+        } else if (tnsLower.startsWith("jdbc:mysql:")) {
+            db = new TDBMySql();
+
+        } else if (tnsLower.startsWith("jdbc:postgresql:")) {
+            db = new TDBPosgreSql();
+
         } else {
-            o = new TDBOracle();
+            throw new IllegalArgumentException(
+                "Tipo de conexão JDBC não suportado: " + tns
+            );
         }
 
-        o.db_usuario     = p_usuario;
-        o.db_senha       = p_senha;
-        o.db_tns         = p_tns.startsWith("jdbc") ? p_tns : "jdbc:oracle:thin:@" + p_tns;
-        o.db_is_direct   = p_is_direct;
-        o.db_name        = p_db_name;
-        if ( !(o instanceof TDBOracle) ) {
-            o.db_is_direct = true;
-        }
-        return o;
-    }
+        db.db_usuario   = p_usuario;
+        db.db_senha     = p_senha;
+        db.db_tns       = tns;
+        db.db_is_direct = db instanceof TDBOracle
+                ? p_is_direct
+                : true;
+        db.db_name      = p_db_name;
+
+        return db;
+    }    
 
 
     public void connectDatabase() {
@@ -96,26 +119,6 @@ public abstract class DATABASE {
             this.status_msg = e.getMessage();
         }
     }    
-
-
-    // =========================================================================
-    // createOracleLob
-    // =========================================================================
-
-    public Object createOracleLob(Object data, boolean is_blob) throws Exception {
-        OracleConnection oc = global_con.unwrap(OracleConnection.class);
-
-        if (is_blob) {
-            Blob blob = oc.createBlob();
-            byte[] bytes = java.util.Base64.getDecoder().decode(data.toString());
-
-            blob.setBytes(1, bytes );
-            return blob;
-        }
-        Clob clob = oc.createClob();
-        clob.setString(1, data.toString());
-        return clob;
-    }
 
 
     // =========================================================================
@@ -208,22 +211,7 @@ public abstract class DATABASE {
     // STOP
     // =========================================================================
 
-    public void stopExecution() {
-        try {
-            if ( this.db_tns.contains("oracle") ) {
-                OracleConnection oc = global_con.unwrap(OracleConnection.class);
-                oc.cancel();
-                this.status_stop_count++;
-                if (this.status_stop_count > 3) {
-                    oc.abort();
-                }
-            } else {
-                global_cur.cancel();                    
-            }
-        } catch (Exception ignored) {
-            ignored.printStackTrace();
-        }        
-    }
+    public abstract void stopExecution();
 
     // =========================================================================
     // get_line_column
@@ -394,6 +382,11 @@ public abstract class DATABASE {
 
     public abstract void treeObjects();
 
+    // =========================================================================
+    // createBinaryObject
+    // =========================================================================
+
+    public abstract Object createBinaryObject(Object data, boolean is_blob) throws Exception;
 
     // =========================================================================
     // allErrors
@@ -441,7 +434,7 @@ public abstract class DATABASE {
                     LocalDate localDate = LocalDate.parse(fv.toString(), formatter);
                     fv = java.sql.Date.valueOf(localDate);
                 } else if (ft.contains("LOB")) {
-                    fv = this.createOracleLob(fv.toString(), ft.contains("BLOB"));
+                    fv = this.createBinaryObject(fv.toString(), ft.contains("BLOB"));
                 }
                 HashMap<String, Object> obj = new HashMap<>();
                 obj.put("name", fn);

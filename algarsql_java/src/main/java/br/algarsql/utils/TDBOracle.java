@@ -1,6 +1,8 @@
 package br.algarsql.utils;
 
+import java.sql.Blob;
 import java.sql.CallableStatement;
+import java.sql.Clob;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -696,6 +698,10 @@ public class TDBOracle extends DATABASE {
         this.executeSelect(sql, false, -1);
     }
 
+    // =========================================================================
+    // selectBySecurity
+    // =========================================================================
+
     @Override
     public ResultSet selectBySecurity(String sql) throws Exception {
         CallableStatement cs = global_con.prepareCall(C_ORACLE_SELECT);
@@ -704,4 +710,42 @@ public class TDBOracle extends DATABASE {
         cs.execute();
         return (ResultSet) cs.getObject(2);
     }
+
+    // =========================================================================
+    // createBinaryObject
+    // =========================================================================
+
+    @Override
+    public Object createBinaryObject(Object data, boolean is_blob) throws Exception {
+        OracleConnection oc = global_con.unwrap(OracleConnection.class);
+
+        if (is_blob) {
+            Blob blob = oc.createBlob();
+            byte[] bytes = java.util.Base64.getDecoder().decode(data.toString());
+
+            blob.setBytes(1, bytes );
+            return blob;
+        }
+        Clob clob = oc.createClob();
+        clob.setString(1, data.toString());
+        return clob;
+    }
+
+    // =========================================================================
+    // stopExecution
+    // =========================================================================
+
+    @Override
+    public void stopExecution() {
+        try {
+            OracleConnection oc = global_con.unwrap(OracleConnection.class);
+            oc.cancel();
+            this.status_stop_count++;
+            if (this.status_stop_count > 3) {
+                oc.abort();
+            }
+        } catch (Exception ignored) {
+            ignored.printStackTrace();
+        }        
+    }    
 }

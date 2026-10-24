@@ -232,4 +232,26 @@ public class TDBMySql extends DATABASE {
         throw new UnsupportedOperationException("Unimplemented method 'selectBySecurity'");
     }
 
+    // =========================================================================
+    // createBinaryObject
+    // =========================================================================
+
+    @Override
+    public Object createBinaryObject(Object data, boolean is_blob) throws Exception {
+        throw new UnsupportedOperationException("Unimplemented method 'createBinaryObject'");
+    }
+
+    // =========================================================================
+    // stopExecution
+    // =========================================================================
+
+    @Override
+    public void stopExecution() {
+        try {
+            global_cur.cancel();                    
+        } catch(Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
 }
