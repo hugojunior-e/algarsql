@@ -48,6 +48,21 @@ public class TDBMySql extends DATABASE {
                   ORDER BY OWNER, OBJECT_TYPE, OBJECT_NAME
             """;
 
+    public static final String C_MYSQL_ALL_TAB_COLUMNS = """
+            SELECT
+                COLUMN_NAME AS N,
+                TABLE_SCHEMA AS O,
+                LPAD(
+                    ROW_NUMBER() OVER (ORDER BY TABLE_SCHEMA, ORDINAL_POSITION),
+                    10,
+                    '0'
+                ) AS I
+            FROM INFORMATION_SCHEMA.COLUMNS
+            WHERE upper(TABLE_NAME) = UPPER('%s')
+            ORDER BY TABLE_SCHEMA, ORDINAL_POSITION
+            """;
+
+
     @Override
     protected void pingConnection() {
 
@@ -221,6 +236,8 @@ public class TDBMySql extends DATABASE {
     @Override
     public void filterTableColumns(String type_object, String type_filter) {
         this.prepareVars("", false);
+        String sql = String.format(C_MYSQL_ALL_TAB_COLUMNS, type_filter);
+        this.executeSelect(sql, false, -1);        
     }
 
     // =========================================================================

@@ -375,7 +375,18 @@
                                     <input type="number" id="id_preferences_fontsize" min="8" max="32" value="${monacoFontSize}"
                                         onchange="configureTheme()">                                    
                                 </td>
-                            </tr>                            
+                            </tr>    
+                            
+                            <tr>
+                                <td>Import Scripts:</td>
+                                <td>
+                                    <input type="file" id="id_preferences_arquivos" multiple>
+                                    <button type="button" onclick="js_preferences_import_scripts()">
+                                        import scripts
+                                    </button>                                    
+                                </td>
+                            </tr> 
+
                         </table>
                     </div>
 

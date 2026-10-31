@@ -105,6 +105,9 @@ public class ParallelProcess extends Thread {
                     }
                 } else {
                     db.executeStatement(sql_aux, false, null);
+                    if ( db.status_code != 0 ) {
+                        throw new Exception(db.status_msg);
+                    }
                 }
                 db.global_rs.close();
                 qtd_records++;

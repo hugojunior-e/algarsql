@@ -955,6 +955,32 @@ function js_recall_sql_form() {
     ==========================================================================================------------------------------------
 */
 
+
+async function js_preferences_import_scripts() {
+    const input = document.getElementById("id_preferences_arquivos");
+
+    if (input.files.length === 0) {
+        alert("Select files.");
+        return;
+    }
+
+    const formData = new FormData();
+
+    for (const arquivo of input.files) {
+        formData.append("arquivos", arquivo);
+    }
+
+    const resposta = await fetch("/uploadLocalFiles", {
+        method: "POST",
+        body: formData
+    });
+
+    const texto = await resposta.text();
+
+    alert(texto);
+}
+
+
 function js_preferences_tnsnames() {
     ajax("/config_get_tnsnames", {}, function (a) {
         js_window_popup("TNSNAMES.ORA", a.tnsnames);
@@ -1180,6 +1206,8 @@ function js_db_grid_editrow_save() {
     });
 
 }
+
+
 
 /*
     ==========================================================================================------------------------------------

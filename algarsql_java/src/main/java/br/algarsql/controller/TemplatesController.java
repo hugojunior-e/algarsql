@@ -3,11 +3,18 @@ package br.algarsql.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
+
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.http.MediaType;
 import br.algarsql.utils.Constants;
 import br.algarsql.utils.Utils;
+
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,17 +22,35 @@ import java.util.Map;
 @RestController
 public class TemplatesController {
 
+    @PostMapping(value = "/uploadLocalFiles", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public String uploadLocalFiles(
+            @RequestParam("arquivos") List<MultipartFile> arquivos,
+            HttpSession session)
+            throws IOException {
+        try {
+            Object o = session.getAttribute("username");
+            for (MultipartFile arquivo : arquivos) {
+                String nome = arquivo.getOriginalFilename();
+                byte[] conteudo = arquivo.getBytes();
+                Utils.configSave("LocalScripts|" + nome, new String(conteudo), "SQL_TEMPLATES.NEW", o.toString());
+            }
+            return "Scripts imported successfully.";
+        } catch (Exception e) {
+            return e.getMessage();
+        }
+    }
+
     // ==========================================================================================
     //
     // ==========================================================================================
 
-
-    @RequestMapping(value = "/template", method = {RequestMethod.GET, RequestMethod.POST})
-    public Map<String, Object> templateActions(HttpServletResponse response, HttpServletRequest request, HttpSession session) throws Exception {
+    @RequestMapping(value = "/template", method = { RequestMethod.GET, RequestMethod.POST })
+    public Map<String, Object> templateActions(HttpServletResponse response, HttpServletRequest request,
+            HttpSession session) throws Exception {
         Map<String, Object> ret = new HashMap<>();
 
         Object o = session.getAttribute("username");
-        if ( o == null ) {
+        if (o == null) {
             response.setStatus(401);
             ret.put("redirect", Constants.PAGE_LOGIN);
             return ret;
@@ -34,13 +59,12 @@ public class TemplatesController {
 
         String action = request.getParameter("action");
 
-
         try {
             // ---------------------------------------------------------
             // SAVE TEMPLATE
             // ---------------------------------------------------------
             if ("save".equals(action)) {
-                String name  = request.getParameter("name");
+                String name = request.getParameter("name");
                 String value = request.getParameter("value");
                 Utils.configSave(name, value, "SQL_TEMPLATES.SAVE", username);
                 ret.put("status_msg", "saved successfully");
@@ -54,7 +78,7 @@ public class TemplatesController {
             else if ("load".equals(action)) {
                 @SuppressWarnings("unchecked")
                 List<Map<String, String>> list = (List<Map<String, String>>) Utils
-                        .configValue("SQL_TEMPLATES", new String[] {"%"}, username);
+                        .configValue("SQL_TEMPLATES", new String[] { "%" }, username);
 
                 StringBuilder sb = new StringBuilder();
                 for (Map<String, String> item : list) {
@@ -76,7 +100,7 @@ public class TemplatesController {
                 String name = request.getParameter("name");
                 @SuppressWarnings("unchecked")
                 List<Map<String, String>> list = (List<Map<String, String>>) Utils
-                        .configValue("SQL_TEMPLATES", new String[] {name}, username);
+                        .configValue("SQL_TEMPLATES", new String[] { name }, username);
 
                 if (list != null && !list.isEmpty()) {
                     ret.put("code", list.get(0).get("info"));
@@ -85,16 +109,14 @@ public class TemplatesController {
                 }
                 ret.put("status_code", 0);
                 return ret;
-            }
-            else if ("delete".equals(action)) {
+            } else if ("delete".equals(action)) {
                 String type = request.getParameter("type");
                 String name = request.getParameter("name") + (type.equals("FILE") ? "" : "|%");
                 Utils.configSave(name, null, "SQL_TEMPLATES.DEL", username);
                 ret.put("status_msg", "successfully deleted");
                 ret.put("status_code", 0);
                 return ret;
-            }
-            else if ("rename".equals(action) || "moveto".equals(action)) {
+            } else if ("rename".equals(action) || "moveto".equals(action)) {
                 String type = request.getParameter("type");
                 String name = request.getParameter("name") + (type.equals("FILE") ? "" : "|%");
                 String newName = request.getParameter("new_name");
@@ -102,16 +124,14 @@ public class TemplatesController {
                 ret.put("status_msg", "rename".equals(action) ? "successfully renamed" : "successfully moved");
                 ret.put("status_code", 0);
                 return ret;
-            }
-            else if ("newfile".equals(action)) {
+            } else if ("newfile".equals(action)) {
                 String newName = request.getParameter("new_name");
-                String value   = request.getParameter("value");
+                String value = request.getParameter("value");
                 Utils.configSave(newName, value, "SQL_TEMPLATES.NEW", username);
                 ret.put("status_msg", "New file created successfully.");
                 ret.put("status_code", 0);
                 return ret;
-            }            
-           
+            }
 
             // ---------------------------------------------------------
             // INVALID ACTION

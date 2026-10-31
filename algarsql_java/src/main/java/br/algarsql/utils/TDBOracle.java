@@ -423,8 +423,12 @@ public class TDBOracle extends DATABASE {
             CallableStatement cs1 = global_con.prepareCall(C_ORACLE_EXEC);
             cs1.registerOutParameter(2, OracleTypes.INTEGER);
             cs1.registerOutParameter(3, OracleTypes.VARCHAR);
-            cs1.setString(1, p_sql);
+
+            Clob b =  (Clob) this.createBinaryObject(p_sql, false);
+
+            cs1.setClob(1, b );
             cs1.execute();
+
             status_code = cs1.getInt(2);
             status_msg = cs1.getString(3);
             cs1.close();

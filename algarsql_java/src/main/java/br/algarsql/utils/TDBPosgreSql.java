@@ -298,7 +298,7 @@ public class TDBPosgreSql extends DATABASE {
 
     @Override
     public ResultSet executeSelectBySecurity(String sql) throws Exception {
-        throw new UnsupportedOperationException("Unimplemented method 'selectBySecurity'");
+        throw new UnsupportedOperationException("Unimplemented method 'executeSelectBySecurity'");
     }
 
     // =========================================================================
